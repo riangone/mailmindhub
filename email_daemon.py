@@ -17,12 +17,14 @@ import argparse
 import json
 import re
 import requests
+from html import unescape
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 from email.header import decode_header as _decode_header
+from email.utils import parseaddr
 
 # ═══════════════════════════════════════════════════════════════
 #  邮箱配置
@@ -118,11 +120,182 @@ AI_BACKENDS = {
     "qwen":        {"type": "cli", "cmd": os.environ.get("QWEN_CMD",   "qwen"),   "args": ["--prompt"]},
     "anthropic":   {"type": "api_anthropic", "api_key": os.environ.get("ANTHROPIC_API_KEY", ""),  "model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")},
     "openai":      {"type": "api_openai",    "api_key": os.environ.get("OPENAI_API_KEY", ""),     "model": os.environ.get("OPENAI_MODEL",     "gpt-4o"),            "url": "https://api.openai.com/v1/chat/completions"},
-    "gemini-api":  {"type": "api_gemini",    "api_key": os.environ.get("GEMINI_API_KEY", ""),     "model": os.environ.get("GEMINI_MODEL",     "gemini-2.0-flash")},
+    "gemini-api":  {"type": "api_gemini",    "api_key": os.environ.get("GEMINI_API_KEY", ""),     "model": os.environ.get("GEMINI_MODEL",     "gemini-3-flash-preview")},
     "qwen-api":    {"type": "api_qwen",      "api_key": os.environ.get("QWEN_API_KEY", ""),       "model": os.environ.get("QWEN_MODEL",       "qwen-max")},
     "deepseek":    {"type": "api_openai",    "api_key": os.environ.get("DEEPSEEK_API_KEY", ""),   "model": os.environ.get("DEEPSEEK_MODEL",    "deepseek-chat"),     "url": "https://api.deepseek.com/v1/chat/completions"},
     "copilot":     {"type": "cli_copilot",   "cmd": _copilot_cmd()},
 }
+
+
+# ────────────────────────────────────────────────────────────────
+#  Web Search 配置
+# ────────────────────────────────────────────────────────────────
+
+WEB_SEARCH_ENABLED = os.environ.get("WEB_SEARCH", "false").lower() == "true"
+WEB_SEARCH_ENGINE = os.environ.get("WEB_SEARCH_ENGINE", "duckduckgo")  # duckduckgo / google / bing
+SEARCH_RESULTS_COUNT = int(os.environ.get("SEARCH_RESULTS_COUNT", "5"))
+
+# 搜索提示词模板
+WEB_SEARCH_PROMPT = """
+【网络搜索结果】（来自 {engine}，共 {count} 条）：
+{search_results}
+
+---
+以上为网络搜索结果，请结合上述信息回答用户的问题。
+"""
+
+
+def web_search(query: str, num_results: int = 5) -> list:
+    """
+    执行网络搜索，返回搜索结果列表
+    
+    支持的搜索引擎：
+    - duckduckgo: DuckDuckGo API（无需 API Key）
+    - wikipedia: Wikipedia API（免费，适合知识类查询）
+    - google: Google Custom Search API（需要 API Key）
+    - bing: Bing Search API（需要 API Key）
+    """
+    results = []
+
+    if WEB_SEARCH_ENGINE == "duckduckgo":
+        try:
+            # DuckDuckGo Instant Answer API（无需 Key）
+            headers = {"User-Agent": "Mozilla/5.0"}
+            url = f"https://api.duckduckgo.com/?q={requests.utils.quote(query)}&format=json&no_html=1"
+            resp = requests.get(url, headers=headers, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            
+            # 提取摘要
+            if data.get("AbstractText"):
+                results.append({
+                    "title": data.get("Heading", "摘要"),
+                    "snippet": data.get("AbstractText", ""),
+                    "url": data.get("AbstractURL", "")
+                })
+            
+            # 提取相关结果
+            for item in data.get("RelatedTopics", [])[:num_results]:
+                if isinstance(item, dict) and "Text" in item:
+                    results.append({
+                        "title": item.get("Text", "")[:100] + "...",
+                        "snippet": item.get("Text", ""),
+                        "url": item.get("FirstURL", "")
+                    })
+                    
+        except Exception as e:
+            log.warning(f"DuckDuckGo 搜索失败：{e}")
+            
+    elif WEB_SEARCH_ENGINE == "wikipedia":
+        # Wikipedia API（免费，无需 API Key）
+        try:
+            lang = os.environ.get('WIKIPEDIA_LANG', 'zh')
+            url = f"https://{lang}.wikipedia.org/w/api.php"
+            params = {
+                "action": "query",
+                "list": "search",
+                "srsearch": query,
+                "format": "json",
+                "srlimit": num_results
+            }
+            headers = {"User-Agent": "MailMind/1.0"}
+            resp = requests.get(url, params=params, headers=headers, timeout=10)
+            data = resp.json()
+            for item in data.get("query", {}).get("search", [])[:num_results]:
+                results.append({
+                    "title": item.get("title", ""),
+                    "snippet": item.get("snippet", "").replace('<span class="searchmatch">', '').replace('</span>', ''),
+                    "url": f"https://{lang}.wikipedia.org/wiki/{item.get('title', '')}"
+                })
+        except Exception as e:
+            log.warning(f"Wikipedia 搜索失败：{e}")
+
+    elif WEB_SEARCH_ENGINE == "google":
+        # Google 需要 API Key，这里使用自定义搜索 API
+        api_key = os.environ.get("GOOGLE_API_KEY", "")
+        cse_id = os.environ.get("GOOGLE_CSE_ID", "")
+        if api_key and cse_id:
+            try:
+                url = f"https://www.googleapis.com/customsearch/v1?key={api_key}&cx={cse_id}&q={requests.utils.quote(query)}"
+                resp = requests.get(url, timeout=10)
+                data = resp.json()
+                for item in data.get("items", [])[:num_results]:
+                    results.append({
+                        "title": item.get("title", ""),
+                        "snippet": item.get("snippet", ""),
+                        "url": item.get("link", "")
+                    })
+            except Exception as e:
+                log.warning(f"Google 搜索失败：{e}")
+        else:
+            log.warning("未配置 GOOGLE_API_KEY 或 GOOGLE_CSE_ID")
+            
+    elif WEB_SEARCH_ENGINE == "bing":
+        # Bing 需要 API Key
+        api_key = os.environ.get("BING_API_KEY", "")
+        if api_key:
+            try:
+                url = f"https://api.bing.microsoft.com/v7.0/search?q={requests.utils.quote(query)}"
+                headers = {"Ocp-Apim-Subscription-Key": api_key}
+                resp = requests.get(url, headers=headers, timeout=10)
+                data = resp.json()
+                for item in data.get("webPages", {}).get("value", [])[:num_results]:
+                    results.append({
+                        "title": item.get("name", ""),
+                        "snippet": item.get("snippet", ""),
+                        "url": item.get("url", "")
+                    })
+            except Exception as e:
+                log.warning(f"Bing 搜索失败：{e}")
+        else:
+            log.warning("未配置 BING_API_KEY")
+    
+    return results
+
+
+def format_search_results(results: list) -> str:
+    """格式化搜索结果为用户可读的文本"""
+    lines = []
+    for i, r in enumerate(results, 1):
+        lines.append(f"{i}. 【{r.get('title', '无标题')}】")
+        lines.append(f"   {r.get('snippet', '')}")
+        lines.append(f"   链接：{r.get('url', '')}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def search_web_if_needed(instruction: str) -> str:
+    """
+    判断是否需要搜索，如果需要则执行搜索并返回格式化的结果
+    如果不需要搜索或搜索失败，返回空字符串
+    """
+    if not WEB_SEARCH_ENABLED:
+        return ""
+    
+    # 检测指令中是否包含搜索关键词
+    search_keywords = ["搜索", "查找", "查询", "最新", "最近", "news", "search", "look up", "find"]
+    needs_search = any(kw in instruction.lower() for kw in search_keywords)
+    
+    if not needs_search:
+        return ""
+    
+    log.info("🔍 检测到搜索意图，执行网络搜索...")
+    
+    # 提取搜索关键词（简化：使用整个指令的前 50 个字）
+    search_query = instruction[:50].replace("\n", " ").strip()
+    
+    results = web_search(search_query, SEARCH_RESULTS_COUNT)
+    
+    if results:
+        log.info(f"✅ 搜索完成，找到 {len(results)} 条结果")
+        return WEB_SEARCH_PROMPT.format(
+            engine=WEB_SEARCH_ENGINE,
+            count=len(results),
+            search_results=format_search_results(results)
+        )
+    else:
+        log.warning("⚠️  搜索未返回结果")
+        return ""
 
 POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "60"))
 
@@ -131,6 +304,68 @@ POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "60"))
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logging.getLogger("mailmind")
 processed_ids: set = set()
+PROCESSED_IDS_PATH: str | None = None
+
+
+def _default_processed_ids_path(mailbox_name: str) -> str:
+    base_dir = os.path.dirname(__file__)
+    return os.path.join(base_dir, f"processed_ids_{mailbox_name}.json")
+
+
+def load_processed_ids(path: str) -> set:
+    if not path:
+        return set()
+    if not os.path.isfile(path):
+        return set()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            return set(str(x) for x in data)
+        log.warning(f"processed_ids 文件格式不正确，忽略：{path}")
+        return set()
+    except Exception as e:
+        log.warning(f"读取 processed_ids 失败：{e}")
+        return set()
+
+
+def save_processed_ids(path: str, ids: set):
+    if not path:
+        return
+    tmp_path = f"{path}.tmp"
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(sorted(ids), f, ensure_ascii=True, indent=2)
+        os.replace(tmp_path, path)
+    except Exception as e:
+        log.warning(f"保存 processed_ids 失败：{e}")
+        try:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:
+            pass
+
+
+def is_sender_allowed(sender_email: str, allowed: list) -> bool:
+    if not allowed:
+        return True
+    sender_email = (sender_email or "").strip().lower()
+    if "@" not in sender_email:
+        return False
+    _, _, sender_domain = sender_email.rpartition("@")
+    for entry in allowed:
+        rule = (entry or "").strip().lower()
+        if not rule:
+            continue
+        if "@" in rule:
+            if sender_email == rule:
+                return True
+        else:
+            if rule.startswith("@"):
+                rule = rule[1:]
+            if sender_domain == rule:
+                return True
+    return False
 
 PROMPT_TEMPLATE = """\
 你正在通过邮件接收用户指令。以下是用户发来的邮件，请执行其中的任务。
@@ -391,10 +626,10 @@ def fetch_unread_emails(mailbox: dict) -> list:
         msg = email.message_from_bytes(data[0][1])
 
         sender = decode_str(msg.get("From", ""))
-        sender_email = sender.split("<")[-1].rstrip(">").strip() if "<" in sender else sender
+        sender_email = parseaddr(sender)[1].strip() if sender else ""
 
         allowed = mailbox.get("allowed_senders", [])
-        if allowed and not any(s.lower() in sender_email.lower() for s in allowed):
+        if not is_sender_allowed(sender_email, allowed):
             log.info(f"跳过非白名单: {sender_email}")
             continue
 
@@ -454,9 +689,13 @@ def parse_ai_response(raw: str) -> tuple:
     if match:
         try:
             data = json.loads(match.group())
-            return data.get("subject", ""), data.get("body", raw), data.get("attachments", [])
+            subject = data.get("subject", "") or ""
+            body = data.get("body", "") or raw
+            attachments = data.get("attachments", [])
+            return subject, body, attachments
         except json.JSONDecodeError:
-            pass
+            log.warning(f"AI 返回的 JSON 解析失败：{raw[:200]}")
+    log.warning(f"AI 返回内容未包含有效 JSON: {raw[:200]}")
     return "", raw, []
 
 
@@ -469,6 +708,52 @@ def call_ai_cli(backend: dict, instruction: str) -> str:
     raise RuntimeError(result.stderr[:300])
 
 
+def log_token_usage(provider: str, data: dict) -> None:
+    """Log token usage if the provider returns it."""
+    if not isinstance(data, dict):
+        return
+
+    try:
+        if provider == "anthropic":
+            usage = data.get("usage", {})
+            if usage:
+                log.info(
+                    f"🔢 {provider} tokens: input={usage.get('input_tokens')} "
+                    f"output={usage.get('output_tokens')}"
+                )
+            return
+
+        if provider == "openai":
+            usage = data.get("usage", {})
+            if usage:
+                log.info(
+                    f"🔢 {provider} tokens: prompt={usage.get('prompt_tokens')} "
+                    f"completion={usage.get('completion_tokens')} total={usage.get('total_tokens')}"
+                )
+            return
+
+        if provider == "gemini":
+            usage = data.get("usageMetadata", {})
+            if usage:
+                log.info(
+                    f"🔢 {provider} tokens: prompt={usage.get('promptTokenCount')} "
+                    f"candidates={usage.get('candidatesTokenCount')} total={usage.get('totalTokenCount')}"
+                )
+            return
+
+        if provider == "qwen":
+            usage = data.get("usage") or data.get("token_usage") or data.get("output", {}).get("token_usage")
+            if isinstance(usage, dict) and usage:
+                log.info(
+                    f"🔢 {provider} tokens: input={usage.get('input_tokens')} "
+                    f"output={usage.get('output_tokens')} total={usage.get('total_tokens')}"
+                )
+            return
+    except Exception:
+        # Never fail the request due to usage logging.
+        return
+
+
 def call_ai_api_anthropic(backend: dict, instruction: str) -> str:
     prompt = PROMPT_TEMPLATE.format(instruction=instruction)
     resp = requests.post(
@@ -478,7 +763,9 @@ def call_ai_api_anthropic(backend: dict, instruction: str) -> str:
         timeout=120,
     )
     resp.raise_for_status()
-    return resp.json()["content"][0]["text"].strip()
+    data = resp.json()
+    log_token_usage("anthropic", data)
+    return data["content"][0]["text"].strip()
 
 
 def call_ai_api_openai(backend: dict, instruction: str) -> str:
@@ -490,15 +777,28 @@ def call_ai_api_openai(backend: dict, instruction: str) -> str:
         timeout=120,
     )
     resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"].strip()
+    data = resp.json()
+    log_token_usage("openai", data)
+    return data["choices"][0]["message"]["content"].strip()
 
 
 def call_ai_api_gemini(backend: dict, instruction: str) -> str:
     prompt = PROMPT_TEMPLATE.format(instruction=instruction)
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{backend['model']}:generateContent?key={backend['api_key']}"
-    resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=120)
+    wait = 5
+    for attempt in range(5):
+        resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=120)
+        if resp.status_code == 429:
+            logging.warning(f"Gemini API 429 レート制限、{wait}秒後にリトライ ({attempt+1}/5)")
+            time.sleep(wait)
+            wait *= 2
+            continue
+        resp.raise_for_status()
+        data = resp.json()
+        log_token_usage("gemini", data)
+        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
     resp.raise_for_status()
-    return resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+    return ""
 
 
 def call_ai_api_qwen(backend: dict, instruction: str) -> str:
@@ -510,7 +810,9 @@ def call_ai_api_qwen(backend: dict, instruction: str) -> str:
         timeout=120,
     )
     resp.raise_for_status()
-    return resp.json()["output"]["text"].strip()
+    data = resp.json()
+    log_token_usage("qwen", data)
+    return data["output"]["text"].strip()
 
 
 def call_ai_cli_copilot(backend: dict, instruction: str) -> str:
@@ -578,22 +880,34 @@ def process_email(mailbox: dict, ai_name: str, backend: dict, em: dict):
             else:
                 instruction += f"\n\n--- 附件（二进制，无法读取内容）：{att['filename']} ---"
 
+    # 如果需要，先执行网络搜索
+    search_results = search_web_if_needed(instruction)
+    if search_results:
+        instruction = search_results + "\n\n" + instruction
+    
     log.info(f"🤖 [{ai_name}] 处理中...")
     new_subject, reply_body, reply_attachments = call_ai(ai_name, backend, instruction)
 
-    if new_subject:
-        reply_subject = new_subject
-        log.info(f"📝 AI 生成新标题: {new_subject}")
+    if new_subject and new_subject.strip():
+        reply_subject = new_subject.strip()
+        log.info(f"📝 AI 生成新标题：{new_subject}")
     else:
         reply_subject = em["subject"] if em["subject"].startswith("Re:") else f"Re: {em['subject']}"
+        log.warning("⚠️  AI 未生成标题，使用默认格式")
+
+    if not reply_body or not reply_body.strip():
+        reply_body = "AI 处理完成，但未生成具体回复内容。请检查 AI 是否正确理解指令。"
+        log.warning("⚠️  AI 返回空 body，使用默认提示")
 
     if reply_attachments:
         log.info(f"📎 AI 生成 {len(reply_attachments)} 个附件")
+
 
     send_reply(mailbox, to=em["from_email"], subject=reply_subject,
                body=reply_body, in_reply_to=em.get("message_id", ""),
                attachments=reply_attachments)
     processed_ids.add(em["id"])
+    save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
 
 
 def run_poll(mailbox: dict, ai_name: str, backend: dict):
@@ -717,6 +1031,12 @@ def main():
         sys.exit(1)
     mailbox = MAILBOXES[mailbox_name]
 
+    # 加载已处理邮件 ID
+    global processed_ids, PROCESSED_IDS_PATH
+    env_ids_path = os.environ.get("PROCESSED_IDS_FILE", "").strip()
+    PROCESSED_IDS_PATH = env_ids_path or _default_processed_ids_path(mailbox_name)
+    processed_ids = load_processed_ids(PROCESSED_IDS_PATH)
+
     # 选择 AI
     ai_name = args.ai or "claude"
     if ai_name not in AI_BACKENDS:
@@ -735,6 +1055,7 @@ def main():
     log.info(f"   邮箱     : {mailbox_name} ({mailbox['address']}) [{mailbox.get('auth', 'password')}]")
     log.info(f"   AI       : {ai_name} [{backend['type']}]")
     log.info(f"   白名单   : {mailbox['allowed_senders'] or '（全部接受）'}")
+    log.info(f"   已处理ID : {len(processed_ids)}（{PROCESSED_IDS_PATH}）")
 
     use_poll = args.poll or os.environ.get("MODE", "").lower() == "poll"
     if use_poll:

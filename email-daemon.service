@@ -6,16 +6,13 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/ws/ccmail
+WorkingDirectory=/home/ubuntu/ws/MailMind
 
-# 环境变量（按需修改）
-Environment=MAIL_126_ADDRESS=your@126.com
-Environment=MAIL_126_PASSWORD=your-auth-code
-Environment=MAIL_126_ALLOWED=your@126.com
-Environment=POLL_INTERVAL=60
+# 环境变量（按需修改 /etc/mailmind.env）
+EnvironmentFile=/etc/mailmind.env
 
 # 启动命令（按需修改 --mailbox 和 --ai）
-ExecStart=/home/ubuntu/ws/ccmail/venv/bin/python email_daemon.py --mailbox 126 --ai claude
+ExecStart=/home/ubuntu/ws/MailMind/venv/bin/python email_daemon.py --mailbox 126 --ai claude
 
 # 崩溃自动重启
 Restart=on-failure

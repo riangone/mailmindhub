@@ -126,7 +126,8 @@ do_log() {
 do_install() {
     heading "安装为 systemd 服务"
 
-    # 生成 service 文件（把环境变量内联进去）
+    # 使用 EnvironmentFile 直接读取 .env，切换邮箱只需修改 .env 后 restart
+    # \$MAILBOX 和 \$AI 转义后由 systemd 在运行时从 EnvironmentFile 读取
     cat > /tmp/${SERVICE_NAME}.service << EOF
 [Unit]
 Description=Email AI Daemon
@@ -136,11 +137,8 @@ After=network.target
 Type=simple
 User=$(whoami)
 WorkingDirectory=$INSTALL_DIR
-Environment=MAIL_126_ADDRESS=$MAIL_126_ADDRESS
-Environment=MAIL_126_PASSWORD=$MAIL_126_PASSWORD
-Environment=MAIL_126_ALLOWED=$MAIL_126_ALLOWED
-Environment=POLL_INTERVAL=$POLL_INTERVAL
-ExecStart=$VENV_PYTHON $SCRIPT --mailbox $MAILBOX --ai $AI
+EnvironmentFile=$ENV_FILE
+ExecStart=$VENV_PYTHON $SCRIPT --mailbox \$MAILBOX --ai \$AI
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal

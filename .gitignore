@@ -9,3 +9,4 @@ daemon.pid
 credentials_gmail.json
 token_gmail.json
 token_outlook.json
+processed_ids_*.json
