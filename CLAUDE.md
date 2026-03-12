@@ -35,17 +35,17 @@ python3 email_daemon.py --mailbox gmail --auth        # One-time OAuth flow
 
 Everything lives in two files:
 
-- **`email_daemon.py`** — the core daemon (~576 lines)
+- **`email_daemon.py`** — the core daemon (~620 lines)
 - **`manage.sh`** — wrapper for background process/systemd lifecycle + all configuration
 
 ### Configuration model
 
-All credentials and settings are injected via environment variables. `manage.sh` (lines 7–57) is where these are set before invoking the daemon. There are no config files — just env vars.
+All credentials and settings are injected via environment variables. `manage.sh` loads them from a `.env` file (not committed; copy from `.env.example`). There are no config files — just env vars.
 
 ### Key data structures in `email_daemon.py`
 
-- **`MAILBOX_CONFIG`** (line ~29) — dict of mailbox presets keyed by name (`126`, `163`, `qq`, `gmail`, `outlook`), each with IMAP/SMTP servers, ports, auth type, and env var names to read credentials from.
-- **`AI_CONFIG`** (line ~99) — dict of AI backend presets keyed by name, each with `type` (`cli` or `api`), command/URL, and model.
+- **`MAILBOXES`** (line ~29) — dict of mailbox presets keyed by name (`126`, `163`, `qq`, `gmail`, `outlook`), each with IMAP/SMTP servers, ports, auth type, and env var names to read credentials from.
+- **`AI_BACKENDS`** (line ~99) — dict of AI backend presets keyed by name, each with `type` (`cli` or `api`), command/URL, and model.
 
 ### Main loop flow
 
@@ -55,12 +55,26 @@ fetch_unread_emails() → process_email() → call_ai() → send_reply()
 
 - IMAP polling every `POLL_INTERVAL` seconds (default 60)
 - Per-mailbox sender whitelist checked before processing
-- AI response expected as JSON `{"subject": "...", "body": "..."}` (prompt is hardcoded in Chinese, lines ~118–124)
+- AI response expected as JSON (prompt hardcoded in Chinese, lines ~118–129):
+  ```json
+  {"subject": "...", "body": "...", "attachments": [{"filename": "report.md", "content": "..."}]}
+  ```
+- `attachments` is optional — only include when the AI needs to return file content
 - Processed email IDs tracked in-memory to prevent duplicate handling
+
+### Attachment support
+
+**Receiving:** `get_body_and_attachments()` extracts both the email body and any attachments.
+- Text-based attachments (`.txt`, `.md`, `.csv`, etc.) are decoded and appended inline to the AI prompt
+- Binary attachments (PDF, images, etc.) are noted by filename only (content not passed to AI)
+
+**Sending:** `send_reply()` accepts an `attachments` list and encodes each entry as a MIME attachment.
+- AI returns file content as plain text in the `attachments` JSON field
+- Each entry is base64-encoded and attached to the reply email
 
 ### Adding a new mailbox or AI backend
 
-Add an entry to `MAILBOX_CONFIG` or `AI_CONFIG` in `email_daemon.py` — the rest of the logic is generic and routes by config.
+Add an entry to `MAILBOXES` or `AI_BACKENDS` in `email_daemon.py` — the rest of the logic is generic and routes by config.
 
 ### Auth types
 
