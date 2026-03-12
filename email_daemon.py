@@ -522,6 +522,16 @@ def call_ai(ai_name: str, backend: dict, instruction: str) -> tuple:
 #  主流程
 # ═══════════════════════════════════════════════════════════════
 
+def _process_new_emails(mailbox: dict, ai_name: str, backend: dict):
+    """拉取并处理所有未读邮件（供 IDLE 和轮询共用）"""
+    emails = fetch_unread_emails(mailbox)
+    if emails:
+        log.info(f"📬 发现 {len(emails)} 封新指令")
+        for em in emails:
+            process_email(mailbox, ai_name, backend, em)
+    return emails
+
+
 def process_email(mailbox: dict, ai_name: str, backend: dict, em: dict):
     log.info(f"📨 收到指令: [{em['subject']}] 来自 {em['from_email']}")
 
@@ -554,12 +564,95 @@ def process_email(mailbox: dict, ai_name: str, backend: dict, em: dict):
     processed_ids.add(em["id"])
 
 
+def run_poll(mailbox: dict, ai_name: str, backend: dict):
+    """定时轮询模式"""
+    while True:
+        try:
+            emails = _process_new_emails(mailbox, ai_name, backend)
+            if not emails:
+                log.info("📭 暂无新邮件，等待下次轮询...")
+        except KeyboardInterrupt:
+            log.info("🛑 已停止")
+            break
+        except Exception as e:
+            log.error(f"出错: {e}", exc_info=True)
+        time.sleep(POLL_INTERVAL)
+
+
+def run_idle(mailbox: dict, ai_name: str, backend: dict):
+    """IMAP IDLE 实时推送模式（断线自动重连）"""
+    try:
+        import imapclient
+    except ImportError:
+        raise ImportError("IMAP IDLE 需要 imapclient 库：pip install imapclient")
+
+    IDLE_REFRESH = 25 * 60   # 25 分钟重发 IDLE（服务器通常 29 分钟超时）
+    RECONNECT_DELAY = 5
+
+    log.info("📡 IDLE 模式就绪，等待新邮件推送...")
+
+    while True:
+        client = None
+        try:
+            client = imapclient.IMAPClient(
+                mailbox["imap_server"], port=mailbox["imap_port"], ssl=True, timeout=30
+            )
+
+            # 登录
+            auth = mailbox.get("auth", "password")
+            if auth == "password":
+                client.login(mailbox["address"], mailbox["password"])
+            else:
+                token = get_oauth_token(mailbox)
+                client.oauth2_login(mailbox["address"], token)
+
+            # IMAP ID（126/163 需要）
+            if mailbox.get("imap_id"):
+                try:
+                    client.id_({"name": "mailmind", "version": "1.0"})
+                except Exception:
+                    pass
+
+            client.select_folder("INBOX")
+            log.info("✅ IDLE 连接建立")
+
+            # 启动时先处理一次积压的未读邮件
+            _process_new_emails(mailbox, ai_name, backend)
+
+            while True:
+                client.idle()
+                responses = client.idle_check(timeout=IDLE_REFRESH)
+                client.idle_done()
+
+                if responses:
+                    log.info("📬 检测到邮箱变化，拉取新邮件...")
+                    try:
+                        _process_new_emails(mailbox, ai_name, backend)
+                    except Exception as e:
+                        log.error(f"处理邮件出错: {e}", exc_info=True)
+                # else: IDLE 超时刷新，重新进入 IDLE
+
+        except KeyboardInterrupt:
+            log.info("🛑 已停止")
+            break
+        except Exception as e:
+            log.error(f"IDLE 连接断开: {e}，{RECONNECT_DELAY} 秒后重连...")
+            time.sleep(RECONNECT_DELAY)
+        finally:
+            if client:
+                try:
+                    client.logout()
+                except Exception:
+                    pass
+
+
 def main():
     parser = argparse.ArgumentParser(description="MailMind — 邮件 AI 守护进程")
     parser.add_argument("--mailbox", default=None, help=f"邮箱: {list(MAILBOXES.keys())}")
     parser.add_argument("--ai",      default=None, help=f"AI:  {list(AI_BACKENDS.keys())}")
     parser.add_argument("--list",    action="store_true", help="列出所有配置状态")
-    parser.add_argument("--auth",    action="store_true", help="仅执行 OAuth 授权（不启动轮询）")
+    parser.add_argument("--auth",    action="store_true", help="仅执行 OAuth 授权（不启动守护进程）")
+    parser.add_argument("--poll",    action="store_true", help="使用轮询模式（默认: IMAP IDLE）")
     args = parser.parse_args()
 
     if args.list:
@@ -610,24 +703,14 @@ def main():
     log.info(f"   邮箱     : {mailbox_name} ({mailbox['address']}) [{mailbox.get('auth', 'password')}]")
     log.info(f"   AI       : {ai_name} [{backend['type']}]")
     log.info(f"   白名单   : {mailbox['allowed_senders'] or '（全部接受）'}")
-    log.info(f"   轮询间隔 : {POLL_INTERVAL} 秒")
 
-    while True:
-        try:
-            emails = fetch_unread_emails(mailbox)
-            if emails:
-                log.info(f"📬 发现 {len(emails)} 封新指令")
-                for em in emails:
-                    process_email(mailbox, ai_name, backend, em)
-            else:
-                log.info("📭 暂无新邮件，等待下次轮询...")
-        except KeyboardInterrupt:
-            log.info("🛑 已停止")
-            break
-        except Exception as e:
-            log.error(f"出错: {e}", exc_info=True)
-
-        time.sleep(POLL_INTERVAL)
+    use_poll = args.poll or os.environ.get("MODE", "").lower() == "poll"
+    if use_poll:
+        log.info(f"   模式     : 轮询（每 {POLL_INTERVAL} 秒）")
+        run_poll(mailbox, ai_name, backend)
+    else:
+        log.info(f"   模式     : IMAP IDLE（实时推送）")
+        run_idle(mailbox, ai_name, backend)
 
 
 if __name__ == "__main__":

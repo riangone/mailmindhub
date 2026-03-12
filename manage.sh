@@ -61,7 +61,14 @@ do_start() {
         return 1
     fi
 
-    nohup "$VENV_PYTHON" "$SCRIPT" --mailbox "$MAILBOX" --ai "$AI" \
+    # 根据 MODE 决定是否加 --poll 参数
+    EXTRA_ARGS=""
+    if [ "${MODE:-idle}" = "poll" ]; then
+        EXTRA_ARGS="--poll"
+    fi
+
+    # shellcheck disable=SC2086
+    nohup "$VENV_PYTHON" "$SCRIPT" --mailbox "$MAILBOX" --ai "$AI" $EXTRA_ARGS \
         >> "$LOG_FILE" 2>&1 &
     echo $! > "$PID_FILE"
     sleep 1
@@ -70,7 +77,7 @@ do_start() {
     if [ -n "$pid" ]; then
         info "服务已启动 (PID: $pid)"
         info "日志文件: $LOG_FILE"
-        info "邮箱: $MAILBOX | AI: $AI | 轮询: ${POLL_INTERVAL}s"
+        info "邮箱: $MAILBOX | AI: $AI | 模式: ${MODE:-idle}"
     else
         error "启动失败，查看日志: tail -f $LOG_FILE"
         return 1

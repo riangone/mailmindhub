@@ -11,7 +11,7 @@ MailMind is an email-to-AI bridge daemon. Users send emails with instructions; t
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install requests
+pip install requests imapclient     # imapclient required for IMAP IDLE mode
 # Optional for Gmail OAuth:
 pip install google-auth google-auth-oauthlib google-auth-httplib2
 # Optional for Outlook OAuth:
@@ -25,11 +25,15 @@ pip install msal
 bash manage.sh start | stop | restart | status | log
 
 # Direct invocation
-python3 email_daemon.py --mailbox gmail --ai claude
-python3 email_daemon.py --mailbox 126 --ai anthropic
-python3 email_daemon.py --list                        # Show config status
-python3 email_daemon.py --mailbox gmail --auth        # One-time OAuth flow
+python3 email_daemon.py --mailbox gmail --ai claude          # IMAP IDLE mode (default)
+python3 email_daemon.py --mailbox 126 --ai anthropic --poll  # polling mode
+python3 email_daemon.py --list                               # show config status
+python3 email_daemon.py --mailbox gmail --auth               # one-time OAuth flow
 ```
+
+Receive mode is controlled by `MODE` in `.env` (or `--poll` flag):
+- `MODE=idle` — IMAP IDLE, server pushes notification on new mail (default)
+- `MODE=poll` — timed polling every `POLL_INTERVAL` seconds
 
 ## Architecture
 
@@ -53,7 +57,8 @@ All credentials and settings are injected via environment variables. `manage.sh`
 fetch_unread_emails() → process_email() → call_ai() → send_reply()
 ```
 
-- IMAP polling every `POLL_INTERVAL` seconds (default 60)
+- **IMAP IDLE** (default): server pushes notification on new mail; `run_idle()` handles auto-reconnect
+- **Poll mode** (`--poll` / `MODE=poll`): `run_poll()` checks every `POLL_INTERVAL` seconds (default 60)
 - Per-mailbox sender whitelist checked before processing
 - AI response expected as JSON (prompt hardcoded in Chinese, lines ~118–129):
   ```json
