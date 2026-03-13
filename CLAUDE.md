@@ -103,6 +103,8 @@ Environment variables:
 - `BING_API_KEY` (Bing Web Search)
 - `TASK_DEFAULT_AI` (default AI for scheduled jobs)
 
+`.env.example` contains the full list and defaults.
+
 ### Attachment support
 
 **Receiving:** `get_body_and_attachments()` extracts both the email body and any attachments.

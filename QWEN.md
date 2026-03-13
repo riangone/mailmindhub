@@ -75,6 +75,8 @@ export NEWS_DEFAULT_QUERY="technology OR AI"
 export NEWS_DEFAULT_LANGUAGE="zh"
 ```
 
+完整默认值见 `.env.example`。
+
 ### 配置
 
 ```bash

@@ -69,6 +69,8 @@
 - `TASK_DEFAULT_AI`（定时任务默认 AI）
 - 可选：`WEATHER_DEFAULT_LOCATION`、`NEWS_DEFAULT_QUERY`、`NEWS_DEFAULT_LANGUAGE`
 
+完整默认值见 `.env.example`。
+
 ### 定时任务与自动识别
 
 当邮件指令包含定时信息时，系统会创建任务并由调度器执行。支持任务类型：
