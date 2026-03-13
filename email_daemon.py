@@ -336,6 +336,80 @@ def search_web_if_needed(instruction: str) -> str:
         return WEB_SEARCH_PROMPT.format(engine=WEB_SEARCH_ENGINE, count=len(results), search_results=format_search_results(results))
     return ""
 
+
+def _parse_schedule_from_text(text: str):
+    low = text.lower()
+    schedule_at = None
+    schedule_every = None
+    schedule_until = None
+
+    rel_min = re.search(r"(?:每|every)\s*(\d+)\s*(分钟|min|minutes)", low)
+    rel_hour = re.search(r"(?:每|every)\s*(\d+)\s*(小时|hour|hours|h)", low)
+    rel_day = re.search(r"(?:每|every)\s*(\d+)\s*(天|day|days|d)", low)
+    if rel_min:
+        schedule_every = f"{rel_min.group(1)}m"
+    elif rel_hour:
+        schedule_every = f"{rel_hour.group(1)}h"
+    elif rel_day:
+        schedule_every = f"{rel_day.group(1)}d"
+
+    date_time = re.search(r"(\d{4}-\d{2}-\d{2})(?:\s*[tT ]\s*(\d{1,2}:\d{2}))?", low)
+    if date_time:
+        d = date_time.group(1)
+        t = date_time.group(2) or "09:00"
+        schedule_at = f"{d}T{t}:00"
+
+    until_match = re.search(r"(?:截止|直到|until)\s*(\d{4}-\d{2}-\d{2}(?:[tT ]\d{1,2}:\d{2})?)", low)
+    if until_match:
+        schedule_until = until_match.group(1).replace(" ", "T")
+
+    return schedule_at, schedule_every, schedule_until
+
+
+def auto_detect_task(instruction: str):
+    low = instruction.lower()
+    task_type = None
+    payload = {}
+    output = {}
+
+    if any(k in low for k in ["天气", "weather"]):
+        task_type = "weather"
+        m = re.search(r"(?:天气|weather)[：: ]?([^\n，,;；]+)", instruction, re.I)
+        if m:
+            payload["location"] = m.group(1).strip()
+    if any(k in low for k in ["新闻", "news"]):
+        task_type = "news"
+        m = re.search(r"(?:新闻|news)[：: ]?([^\n，,;；]+)", instruction, re.I)
+        if m:
+            payload["query"] = m.group(1).strip()
+    if any(k in low for k in ["检索", "搜索", "网页", "search", "look up", "find"]):
+        task_type = "web_search"
+        m = re.search(r"(?:检索|搜索|网页检索|search|look up|find)[：: ]?([^\n]+)", instruction, re.I)
+        if m:
+            payload["query"] = m.group(1).strip()
+    if any(k in low for k in ["日报", "周报", "月报", "report", "summary"]):
+        task_type = "report"
+        if "天气" in low or "weather" in low:
+            payload["weather_locations"] = [WEATHER_DEFAULT_LOCATION]
+        if "新闻" in low or "news" in low:
+            payload["news_query"] = NEWS_DEFAULT_QUERY
+        m = re.search(r"(?:检索|搜索|网页检索|search)[：: ]?([^\n，,;；]+)", instruction, re.I)
+        if m:
+            payload["web_query"] = m.group(1).strip()
+    if any(k in low for k in ["ai", "分析", "总结", "润色", "翻译", "生成"]):
+        if not task_type:
+            task_type = "ai_job"
+        payload.setdefault("prompt", instruction.strip())
+
+    if any(k in low for k in ["归档", "archive", "保存", "save"]):
+        output["archive"] = True
+        output["archive_dir"] = "reports"
+    if any(k in low for k in ["仅归档", "no email", "不要发邮件"]):
+        output["email"] = False
+
+    schedule_at, schedule_every, schedule_until = _parse_schedule_from_text(instruction)
+    return task_type, payload, output, schedule_at, schedule_every, schedule_until
+
 POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "60"))
 
 # ═══════════════════════════════════════════════════════════════
@@ -824,6 +898,14 @@ def process_email(mailbox_name, ai_name, backend, em):
     if search_res: instr = search_res + "\n\n" + instr
     
     sub, body, sch_at, sch_every, sch_until, atts, task_type, task_payload, output = call_ai(ai_name, backend, instr)
+    if not task_type:
+        det_type, det_payload, det_output, det_at, det_every, det_until = auto_detect_task(em["body"] or "")
+        task_type = det_type or task_type
+        if not task_payload and det_payload: task_payload = det_payload
+        if not output and det_output: output = det_output
+        if not sch_at and det_at: sch_at = det_at
+        if not sch_every and det_every: sch_every = det_every
+        if not sch_until and det_until: sch_until = det_until
     sub = sub or (em["subject"] if em["subject"].startswith("Re:") else f"Re: {em['subject']}")
     
     if sch_at or sch_every:
