@@ -1330,6 +1330,18 @@ def process_email(mailbox_name, ai_name, backend, em):
     processed_ids.add(em["id"])
     save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
 
+def run_poll(mailbox_name, ai_name, backend):
+    mailbox = MAILBOXES[mailbox_name]
+    interval = int(os.environ.get("POLL_INTERVAL", "60"))
+    log.info(f"✅ {mailbox_name} 轮询模式就绪（每 {interval} 秒）")
+    while True:
+        try:
+            for em in fetch_unread_emails(mailbox):
+                process_email(mailbox_name, ai_name, backend, em)
+        except Exception as e:
+            log.error(f"轮询异常: {e}")
+        time.sleep(interval)
+
 def run_idle(mailbox_name, ai_name, backend):
     import imapclient
     mailbox = MAILBOXES[mailbox_name]
@@ -1340,6 +1352,12 @@ def run_idle(mailbox_name, ai_name, backend):
                 else: client.oauth2_login(mailbox["address"], get_oauth_token(mailbox))
                 if mailbox.get("imap_id"): client.id_({"name": "mailmind"})
                 client.select_folder("INBOX")
+                # Check IDLE support before entering loop
+                caps = client.capabilities()
+                if b"IDLE" not in caps:
+                    log.warning(f"{mailbox_name} 服务器不支持 IDLE，自动切换为轮询模式")
+                    run_poll(mailbox_name, ai_name, backend)
+                    return
                 log.info(f"✅ {mailbox_name} IDLE 就绪")
                 while True:
                     for em in fetch_unread_emails(mailbox): process_email(mailbox_name, ai_name, backend, em)
@@ -1354,21 +1372,35 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mailbox", default="126")
     parser.add_argument("--ai", default="claude")
+    parser.add_argument("--poll", action="store_true", help="轮询模式（不使用 IMAP IDLE）")
+    parser.add_argument("--list", action="store_true", help="显示配置状态")
+    parser.add_argument("--auth", action="store_true", help="OAuth 授权")
     args = parser.parse_args()
-    
+
+    if args.list:
+        for name, mb in MAILBOXES.items():
+            addr = mb.get("address", "")
+            print(f"  {name:10s} {addr or '(未配置)'}")
+        return
+
     global DEFAULT_TASK_AI
     if not DEFAULT_TASK_AI:
         DEFAULT_TASK_AI = args.ai
-    
+
     global processed_ids, PROCESSED_IDS_PATH
     PROCESSED_IDS_PATH = _default_processed_ids_path(args.mailbox)
     processed_ids = load_processed_ids(PROCESSED_IDS_PATH)
-    
+
     # 启动任务调度器线程
     threading.Thread(target=scheduler.run_forever, daemon=True).start()
-    
-    log.info(f"🚀 MailMind 启动 | 邮箱: {args.mailbox} | AI: {args.ai}")
-    run_idle(args.mailbox, args.ai, AI_BACKENDS[args.ai])
+
+    use_poll = args.poll or os.environ.get("MODE", "idle").lower() == "poll"
+    mode_str = "轮询" if use_poll else "IDLE"
+    log.info(f"🚀 MailMind 启动 | 邮箱: {args.mailbox} | AI: {args.ai} | 模式: {mode_str}")
+    if use_poll:
+        run_poll(args.mailbox, args.ai, AI_BACKENDS[args.ai])
+    else:
+        run_idle(args.mailbox, args.ai, AI_BACKENDS[args.ai])
 
 if __name__ == "__main__":
     main()
