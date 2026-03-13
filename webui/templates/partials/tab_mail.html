@@ -1,0 +1,104 @@
+<div class="tab-body">
+
+  {% if feedback %}
+  <div class="feedback {{ 'ok' if feedback.ok else 'err' }}">
+    {{ feedback.message }}
+  </div>
+  {% endif %}
+
+  <form hx-post="/config/mail" hx-target="#content" hx-swap="innerHTML">
+
+    <div class="form-group">
+      <label>邮箱地址</label>
+      <input type="email"
+             name="_email_input"
+             value="{{ mail_config.address }}"
+             placeholder="your@example.com"
+             hx-post="/autoconfig"
+             hx-trigger="blur"
+             hx-include="[name='_email_input']"
+             hx-target="#provider-section"
+             hx-swap="innerHTML">
+    </div>
+
+    <div id="provider-section">
+      {% if mail_config.mailbox_type %}
+        <div class="provider-info">
+          <span class="provider-tag">{{ mail_config.mailbox_type.upper() }}</span>
+          当前使用 {{ mail_config.mailbox_type }} 配置
+        </div>
+        <input type="hidden" name="MAILBOX" value="{{ mail_config.mailbox_type }}">
+        {% if mail_config.mailbox_type == "gmail" %}
+          <div class="form-group">
+            <label>认证方式</label>
+            <select name="MAIL_GMAIL_AUTH">
+              <option value="password" {% if env.get('MAIL_GMAIL_AUTH') == 'password' %}selected{% endif %}>应用专用密码（简单）</option>
+              <option value="oauth_google" {% if env.get('MAIL_GMAIL_AUTH', 'oauth_google') == 'oauth_google' %}selected{% endif %}>OAuth（推荐）</option>
+            </select>
+            <div class="hint">OAuth 需先运行: <code>python3 email_daemon.py --mailbox gmail --auth</code></div>
+          </div>
+        {% elif mail_config.mailbox_type == "outlook" %}
+          <div class="form-group">
+            <label>Azure App Client ID</label>
+            <input type="text" name="OUTLOOK_CLIENT_ID" value="{{ env.get('OUTLOOK_CLIENT_ID', '') }}">
+            <div class="hint">在 Azure Portal 注册应用后获取。授权需运行: <code>python3 email_daemon.py --mailbox outlook --auth</code></div>
+          </div>
+        {% elif mail_config.mailbox_type == "custom" %}
+          <div class="server-info">
+            <div>IMAP &nbsp; {{ env.get('MAIL_CUSTOM_IMAP_SERVER', '') }}:{{ env.get('MAIL_CUSTOM_IMAP_PORT', '') }}</div>
+            <div>SMTP &nbsp; {{ env.get('MAIL_CUSTOM_SMTP_SERVER', '') }}:{{ env.get('MAIL_CUSTOM_SMTP_PORT', '') }} &nbsp; SSL={{ env.get('MAIL_CUSTOM_SMTP_SSL', '') }}</div>
+          </div>
+          <details class="override">
+            <summary>手动修改服务器</summary>
+            <div class="form-group">
+              <label>IMAP 服务器</label>
+              <input type="text" name="MAIL_CUSTOM_IMAP_SERVER" value="{{ env.get('MAIL_CUSTOM_IMAP_SERVER', '') }}" placeholder="imap.example.com">
+            </div>
+            <div class="form-group">
+              <label>IMAP 端口</label>
+              <input type="number" name="MAIL_CUSTOM_IMAP_PORT" value="{{ env.get('MAIL_CUSTOM_IMAP_PORT', '993') }}" placeholder="993">
+            </div>
+            <div class="form-group">
+              <label>SMTP 服务器</label>
+              <input type="text" name="MAIL_CUSTOM_SMTP_SERVER" value="{{ env.get('MAIL_CUSTOM_SMTP_SERVER', '') }}" placeholder="smtp.example.com">
+            </div>
+            <div class="form-group">
+              <label>SMTP 端口</label>
+              <input type="number" name="MAIL_CUSTOM_SMTP_PORT" value="{{ env.get('MAIL_CUSTOM_SMTP_PORT', '465') }}" placeholder="465">
+            </div>
+            <div class="form-group">
+              <label>SMTP SSL</label>
+              <select name="MAIL_CUSTOM_SMTP_SSL">
+                <option value="true" {% if env.get('MAIL_CUSTOM_SMTP_SSL', 'true') == 'true' %}selected{% endif %}>true</option>
+                <option value="false" {% if env.get('MAIL_CUSTOM_SMTP_SSL') == 'false' %}selected{% endif %}>false</option>
+              </select>
+            </div>
+          </details>
+        {% endif %}
+      {% else %}
+        <div class="hint">输入邮箱地址后自动检测服务器配置</div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label>授权码 / 密码</label>
+      <input type="password"
+             name="{{ mail_config.prefix }}_PASSWORD"
+             value="{{ mail_config.password }}"
+             placeholder="授权码或应用专用密码">
+      <div class="hint">授权码（非登录密码），在邮箱设置 → POP3/IMAP → 开启服务时获取</div>
+    </div>
+
+    <div class="form-group">
+      <label>发件人白名单</label>
+      <input type="text"
+             name="{{ mail_config.prefix }}_ALLOWED"
+             value="{{ mail_config.allowed }}"
+             placeholder="your@email.com,@company.com">
+      <div class="hint">仅处理来自这些地址的邮件，多个用逗号分隔；空白表示不限制</div>
+    </div>
+
+    <button type="submit" class="btn">保存邮件设置</button>
+
+  </form>
+</div>

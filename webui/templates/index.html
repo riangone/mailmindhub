@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MailMind</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+  <script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js" defer></script>
+</head>
+<body>
+
+<header>
+  <div class="logo">MAILMIND</div>
+  {% include "partials/header_status.html" %}
+</header>
+
+<nav>
+  <button class="tab active"
+          hx-get="/tabs/mail"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">邮件设置</button>
+  <button class="tab"
+          hx-get="/tabs/ai"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">AI 设置</button>
+  <button class="tab"
+          hx-get="/tabs/logs"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">日志</button>
+</nav>
+
+<main>
+  <div id="content">
+    {% include "partials/tab_mail.html" %}
+  </div>
+</main>
+
+<script>
+  function setTab(el) {
+    document.querySelectorAll('.tab').forEach(function(t) {
+      t.classList.remove('active');
+    });
+    el.classList.add('active');
+  }
+
+  // Auto-scroll log panel when new SSE messages arrive
+  document.addEventListener('htmx:sseMessage', function(evt) {
+    var wrap = document.getElementById('log-wrap');
+    if (wrap) {
+      wrap.scrollTop = wrap.scrollHeight;
+    }
+  });
+</script>
+
+</body>
+</html>

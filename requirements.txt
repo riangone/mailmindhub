@@ -10,3 +10,9 @@ markdown>=3.4.0         # 邮件 Markdown 转 HTML 渲染
 
 # ─── Outlook OAuth（可选，使用 outlook + oauth_microsoft 时需要）
 # msal>=1.20.0
+
+# ─── Web UI（可选，运行 bash manage.sh webui 时自动安装）────────
+# fastapi>=0.110.0
+# uvicorn[standard]>=0.29.0
+# jinja2>=3.1.0
+# python-multipart>=0.0.9

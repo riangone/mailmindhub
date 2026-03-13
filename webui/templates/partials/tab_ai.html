@@ -1,0 +1,214 @@
+<div class="tab-body">
+
+  {% if feedback %}
+  <div class="feedback {{ 'ok' if feedback.ok else 'err' }}">
+    {{ feedback.message }}
+  </div>
+  {% endif %}
+
+  <form hx-post="/config/ai" hx-target="#content" hx-swap="innerHTML">
+
+    <!-- ── AI 后端 ──────────────────────────────────────────────── -->
+    <div class="form-group">
+      <label>AI 后端</label>
+      <select name="AI" id="ai-select" onchange="updateAiKeyFields()">
+        {% for key, info in ai_backends.items() %}
+        <option value="{{ key }}" {% if env.get('AI', 'deepseek') == key %}selected{% endif %}>
+          {{ info.label }}{% if info.type == 'cli' %} (CLI){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- API key fields — one per backend with an API key, show/hide via JS -->
+    {% for key, info in ai_backends.items() %}
+    {% if info.key %}
+    <div class="api-key-field form-group"
+         data-backend="{{ key }}"
+         style="display: {{ 'block' if env.get('AI', 'deepseek') == key else 'none' }}">
+      <label>{{ info.key }}</label>
+      <input type="password"
+             name="{{ info.key }}"
+             value="{{ env.get(info.key, '') }}"
+             placeholder="留空则保留现有值">
+      <div class="hint">{{ info.label }} 的 API 密钥</div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <!-- CLI backends notice -->
+    <div class="api-key-field form-group" id="cli-notice" style="display: none">
+      <div class="hint">CLI 后端无需 API Key，请确保对应 CLI 工具已安装并可在 PATH 中找到。</div>
+    </div>
+
+    <!-- ── 运行模式 ─────────────────────────────────────────────── -->
+    <div class="section-title">运行模式</div>
+
+    <div class="form-group">
+      <div class="radio-group">
+        <label>
+          <input type="radio" name="MODE" value="idle"
+                 {% if env.get('MODE', 'idle') == 'idle' %}checked{% endif %}
+                 onchange="togglePollInterval()">
+          IDLE（推荐，服务器实时推送）
+        </label>
+        <label>
+          <input type="radio" name="MODE" value="poll"
+                 {% if env.get('MODE') == 'poll' %}checked{% endif %}
+                 onchange="togglePollInterval()">
+          POLL（定时轮询）
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group" id="poll-interval-group"
+         style="display: {{ 'block' if env.get('MODE') == 'poll' else 'none' }}">
+      <label>轮询间隔（秒）</label>
+      <input type="number" name="POLL_INTERVAL"
+             value="{{ env.get('POLL_INTERVAL', '60') }}"
+             min="10" max="3600">
+    </div>
+
+    <!-- ── 定时任务默认 AI ──────────────────────────────────────── -->
+    <div class="section-title">定时任务</div>
+
+    <div class="form-group">
+      <label>定时任务 AI（TASK_DEFAULT_AI）</label>
+      <select name="TASK_DEFAULT_AI">
+        <option value="" {% if not env.get('TASK_DEFAULT_AI') %}selected{% endif %}>— 使用启动参数 --ai —</option>
+        {% for key, info in ai_backends.items() %}
+        <option value="{{ key }}" {% if env.get('TASK_DEFAULT_AI') == key %}selected{% endif %}>
+          {{ info.label }}{% if info.type == 'cli' %} (CLI){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      <div class="hint">定时调度任务（天气、新闻等）单独使用的 AI 后端，不填则跟随守护进程启动参数</div>
+    </div>
+
+    <!-- ── Web 搜索 ────────────────────────────────────────────── -->
+    <div class="section-title">Web 搜索（为 AI 注入实时搜索结果）</div>
+
+    <div class="form-group">
+      <label class="toggle-label">
+        <input type="checkbox" name="WEB_SEARCH" value="true"
+               {% if env.get('WEB_SEARCH') == 'true' %}checked{% endif %}
+               id="ws-toggle"
+               onchange="toggleWsOptions()">
+        启用 Web 搜索
+      </label>
+    </div>
+
+    <div id="ws-options" style="display: {{ 'block' if env.get('WEB_SEARCH') == 'true' else 'none' }}">
+
+      <div class="form-group">
+        <label>搜索引擎</label>
+        <select name="WEB_SEARCH_ENGINE" id="ws-engine" onchange="toggleSearchKeyFields()">
+          <option value="duckduckgo" {% if env.get('WEB_SEARCH_ENGINE', 'duckduckgo') == 'duckduckgo' %}selected{% endif %}>DuckDuckGo（免费，无需 Key）</option>
+          <option value="wikipedia"  {% if env.get('WEB_SEARCH_ENGINE') == 'wikipedia' %}selected{% endif %}>Wikipedia（免费，无需 Key）</option>
+          <option value="bing"       {% if env.get('WEB_SEARCH_ENGINE') == 'bing' %}selected{% endif %}>Bing（需要 BING_API_KEY）</option>
+          <option value="google"     {% if env.get('WEB_SEARCH_ENGINE') == 'google' %}selected{% endif %}>Google（需要 GOOGLE_API_KEY + CSE_ID）</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>返回结果数量（SEARCH_RESULTS_COUNT）</label>
+        <input type="number" name="SEARCH_RESULTS_COUNT"
+               value="{{ env.get('SEARCH_RESULTS_COUNT', '5') }}"
+               min="1" max="20">
+      </div>
+
+      <div class="form-group">
+        <label>Wikipedia 语言（WIKIPEDIA_LANG）</label>
+        <input type="text" name="WIKIPEDIA_LANG"
+               value="{{ env.get('WIKIPEDIA_LANG', 'zh') }}"
+               placeholder="zh">
+        <div class="hint">仅搜索引擎为 wikipedia 时生效</div>
+      </div>
+
+      <div id="ws-bing-fields"
+           style="display: {{ 'block' if env.get('WEB_SEARCH_ENGINE') == 'bing' else 'none' }}">
+        <div class="form-group">
+          <label>BING_API_KEY</label>
+          <input type="password" name="BING_API_KEY"
+                 value="{{ env.get('BING_API_KEY', '') }}"
+                 placeholder="留空则保留现有值">
+        </div>
+      </div>
+
+      <div id="ws-google-fields"
+           style="display: {{ 'block' if env.get('WEB_SEARCH_ENGINE') == 'google' else 'none' }}">
+        <div class="form-group">
+          <label>GOOGLE_API_KEY</label>
+          <input type="password" name="GOOGLE_API_KEY"
+                 value="{{ env.get('GOOGLE_API_KEY', '') }}"
+                 placeholder="留空则保留现有值">
+        </div>
+        <div class="form-group">
+          <label>GOOGLE_CSE_ID</label>
+          <input type="text" name="GOOGLE_CSE_ID"
+                 value="{{ env.get('GOOGLE_CSE_ID', '') }}"
+                 placeholder="Custom Search Engine ID">
+        </div>
+      </div>
+
+    </div><!-- #ws-options -->
+
+    <div style="margin-top: 28px;">
+      <button type="submit" class="btn">保存 AI 设置</button>
+    </div>
+
+  </form>
+</div>
+
+<script>
+(function() {
+  // Map of backend key → whether it's a CLI type
+  var AI_KEY_MAP = {
+    {% for key, info in ai_backends.items() %}
+    "{{ key }}": { key_var: "{{ info.key or '' }}", type: "{{ info.type }}" },
+    {% endfor %}
+  };
+
+  window.updateAiKeyFields = function() {
+    var selected = document.getElementById('ai-select').value;
+    var info = AI_KEY_MAP[selected] || {};
+
+    // Hide all API key fields
+    document.querySelectorAll('.api-key-field[data-backend]').forEach(function(el) {
+      el.style.display = 'none';
+    });
+
+    var cliNotice = document.getElementById('cli-notice');
+
+    if (info.type === 'cli') {
+      if (cliNotice) cliNotice.style.display = 'block';
+    } else {
+      if (cliNotice) cliNotice.style.display = 'none';
+      // Show the matching key field
+      var target = document.querySelector('.api-key-field[data-backend="' + selected + '"]');
+      if (target) target.style.display = 'block';
+    }
+  };
+
+  window.togglePollInterval = function() {
+    var pollRadio = document.querySelector('input[name="MODE"][value="poll"]');
+    var group = document.getElementById('poll-interval-group');
+    if (group) group.style.display = pollRadio && pollRadio.checked ? 'block' : 'none';
+  };
+
+  window.toggleWsOptions = function() {
+    var cb = document.getElementById('ws-toggle');
+    var opts = document.getElementById('ws-options');
+    if (opts) opts.style.display = cb && cb.checked ? 'block' : 'none';
+  };
+
+  window.toggleSearchKeyFields = function() {
+    var engine = document.getElementById('ws-engine');
+    var val = engine ? engine.value : '';
+    var bingFields   = document.getElementById('ws-bing-fields');
+    var googleFields = document.getElementById('ws-google-fields');
+    if (bingFields)   bingFields.style.display   = val === 'bing'   ? 'block' : 'none';
+    if (googleFields) googleFields.style.display = val === 'google' ? 'block' : 'none';
+  };
+})();
+</script>

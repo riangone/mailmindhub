@@ -439,6 +439,25 @@ do_uninstall() {
     info "systemd 服务已卸载"
 }
 
+do_webui() {
+    ensure_venv
+    local host="${2:-0.0.0.0}"
+    local port="${3:-8000}"
+    # 检查 fastapi 是否已安装
+    if ! "$VENV_PYTHON" -c "import fastapi" 2>/dev/null; then
+        info "正在安装 Web UI 依赖..."
+        "$VENV_PIP" install "fastapi>=0.110.0" "uvicorn[standard]>=0.29.0" "jinja2>=3.1.0" "python-multipart>=0.0.9" --quiet || {
+            error "依赖安装失败"
+            exit 1
+        }
+    fi
+    heading "启动 Web UI"
+    info "地址: http://${host}:${port}"
+    info "按 Ctrl+C 停止"
+    cd "$INSTALL_DIR"
+    exec "$VENV_PYTHON" -m webui.server --host "$host" --port "$port"
+}
+
 # ─── 入口 ──────────────────────────────────────────────────────
 case "$1" in
     setup)     do_setup ;;
@@ -447,6 +466,7 @@ case "$1" in
     restart)   do_restart ;;
     status)    do_status ;;
     log)       do_log ;;
+    webui)     do_webui "$@" ;;
     install)   do_install ;;
     uninstall) do_uninstall ;;
     *)
@@ -459,6 +479,7 @@ case "$1" in
         echo "  restart    重启守护进程"
         echo "  status     查看运行状态和最近日志"
         echo "  log        实时查看日志"
+        echo "  webui      启动 Web 管理界面 [host] [port]（默认 0.0.0.0:8000）"
         echo "  install    安装为 systemd 服务（开机自启）"
         echo "  uninstall  卸载 systemd 服务"
         echo ""

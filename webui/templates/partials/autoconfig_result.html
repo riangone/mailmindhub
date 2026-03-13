@@ -1,0 +1,125 @@
+{% if not domain or not mailbox_type %}
+
+  <div class="hint">输入邮箱地址后自动检测服务器配置</div>
+
+{% elif mailbox_type == "gmail" %}
+
+  <div class="provider-info">
+    <span class="provider-tag">Gmail</span>
+    检测到 Gmail 邮箱
+  </div>
+  <input type="hidden" name="MAILBOX" value="gmail">
+  <input type="hidden" name="MAIL_GMAIL_ADDRESS" value="{{ email }}">
+  <div class="form-group">
+    <label>认证方式</label>
+    <select name="MAIL_GMAIL_AUTH">
+      <option value="password" {% if env.get('MAIL_GMAIL_AUTH') == 'password' %}selected{% endif %}>应用专用密码（简单）</option>
+      <option value="oauth_google" {% if env.get('MAIL_GMAIL_AUTH', 'oauth_google') == 'oauth_google' %}selected{% endif %}>OAuth（推荐）</option>
+    </select>
+    <div class="hint">OAuth 需先运行: <code>python3 email_daemon.py --mailbox gmail --auth</code></div>
+  </div>
+
+{% elif mailbox_type == "outlook" %}
+
+  <div class="provider-info">
+    <span class="provider-tag">Outlook</span>
+    检测到 Outlook / Hotmail / Live 邮箱
+  </div>
+  <input type="hidden" name="MAILBOX" value="outlook">
+  <input type="hidden" name="MAIL_OUTLOOK_ADDRESS" value="{{ email }}">
+  <div class="form-group">
+    <label>Azure App Client ID</label>
+    <input type="text" name="OUTLOOK_CLIENT_ID" value="{{ env.get('OUTLOOK_CLIENT_ID', '') }}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+    <div class="hint">在 Azure Portal 注册应用后获取。授权需运行: <code>python3 email_daemon.py --mailbox outlook --auth</code></div>
+  </div>
+
+{% elif mailbox_type in ("126", "163", "qq", "icloud", "proton") %}
+
+  <div class="provider-info">
+    <span class="provider-tag">{{ mailbox_type.upper() }}</span>
+    已识别，使用内置服务器配置
+  </div>
+  <input type="hidden" name="MAILBOX" value="{{ mailbox_type }}">
+  <input type="hidden" name="{{ prefix }}_ADDRESS" value="{{ email }}">
+
+{% elif mailbox_type == "custom" and ac_result is not none %}
+
+  <div class="provider-info">
+    <span class="provider-tag">AUTO</span>
+    自动检测成功 ({{ domain }})
+  </div>
+  <input type="hidden" name="MAILBOX" value="custom">
+  <input type="hidden" name="MAIL_CUSTOM_ADDRESS" value="{{ email }}">
+  <div class="server-info">
+    <div>IMAP &nbsp; {{ ac_result.imap_server }}:{{ ac_result.imap_port }}</div>
+    <div>SMTP &nbsp; {{ ac_result.smtp_server }}:{{ ac_result.smtp_port }} &nbsp; SSL={{ ac_result.smtp_ssl }}</div>
+  </div>
+  <input type="hidden" name="MAIL_CUSTOM_IMAP_SERVER" value="{{ ac_result.imap_server }}">
+  <input type="hidden" name="MAIL_CUSTOM_IMAP_PORT"   value="{{ ac_result.imap_port }}">
+  <input type="hidden" name="MAIL_CUSTOM_SMTP_SERVER" value="{{ ac_result.smtp_server }}">
+  <input type="hidden" name="MAIL_CUSTOM_SMTP_PORT"   value="{{ ac_result.smtp_port }}">
+  <input type="hidden" name="MAIL_CUSTOM_SMTP_SSL"    value="{{ ac_result.smtp_ssl }}">
+  <details class="override">
+    <summary>手动修改服务器</summary>
+    <div class="form-group">
+      <label>IMAP 服务器</label>
+      <input type="text" name="MAIL_CUSTOM_IMAP_SERVER" value="{{ ac_result.imap_server }}" placeholder="imap.example.com">
+    </div>
+    <div class="form-group">
+      <label>IMAP 端口</label>
+      <input type="number" name="MAIL_CUSTOM_IMAP_PORT" value="{{ ac_result.imap_port }}" placeholder="993">
+    </div>
+    <div class="form-group">
+      <label>SMTP 服务器</label>
+      <input type="text" name="MAIL_CUSTOM_SMTP_SERVER" value="{{ ac_result.smtp_server }}" placeholder="smtp.example.com">
+    </div>
+    <div class="form-group">
+      <label>SMTP 端口</label>
+      <input type="number" name="MAIL_CUSTOM_SMTP_PORT" value="{{ ac_result.smtp_port }}" placeholder="465">
+    </div>
+    <div class="form-group">
+      <label>SMTP SSL</label>
+      <select name="MAIL_CUSTOM_SMTP_SSL">
+        <option value="true"  {% if ac_result.smtp_ssl == 'true' %}selected{% endif %}>true</option>
+        <option value="false" {% if ac_result.smtp_ssl == 'false' %}selected{% endif %}>false</option>
+      </select>
+    </div>
+  </details>
+
+{% elif mailbox_type == "custom" and ac_result is none %}
+
+  <div class="provider-info warn">
+    <span class="provider-tag">?</span>
+    未能自动检测，请手动填写服务器信息
+  </div>
+  <input type="hidden" name="MAILBOX" value="custom">
+  <input type="hidden" name="MAIL_CUSTOM_ADDRESS" value="{{ email }}">
+  <div class="form-group">
+    <label>IMAP 服务器</label>
+    <input type="text" name="MAIL_CUSTOM_IMAP_SERVER" value="{{ env.get('MAIL_CUSTOM_IMAP_SERVER', '') }}" placeholder="imap.example.com">
+  </div>
+  <div class="form-group">
+    <label>IMAP 端口</label>
+    <input type="number" name="MAIL_CUSTOM_IMAP_PORT" value="{{ env.get('MAIL_CUSTOM_IMAP_PORT', '993') }}" placeholder="993">
+  </div>
+  <div class="form-group">
+    <label>SMTP 服务器</label>
+    <input type="text" name="MAIL_CUSTOM_SMTP_SERVER" value="{{ env.get('MAIL_CUSTOM_SMTP_SERVER', '') }}" placeholder="smtp.example.com">
+  </div>
+  <div class="form-group">
+    <label>SMTP 端口</label>
+    <input type="number" name="MAIL_CUSTOM_SMTP_PORT" value="{{ env.get('MAIL_CUSTOM_SMTP_PORT', '465') }}" placeholder="465">
+  </div>
+  <div class="form-group">
+    <label>SMTP SSL</label>
+    <select name="MAIL_CUSTOM_SMTP_SSL">
+      <option value="true"  {% if env.get('MAIL_CUSTOM_SMTP_SSL', 'true') == 'true' %}selected{% endif %}>true</option>
+      <option value="false" {% if env.get('MAIL_CUSTOM_SMTP_SSL') == 'false' %}selected{% endif %}>false</option>
+    </select>
+  </div>
+
+{% else %}
+
+  <div class="hint">输入邮箱地址后自动检测服务器配置</div>
+
+{% endif %}
