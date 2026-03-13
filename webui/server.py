@@ -348,17 +348,31 @@ async def config_mail(request: Request):
             continue
         updates[key] = value
 
-    # Map _email_input → correct env var based on MAILBOX type
+    # Determine final mailbox type
+    mailbox = updates.get("MAILBOX") or env.get("MAILBOX", "")
     email_input = data.get("_email_input", "").strip()
     if email_input and "@" in email_input:
-        mailbox = updates.get("MAILBOX") or env.get("MAILBOX", "")
         if not mailbox:
-            # Infer mailbox type from domain
             domain = email_input.split("@", 1)[1].lower()
             mailbox = DOMAIN_MAP.get(domain, "custom")
             updates["MAILBOX"] = mailbox
         prefix = MAILBOX_PREFIX.get(mailbox, "MAIL_CUSTOM")
         updates[f"{prefix}_ADDRESS"] = email_input
+
+    # Re-map password/allowed to correct prefix if MAILBOX changed
+    # (e.g. form had MAIL_CUSTOM_PASSWORD but MAILBOX is now 126)
+    if mailbox:
+        correct_prefix = MAILBOX_PREFIX.get(mailbox, "MAIL_CUSTOM")
+        for suffix in ("_PASSWORD", "_ALLOWED"):
+            correct_key = f"{correct_prefix}{suffix}"
+            if correct_key in updates:
+                continue  # already correct
+            # Look for the value under any other prefix
+            for pfx in MAILBOX_PREFIX.values():
+                wrong_key = f"{pfx}{suffix}"
+                if wrong_key in updates and wrong_key != correct_key:
+                    updates[correct_key] = updates.pop(wrong_key)
+                    break
 
     try:
         write_env(updates)
