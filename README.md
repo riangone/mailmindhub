@@ -24,6 +24,7 @@
 - **白名单安全**：每个邮箱独立配置白名单，支持多个地址或域名
 - **AI 自动拟标题**：AI 根据回复内容自动生成邮件标题
 - **服务化管理**：一个脚本完成启动、停止、重启、日志、系统服务安装
+- **定时任务扩展**：可定时执行 AI 任务、天气、新闻、网页检索与日报汇总（支持归档）
 
 ### 📦 安装
 
@@ -45,6 +46,30 @@ AI="claude"     # 使用的 AI
 ```
 
 ---
+
+### ⏰ 定时任务与外部数据（默认方案）
+
+新增任务类型支持：`email` / `ai_job` / `weather` / `news` / `web_search` / `report`。  
+当指令包含定时（`schedule_at`/`schedule_every`）且设置 `task_type` 时，任务会按类型执行并可归档到 `reports/`。
+
+**默认所需环境变量：**
+
+```bash
+export WEATHER_API_KEY="your_weatherapi_key"
+export NEWS_API_KEY="your_newsapi_key"
+export BING_API_KEY="your_bing_search_key"
+export TASK_DEFAULT_AI="openai"   # 任务使用的默认 AI（不填则使用启动参数 --ai）
+```
+
+**可选默认参数：**
+
+```bash
+export WEATHER_DEFAULT_LOCATION="Tokyo"
+export NEWS_DEFAULT_QUERY="technology OR AI"
+export NEWS_DEFAULT_LANGUAGE="zh"
+export NEWS_DEFAULT_COUNTRY=""
+export NEWS_DEFAULT_PAGE_SIZE="8"
+```
 
 #### 📮 126 / 163 / QQ 邮箱（授权码方式）
 
