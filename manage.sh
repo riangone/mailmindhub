@@ -327,6 +327,18 @@ do_start() {
         return 1
     fi
 
+    if [ -z "$MAILBOX" ]; then
+        error "未配置邮箱（MAILBOX 为空）"
+        echo "       请先运行: bash manage.sh setup"
+        echo "       或打开 Web UI 配置邮箱后重试"
+        exit 1
+    fi
+    if [ -z "$AI" ]; then
+        error "未配置 AI（AI 为空）"
+        echo "       请先运行: bash manage.sh setup"
+        exit 1
+    fi
+
     ensure_venv
 
     EXTRA_ARGS=""

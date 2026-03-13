@@ -336,13 +336,17 @@ async def config_mail(request: Request):
     data = dict(form)
     env = read_env()
 
-    # Build updates dict — skip internal/private fields and empty values
+    # Build updates dict — skip internal/private fields and critical empty values
     updates: dict[str, str] = {}
     for key, value in data.items():
         if key.startswith("_"):
             continue
-        if isinstance(value, str):
-            updates[key] = value
+        if not isinstance(value, str):
+            continue
+        # Don't overwrite critical keys with empty string
+        if key in ("MAILBOX", "AI") and not value.strip():
+            continue
+        updates[key] = value
 
     # Map _email_input → correct env var based on MAILBOX type
     email_input = data.get("_email_input", "").strip()
