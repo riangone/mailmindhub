@@ -363,9 +363,9 @@ def _parse_schedule_from_text(text: str):
     schedule_every = None
     schedule_until = None
 
-    rel_min = re.search(r"(?:每|every)\s*(\d+)\s*(分钟|min|minutes)", low)
-    rel_hour = re.search(r"(?:每|every)\s*(\d+)\s*(小时|hour|hours|h)", low)
-    rel_day = re.search(r"(?:每|every)\s*(\d+)\s*(天|day|days|d)", low)
+    rel_min = re.search(r"(?:每|every|毎|매)\s*(\d+)\s*(分钟|min|minutes|分|분)", low)
+    rel_hour = re.search(r"(?:每|every|毎|매)\s*(\d+)\s*(小时|hour|hours|h|時間|시간)", low)
+    rel_day = re.search(r"(?:每|every|毎|매)\s*(\d+)\s*(天|day|days|d|日|일)", low)
     if rel_min:
         schedule_every = f"{rel_min.group(1)}m"
     elif rel_hour:
@@ -373,10 +373,10 @@ def _parse_schedule_from_text(text: str):
     elif rel_day:
         schedule_every = f"{rel_day.group(1)}d"
 
-    if "每天" in text and not schedule_every:
+    if any(k in text for k in ["每天", "毎日", "매일"]) and not schedule_every:
         schedule_every = "1d"
 
-    if "每周" in text and not schedule_every:
+    if any(k in text for k in ["每周", "毎週", "매주"]) and not schedule_every:
         schedule_every = "7d"
 
     date_time = re.search(r"(\d{4}-\d{2}-\d{2})(?:\s*[tT ]\s*(\d{1,2}:\d{2}))?", low)
@@ -391,20 +391,20 @@ def _parse_schedule_from_text(text: str):
 
     now = datetime.now()
     if not schedule_at:
-        if any(k in text for k in ["今天", "今日"]):
+        if any(k in text for k in ["今天", "今日", "今日", "오늘"]):
             h, m = _parse_time_hhmm(text)
             if h is not None:
                 dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
                 if dt <= now:
                     dt = dt + timedelta(days=1)
                 schedule_at = dt.strftime("%Y-%m-%dT%H:%M:%S")
-        if any(k in text for k in ["明天", "明日"]):
+        if any(k in text for k in ["明天", "明日", "明日", "내일"]):
             h, m = _parse_time_hhmm(text)
             h = 9 if h is None else h
             m = 0 if m is None else m
             dt = (now + timedelta(days=1)).replace(hour=h, minute=m, second=0, microsecond=0)
             schedule_at = dt.strftime("%Y-%m-%dT%H:%M:%S")
-        if any(k in text for k in ["今晚", "今夜", "晚上"]):
+        if any(k in text for k in ["今晚", "今夜", "晚上", "今晚", "오늘 밤", "저녁"]):
             h, m = _parse_time_hhmm(text)
             h = 20 if h is None else h
             m = 0 if m is None else m
@@ -412,7 +412,7 @@ def _parse_schedule_from_text(text: str):
             if dt <= now:
                 dt = dt + timedelta(days=1)
             schedule_at = dt.strftime("%Y-%m-%dT%H:%M:%S")
-        if any(k in text for k in ["早上", "上午"]):
+        if any(k in text for k in ["早上", "上午", "朝", "午前", "아침", "오전"]):
             h, m = _parse_time_hhmm(text)
             h = 9 if h is None else h
             m = 0 if m is None else m
@@ -420,7 +420,7 @@ def _parse_schedule_from_text(text: str):
             if dt <= now:
                 dt = dt + timedelta(days=1)
             schedule_at = dt.strftime("%Y-%m-%dT%H:%M:%S")
-        if any(k in text for k in ["下午"]):
+        if any(k in text for k in ["下午", "午後", "오후"]):
             h, m = _parse_time_hhmm(text)
             h = 15 if h is None else h
             m = 0 if m is None else m
@@ -428,9 +428,13 @@ def _parse_schedule_from_text(text: str):
             if dt <= now:
                 dt = dt + timedelta(days=1)
             schedule_at = dt.strftime("%Y-%m-%dT%H:%M:%S")
-        if "每周" in text:
-            weekday_map = {"一": 0, "二": 1, "三": 2, "四": 3, "五": 4, "六": 5, "日": 6, "天": 6}
-            m = re.search(r"每周([一二三四五六日天])", text)
+        if any(k in text for k in ["每周", "毎週", "매주"]):
+            weekday_map = {
+                "一": 0, "二": 1, "三": 2, "四": 3, "五": 4, "六": 5, "日": 6, "天": 6,
+                "月": 0, "火": 1, "水": 2, "木": 3, "金": 4, "土": 5, "日曜": 6, "日": 6,
+                "월": 0, "화": 1, "수": 2, "목": 3, "금": 4, "토": 5, "일": 6,
+            }
+            m = re.search(r"(?:每周|毎週|매주)([一二三四五六日天月火水木金土日曜월화수목금토일])", text)
             if m:
                 target = weekday_map[m.group(1)]
                 h, m2 = _parse_time_hhmm(text)
@@ -438,7 +442,7 @@ def _parse_schedule_from_text(text: str):
                 m2 = 0 if m2 is None else m2
                 dt = _next_weekday(now, target).replace(hour=h, minute=m2, second=0, microsecond=0)
                 schedule_at = dt.strftime("%Y-%m-%dT%H:%M:%S")
-        if "每天" in text:
+        if any(k in text for k in ["每天", "毎日", "매일"]):
             h, m = _parse_time_hhmm(text)
             if h is not None:
                 dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
@@ -455,39 +459,39 @@ def auto_detect_task(instruction: str):
     payload = {}
     output = {}
 
-    if any(k in low for k in ["天气", "weather"]):
+    if any(k in low for k in ["天气", "weather", "天気", "날씨"]):
         task_type = "weather"
-        m = re.search(r"(?:天气|weather)[：: ]?([^\n，,;；]+)", instruction, re.I)
+        m = re.search(r"(?:天气|weather|天気|날씨)[：: ]?([^\n，,;；]+)", instruction, re.I)
         if m:
             payload["location"] = m.group(1).strip()
-    if any(k in low for k in ["新闻", "news"]):
+    if any(k in low for k in ["新闻", "news", "ニュース", "뉴스"]):
         task_type = "news"
-        m = re.search(r"(?:新闻|news)[：: ]?([^\n，,;；]+)", instruction, re.I)
+        m = re.search(r"(?:新闻|news|ニュース|뉴스)[：: ]?([^\n，,;；]+)", instruction, re.I)
         if m:
             payload["query"] = m.group(1).strip()
-    if any(k in low for k in ["检索", "搜索", "网页", "search", "look up", "find"]):
+    if any(k in low for k in ["检索", "搜索", "网页", "search", "look up", "find", "検索", "검색"]):
         task_type = "web_search"
-        m = re.search(r"(?:检索|搜索|网页检索|search|look up|find)[：: ]?([^\n]+)", instruction, re.I)
+        m = re.search(r"(?:检索|搜索|网页检索|search|look up|find|検索|검색)[：: ]?([^\n]+)", instruction, re.I)
         if m:
             payload["query"] = m.group(1).strip()
-    if any(k in low for k in ["日报", "周报", "月报", "report", "summary"]):
+    if any(k in low for k in ["日报", "周报", "月报", "report", "summary", "レポート", "보고서", "리포트"]):
         task_type = "report"
-        if "天气" in low or "weather" in low:
+        if any(k in low for k in ["天气", "weather", "天気", "날씨"]):
             payload["weather_locations"] = [WEATHER_DEFAULT_LOCATION]
-        if "新闻" in low or "news" in low:
+        if any(k in low for k in ["新闻", "news", "ニュース", "뉴스"]):
             payload["news_query"] = NEWS_DEFAULT_QUERY
-        m = re.search(r"(?:检索|搜索|网页检索|search)[：: ]?([^\n，,;；]+)", instruction, re.I)
+        m = re.search(r"(?:检索|搜索|网页检索|search|検索|검색)[：: ]?([^\n，,;；]+)", instruction, re.I)
         if m:
             payload["web_query"] = m.group(1).strip()
-    if any(k in low for k in ["ai", "分析", "总结", "润色", "翻译", "生成"]):
+    if any(k in low for k in ["ai", "分析", "总结", "润色", "翻译", "生成", "分析", "要約", "翻訳", "生成", "분석", "요약", "번역", "생성"]):
         if not task_type:
             task_type = "ai_job"
         payload.setdefault("prompt", instruction.strip())
 
-    if any(k in low for k in ["归档", "archive", "保存", "save"]):
+    if any(k in low for k in ["归档", "archive", "保存", "save", "保存", "アーカイブ", "저장", "아카이브"]):
         output["archive"] = True
         output["archive_dir"] = "reports"
-    if any(k in low for k in ["仅归档", "no email", "不要发邮件"]):
+    if any(k in low for k in ["仅归档", "no email", "不要发邮件", "メール不要", "메일 보내지", "이메일 필요없음"]):
         output["email"] = False
 
     schedule_at, schedule_every, schedule_until = _parse_schedule_from_text(instruction)

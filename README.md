@@ -363,6 +363,15 @@ export TASK_DEFAULT_AI="openai"
 ```
 毎日 18:00 日報：天気 Tokyo、ニュース AI、検索 OpenAI 発表
 ```
+```
+毎週月曜 10:00 ニュース AI を要約、アーカイブ
+```
+```
+毎日 08:00 天気 Tokyo
+```
+```
+毎日 09:30 検索 深層学習 前線
+```
 
 ### 🚀 使い方
 
@@ -526,6 +535,15 @@ export TASK_DEFAULT_AI="openai"
 ```
 Every day 18:00: report with weather Tokyo, AI news, and web search OpenAI event.
 ```
+```
+Every 2 hours: news AI summary, archive
+```
+```
+Every day 08:00 weather Tokyo
+```
+```
+Every day 09:30 web search deep learning trends
+```
 
 ### 🚀 Usage
 
@@ -680,6 +698,15 @@ export TASK_DEFAULT_AI="openai"
 **예시**
 ```
 매일 18:00 리포트: 날씨 Tokyo, AI 뉴스, 웹 검색 OpenAI 발표
+```
+```
+매주 월요일 10:00 뉴스 AI 요약, 아카이브
+```
+```
+매일 08:00 날씨 Tokyo
+```
+```
+매일 09:30 검색 딥러닝 트렌드
 ```
 
 ### 🚀 사용법
