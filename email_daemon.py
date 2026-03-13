@@ -82,7 +82,7 @@ MAILBOXES = {
         "smtp_port":       465,
         "smtp_ssl":        True,
         "imap_id":         False,
-        "auth":            "oauth_google",
+        "auth":            os.environ.get("MAIL_GMAIL_AUTH", "oauth_google"),
         "oauth_token_file": os.path.join(os.path.dirname(__file__), "token_gmail.json"),
         "oauth_creds_file": os.path.join(os.path.dirname(__file__), "credentials_gmail.json"),
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_GMAIL_ALLOWED", "").split(",") if s.strip()],
@@ -123,6 +123,18 @@ MAILBOXES = {
         "imap_id":         False,
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_PROTON_ALLOWED", "").split(",") if s.strip()],
+    },
+    "custom": {
+        "address":         os.environ.get("MAIL_CUSTOM_ADDRESS", ""),
+        "password":        os.environ.get("MAIL_CUSTOM_PASSWORD", ""),
+        "imap_server":     os.environ.get("MAIL_CUSTOM_IMAP_SERVER", ""),
+        "imap_port":       int(os.environ.get("MAIL_CUSTOM_IMAP_PORT", "993")),
+        "smtp_server":     os.environ.get("MAIL_CUSTOM_SMTP_SERVER", ""),
+        "smtp_port":       int(os.environ.get("MAIL_CUSTOM_SMTP_PORT", "465")),
+        "smtp_ssl":        os.environ.get("MAIL_CUSTOM_SMTP_SSL", "true").lower() == "true",
+        "imap_id":         False,
+        "auth":            "password",
+        "allowed_senders": [s.strip() for s in os.environ.get("MAIL_CUSTOM_ALLOWED", "").split(",") if s.strip()],
     },
 }
 

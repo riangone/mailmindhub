@@ -24,23 +24,33 @@ class TestEmailLogic(unittest.TestCase):
         self.assertEqual(decode_str(""), "")
 
     def test_parse_ai_response(self):
+        # parse_ai_response returns (subject, body, schedule_at, schedule_every,
+        #   schedule_until, attachments, task_type, task_payload, output)
+
         # 测试包含 JSON 的响应
         raw_with_json = 'Some chatty text before. {"subject": "Test Sub", "body": "Test Body"} and after.'
-        sub, body, atts = parse_ai_response(raw_with_json)
+        sub, body, *_ = parse_ai_response(raw_with_json)
         self.assertEqual(sub, "Test Sub")
         self.assertEqual(body, "Test Body")
-        
+
         # 测试不包含 JSON 的响应
         raw_plain = "Just plain text response."
-        sub, body, atts = parse_ai_response(raw_plain)
+        sub, body, *_ = parse_ai_response(raw_plain)
         self.assertEqual(sub, "")
         self.assertEqual(body, raw_plain)
 
         # 测试 JSON 缺少字段
         raw_partial = '{"body": "Only Body"}'
-        sub, body, atts = parse_ai_response(raw_partial)
+        sub, body, *_ = parse_ai_response(raw_partial)
         self.assertEqual(sub, "")
         self.assertEqual(body, "Only Body")
+
+        # 测试调度字段
+        raw_sched = '{"subject": "S", "body": "B", "schedule_every": "5m", "task_type": "weather"}'
+        sub, body, sch_at, sch_every, sch_until, atts, task_type, task_payload, output = parse_ai_response(raw_sched)
+        self.assertEqual(sch_every, "5m")
+        self.assertEqual(task_type, "weather")
+        self.assertIsNone(sch_at)
 
     def test_is_sender_allowed(self):
         allowed = ["me@example.com", "@company.com"]

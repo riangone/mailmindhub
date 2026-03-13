@@ -1,36 +1,24 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
 #  邮件 AI 守护进程管理脚本
-#  用法: bash manage.sh [start|stop|restart|status|log|install]
+#  用法: bash manage.sh [setup|start|stop|restart|status|log|install]
 # ═══════════════════════════════════════════════════════════════
 
 # ─── 固定路径 ──────────────────────────────────────────────────
 INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_PYTHON="$INSTALL_DIR/venv/bin/python3"
+VENV_PIP="$INSTALL_DIR/venv/bin/pip"
 SCRIPT="$INSTALL_DIR/email_daemon.py"
 SERVICE_NAME="email-daemon"
 LOG_FILE="$INSTALL_DIR/daemon.log"
 PID_FILE="$INSTALL_DIR/daemon.pid"
-
-# ─── 加载本地配置（不提交到 git）──────────────────────────────
 ENV_FILE="$INSTALL_DIR/.env"
-if [ -f "$ENV_FILE" ]; then
-    set -a
-    # shellcheck source=.env.example
-    source "$ENV_FILE"
-    set +a
-else
-    echo -e "\033[0;31m[ERROR]\033[0m 找不到配置文件: $ENV_FILE"
-    echo "       请复制模板并填写真实信息: cp .env.example .env"
-    exit 1
-fi
-
-# ═══════════════════════════════════════════════════════════════
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 info()    { echo -e "${GREEN}[INFO]${NC}  $*"; }
@@ -38,9 +26,238 @@ warn()    { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 error()   { echo -e "${RED}[ERROR]${NC} $*"; }
 heading() { echo -e "\n${BLUE}══ $* ══${NC}"; }
 
+# ─── 加载 .env（仅需要配置的命令才调用）──────────────────────
+load_env() {
+    if [ -f "$ENV_FILE" ]; then
+        set -a
+        # shellcheck source=.env.example
+        source "$ENV_FILE"
+        set +a
+    else
+        error "找不到配置文件: $ENV_FILE"
+        echo "       首次使用请运行: bash manage.sh setup"
+        exit 1
+    fi
+}
+
+# ─── 确保 venv 存在，不存在则自动创建 ─────────────────────────
+ensure_venv() {
+    if [ ! -f "$VENV_PYTHON" ]; then
+        info "未检测到虚拟环境，正在自动创建..."
+        python3 -m venv "$INSTALL_DIR/venv" || {
+            error "创建虚拟环境失败，请确认已安装 python3-venv"
+            exit 1
+        }
+        info "正在安装依赖..."
+        "$VENV_PIP" install --quiet -r "$INSTALL_DIR/requirements.txt" || {
+            error "依赖安装失败，请检查网络连接或 requirements.txt"
+            exit 1
+        }
+        info "依赖安装完成"
+    fi
+}
+
+# ─── 交互式配置向导 ───────────────────────────────────────────
+do_setup() {
+    heading "MailMind 一键配置向导"
+    echo ""
+    echo "本向导将引导您完成所有配置，结束后自动生成 .env 并安装依赖。"
+    echo ""
+
+    # ── 1. 输入邮箱地址，自动判断类型 ───────────────────────
+    echo -e "${CYAN}【1/4】邮箱地址：${NC}"
+    read -rp "邮箱地址: " MAIL_ADDRESS
+    [ -z "$MAIL_ADDRESS" ] && { error "邮箱地址不能为空"; exit 1; }
+
+    DOMAIN=$(echo "$MAIL_ADDRESS" | awk -F'@' '{print tolower($2)}')
+    OUTLOOK_CLIENT_ID=""
+    CUSTOM_IMAP_SERVER="" CUSTOM_IMAP_PORT="" CUSTOM_SMTP_SERVER="" CUSTOM_SMTP_PORT="" CUSTOM_SMTP_SSL=""
+
+    case "$DOMAIN" in
+        gmail.com)
+            echo ""
+            echo "检测到 Gmail，选择认证方式："
+            echo "  1) 应用专用密码（简单，在 myaccount.google.com/apppasswords 生成）"
+            echo "  2) OAuth（推荐，需 Google Cloud 项目）"
+            read -rp "请输入数字 [1-2]: " gmail_choice
+            MAILBOX="gmail"; MAIL_ENV_PREFIX="MAIL_GMAIL"
+            if [ "$gmail_choice" = "2" ]; then
+                AUTH_TYPE="oauth_google"
+            else
+                AUTH_TYPE="app_password"
+            fi
+            ;;
+        outlook.com|hotmail.com|live.com|live.cn|msn.com)
+            info "检测到 Outlook / Hotmail，使用 OAuth 认证"
+            MAILBOX="outlook"; MAIL_ENV_PREFIX="MAIL_OUTLOOK"; AUTH_TYPE="oauth_microsoft"
+            read -rp "Azure App Client ID: " OUTLOOK_CLIENT_ID
+            [ -z "$OUTLOOK_CLIENT_ID" ] && { error "Client ID 不能为空"; exit 1; }
+            ;;
+        126.com)
+            info "检测到 126 邮箱"
+            MAILBOX="126"; MAIL_ENV_PREFIX="MAIL_126"; AUTH_TYPE="password"
+            ;;
+        163.com|yeah.net)
+            info "检测到 163 邮箱"
+            MAILBOX="163"; MAIL_ENV_PREFIX="MAIL_163"; AUTH_TYPE="password"
+            ;;
+        qq.com|foxmail.com)
+            info "检测到 QQ 邮箱"
+            MAILBOX="qq"; MAIL_ENV_PREFIX="MAIL_QQ"; AUTH_TYPE="password"
+            ;;
+        icloud.com|me.com|mac.com)
+            info "检测到 iCloud 邮箱"
+            MAILBOX="icloud"; MAIL_ENV_PREFIX="MAIL_ICLOUD"; AUTH_TYPE="password"
+            ;;
+        protonmail.com|proton.me|pm.me)
+            info "检测到 Proton Mail（需要先运行 Proton Mail Bridge）"
+            MAILBOX="proton"; MAIL_ENV_PREFIX="MAIL_PROTON"; AUTH_TYPE="password"
+            ;;
+        *)
+            warn "未识别的邮箱域名（$DOMAIN），请手动填写服务器信息"
+            MAILBOX="custom"; MAIL_ENV_PREFIX="MAIL_CUSTOM"; AUTH_TYPE="password"
+            echo ""
+            read -rp "IMAP 服务器（如 imap.example.com）: " CUSTOM_IMAP_SERVER
+            [ -z "$CUSTOM_IMAP_SERVER" ] && { error "IMAP 服务器不能为空"; exit 1; }
+            read -rp "IMAP 端口 [993]: " CUSTOM_IMAP_PORT
+            CUSTOM_IMAP_PORT="${CUSTOM_IMAP_PORT:-993}"
+            read -rp "SMTP 服务器（如 smtp.example.com）: " CUSTOM_SMTP_SERVER
+            [ -z "$CUSTOM_SMTP_SERVER" ] && { error "SMTP 服务器不能为空"; exit 1; }
+            read -rp "SMTP 端口 [465]: " CUSTOM_SMTP_PORT
+            CUSTOM_SMTP_PORT="${CUSTOM_SMTP_PORT:-465}"
+            read -rp "SMTP 使用 SSL？[Y/n]: " _ssl
+            [[ "$_ssl" =~ ^[Nn] ]] && CUSTOM_SMTP_SSL="false" || CUSTOM_SMTP_SSL="true"
+            ;;
+    esac
+
+    # ── 2. 授权码 / 密码 ──────────────────────────────────────
+    MAIL_PASSWORD=""
+    if [ "$AUTH_TYPE" = "password" ]; then
+        echo ""
+        echo -e "${CYAN}【2/4】授权码 / 密码：${NC}"
+        echo "（提示：需要邮箱授权码，不是登录密码。在邮箱设置 → POP3/IMAP 开启服务时获取）"
+        read -rp "授权码: " MAIL_PASSWORD
+        [ -z "$MAIL_PASSWORD" ] && { error "授权码不能为空"; exit 1; }
+    elif [ "$AUTH_TYPE" = "app_password" ]; then
+        echo ""
+        echo -e "${CYAN}【2/4】应用专用密码：${NC}"
+        read -rp "应用专用密码（格式：xxxx xxxx xxxx xxxx）: " MAIL_PASSWORD
+        [ -z "$MAIL_PASSWORD" ] && { error "应用专用密码不能为空"; exit 1; }
+    else
+        info "【2/4】OAuth 模式无需密码，跳过"
+    fi
+
+    # ── 3. 白名单 ─────────────────────────────────────────────
+    echo ""
+    echo -e "${CYAN}【3/4】发件人白名单（只处理来自这些地址的邮件）：${NC}"
+    echo "  直接回车 = 仅允许自己的地址: $MAIL_ADDRESS"
+    read -rp "白名单（多个地址用英文逗号分隔）: " MAIL_ALLOWED_INPUT
+    MAIL_ALLOWED="${MAIL_ALLOWED_INPUT:-$MAIL_ADDRESS}"
+
+    # ── 4. 选择 AI 后端 + API Key ────────────────────────────
+    echo ""
+    echo -e "${CYAN}【4/4】选择 AI 后端：${NC}"
+    echo "  1) DeepSeek API（推荐，性价比高）"
+    echo "  2) OpenAI API（gpt-4o）"
+    echo "  3) Anthropic API（claude-sonnet）"
+    echo "  4) Gemini API"
+    echo "  5) claude CLI（需本地已安装 claude 命令）"
+    echo "  6) gemini CLI（需本地已安装 gemini 命令）"
+    echo ""
+    read -rp "请输入数字 [1-6]: " AI_CHOICE
+
+    case "$AI_CHOICE" in
+        1) AI_BACKEND="deepseek";   AI_KEY_VAR="DEEPSEEK_API_KEY";  AI_TYPE="api" ;;
+        2) AI_BACKEND="openai";     AI_KEY_VAR="OPENAI_API_KEY";    AI_TYPE="api" ;;
+        3) AI_BACKEND="anthropic";  AI_KEY_VAR="ANTHROPIC_API_KEY"; AI_TYPE="api" ;;
+        4) AI_BACKEND="gemini-api"; AI_KEY_VAR="GEMINI_API_KEY";    AI_TYPE="api" ;;
+        5) AI_BACKEND="claude";     AI_KEY_VAR="";                  AI_TYPE="cli" ;;
+        6) AI_BACKEND="gemini";     AI_KEY_VAR="";                  AI_TYPE="cli" ;;
+        *) error "无效选项"; exit 1 ;;
+    esac
+
+    AI_KEY_VALUE=""
+    if [ "$AI_TYPE" = "api" ]; then
+        read -rp "$AI_KEY_VAR: " AI_KEY_VALUE
+        [ -z "$AI_KEY_VALUE" ] && { error "API Key 不能为空"; exit 1; }
+    fi
+
+    # ── 创建 venv + 安装依赖 ──────────────────────────────────
+    echo ""
+    heading "安装 Python 依赖"
+    ensure_venv
+
+    if [ "$AUTH_TYPE" = "oauth_google" ]; then
+        info "安装 Gmail OAuth 依赖..."
+        "$VENV_PIP" install --quiet google-auth google-auth-oauthlib google-auth-httplib2 \
+            || warn "OAuth 依赖安装失败，请手动运行: pip install google-auth google-auth-oauthlib google-auth-httplib2"
+    elif [ "$AUTH_TYPE" = "oauth_microsoft" ]; then
+        info "安装 Outlook OAuth 依赖..."
+        "$VENV_PIP" install --quiet msal \
+            || warn "msal 安装失败，请手动运行: pip install msal"
+    fi
+
+    # ── 写入 .env ─────────────────────────────────────────────
+    echo ""
+    heading "生成配置文件"
+
+    {
+        echo "# 由 bash manage.sh setup 自动生成"
+        echo "MAILBOX=\"$MAILBOX\""
+        echo "AI=\"$AI_BACKEND\""
+        echo "MODE=\"idle\""
+        echo "POLL_INTERVAL=\"60\""
+        echo ""
+        echo "# 邮箱配置"
+        echo "${MAIL_ENV_PREFIX}_ADDRESS=\"$MAIL_ADDRESS\""
+        [ -n "$MAIL_PASSWORD" ]          && echo "${MAIL_ENV_PREFIX}_PASSWORD=\"$MAIL_PASSWORD\""
+        echo "${MAIL_ENV_PREFIX}_ALLOWED=\"$MAIL_ALLOWED\""
+        [ "$AUTH_TYPE" = "app_password" ] && echo "MAIL_GMAIL_AUTH=\"password\""
+        [ -n "$OUTLOOK_CLIENT_ID" ]       && echo "OUTLOOK_CLIENT_ID=\"$OUTLOOK_CLIENT_ID\""
+        if [ -n "$CUSTOM_IMAP_SERVER" ]; then
+            echo "MAIL_CUSTOM_IMAP_SERVER=\"$CUSTOM_IMAP_SERVER\""
+            echo "MAIL_CUSTOM_IMAP_PORT=\"$CUSTOM_IMAP_PORT\""
+            echo "MAIL_CUSTOM_SMTP_SERVER=\"$CUSTOM_SMTP_SERVER\""
+            echo "MAIL_CUSTOM_SMTP_PORT=\"$CUSTOM_SMTP_PORT\""
+            echo "MAIL_CUSTOM_SMTP_SSL=\"$CUSTOM_SMTP_SSL\""
+        fi
+        if [ -n "$AI_KEY_VALUE" ]; then
+            echo ""
+            echo "# AI 配置"
+            echo "${AI_KEY_VAR}=\"$AI_KEY_VALUE\""
+        fi
+    } > "$ENV_FILE"
+
+    info ".env 已写入: $ENV_FILE"
+
+    # ── 下一步提示 ────────────────────────────────────────────
+    echo ""
+    heading "配置完成！"
+
+    if [ "$AUTH_TYPE" = "oauth_google" ]; then
+        warn "Gmail OAuth 还需额外步骤："
+        echo "  1. 在 Google Cloud Console 创建项目，启用 Gmail API"
+        echo "  2. 下载 OAuth 凭据文件，重命名为 credentials_gmail.json 放到本目录"
+        echo "  3. 运行授权（仅首次）: $VENV_PYTHON $SCRIPT --mailbox gmail --auth"
+        echo "  4. 授权完成后: bash manage.sh start"
+    elif [ "$AUTH_TYPE" = "oauth_microsoft" ]; then
+        warn "Outlook OAuth 还需额外步骤："
+        echo "  1. 运行授权（按终端提示在浏览器输入设备码）:"
+        echo "     $VENV_PYTHON $SCRIPT --mailbox outlook --auth"
+        echo "  2. 授权完成后: bash manage.sh start"
+    else
+        echo ""
+        echo "  启动服务:   bash manage.sh start"
+        echo "  查看状态:   bash manage.sh status"
+        echo "  查看日志:   bash manage.sh log"
+    fi
+    echo ""
+}
+
 get_pid() {
     if [ -f "$PID_FILE" ]; then
-        local pid=$(cat "$PID_FILE")
+        local pid
+        pid=$(cat "$PID_FILE")
         if kill -0 "$pid" 2>/dev/null; then
             echo "$pid"
         fi
@@ -48,20 +265,17 @@ get_pid() {
 }
 
 do_start() {
+    load_env
     heading "启动服务"
-    local pid=$(get_pid)
+    local pid
+    pid=$(get_pid)
     if [ -n "$pid" ]; then
         warn "服务已在运行中 (PID: $pid)"
         return 1
     fi
 
-    if [ ! -f "$VENV_PYTHON" ]; then
-        error "找不到虚拟环境: $VENV_PYTHON"
-        error "请先运行: python3 -m venv venv && venv/bin/pip install requests"
-        return 1
-    fi
+    ensure_venv
 
-    # 根据 MODE 决定是否加 --poll 参数
     EXTRA_ARGS=""
     if [ "${MODE:-idle}" = "poll" ]; then
         EXTRA_ARGS="--poll"
@@ -73,7 +287,7 @@ do_start() {
     echo $! > "$PID_FILE"
     sleep 1
 
-    local pid=$(get_pid)
+    pid=$(get_pid)
     if [ -n "$pid" ]; then
         info "服务已启动 (PID: $pid)"
         info "日志文件: $LOG_FILE"
@@ -85,8 +299,10 @@ do_start() {
 }
 
 do_stop() {
+    load_env
     heading "停止服务"
-    local pid=$(get_pid)
+    local pid
+    pid=$(get_pid)
     if [ -z "$pid" ]; then
         warn "服务未在运行"
         return 0
@@ -97,6 +313,7 @@ do_stop() {
 }
 
 do_restart() {
+    load_env
     heading "重启服务"
     do_stop
     sleep 2
@@ -104,8 +321,10 @@ do_restart() {
 }
 
 do_status() {
+    load_env
     heading "服务状态"
-    local pid=$(get_pid)
+    local pid
+    pid=$(get_pid)
     if [ -n "$pid" ]; then
         info "状态: ${GREEN}运行中${NC} (PID: $pid)"
         info "邮箱: $MAILBOX | AI: $AI"
@@ -124,10 +343,9 @@ do_log() {
 }
 
 do_install() {
+    load_env
     heading "安装为 systemd 服务"
 
-    # 使用 EnvironmentFile 直接读取 .env，切换邮箱只需修改 .env 后 restart
-    # \$MAILBOX 和 \$AI 转义后由 systemd 在运行时从 EnvironmentFile 读取
     cat > /tmp/${SERVICE_NAME}.service << EOF
 [Unit]
 Description=Email AI Daemon
@@ -159,6 +377,7 @@ EOF
 }
 
 do_uninstall() {
+    load_env
     heading "卸载 systemd 服务"
     sudo systemctl stop "$SERVICE_NAME" 2>/dev/null
     sudo systemctl disable "$SERVICE_NAME" 2>/dev/null
@@ -169,6 +388,7 @@ do_uninstall() {
 
 # ─── 入口 ──────────────────────────────────────────────────────
 case "$1" in
+    setup)     do_setup ;;
     start)     do_start ;;
     stop)      do_stop ;;
     restart)   do_restart ;;
@@ -180,6 +400,7 @@ case "$1" in
         echo ""
         echo "用法: bash manage.sh <命令>"
         echo ""
+        echo "  setup      一键配置向导（首次使用从这里开始）"
         echo "  start      启动守护进程（后台运行）"
         echo "  stop       停止守护进程"
         echo "  restart    重启守护进程"
