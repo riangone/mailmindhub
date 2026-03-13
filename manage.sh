@@ -57,6 +57,44 @@ ensure_venv() {
     fi
 }
 
+# ─── Mozilla Autoconfig 查询（返回 imap_host|imap_port|smtp_host|smtp_port|smtp_ssl）
+autoconfig_lookup() {
+    local domain="$1"
+    local urls=(
+        "https://autoconfig.thunderbird.net/v1.1/${domain}"
+        "https://autoconfig.${domain}/mail/config-v1.1.xml"
+        "https://${domain}/.well-known/autoconfig/mail/config-v1.1.xml"
+    )
+    local xml=""
+    for url in "${urls[@]}"; do
+        xml=$(curl -fsS --max-time 6 "$url" 2>/dev/null) && \
+        echo "$xml" | grep -q "<incomingServer" && break || xml=""
+    done
+    [ -z "$xml" ] && return 1
+
+    python3 - <<PYEOF
+import sys, xml.etree.ElementTree as ET
+try:
+    root = ET.fromstring("""${xml//\"/\\\"}""")
+    imap = root.find('.//incomingServer[@type="imap"]')
+    smtp = root.find('.//outgoingServer[@type="smtp"]')
+    if imap is None or smtp is None:
+        sys.exit(1)
+    imap_host = imap.findtext('hostname', '').strip()
+    imap_port = imap.findtext('port', '993').strip()
+    smtp_host = smtp.findtext('hostname', '').strip()
+    smtp_port = smtp.findtext('port', '465').strip()
+    ssl_type  = (smtp.findtext('socketType') or '').upper()
+    smtp_ssl  = 'true' if ssl_type == 'SSL' else 'false'
+    if imap_host and smtp_host:
+        print(f'{imap_host}|{imap_port}|{smtp_host}|{smtp_port}|{smtp_ssl}')
+    else:
+        sys.exit(1)
+except Exception:
+    sys.exit(1)
+PYEOF
+}
+
 # ─── 交互式配置向导 ───────────────────────────────────────────
 do_setup() {
     heading "MailMind 一键配置向导"
@@ -114,19 +152,34 @@ do_setup() {
             MAILBOX="proton"; MAIL_ENV_PREFIX="MAIL_PROTON"; AUTH_TYPE="password"
             ;;
         *)
-            warn "未识别的邮箱域名（$DOMAIN），请手动填写服务器信息"
             MAILBOX="custom"; MAIL_ENV_PREFIX="MAIL_CUSTOM"; AUTH_TYPE="password"
-            echo ""
-            read -rp "IMAP 服务器（如 imap.example.com）: " CUSTOM_IMAP_SERVER
-            [ -z "$CUSTOM_IMAP_SERVER" ] && { error "IMAP 服务器不能为空"; exit 1; }
-            read -rp "IMAP 端口 [993]: " CUSTOM_IMAP_PORT
-            CUSTOM_IMAP_PORT="${CUSTOM_IMAP_PORT:-993}"
-            read -rp "SMTP 服务器（如 smtp.example.com）: " CUSTOM_SMTP_SERVER
-            [ -z "$CUSTOM_SMTP_SERVER" ] && { error "SMTP 服务器不能为空"; exit 1; }
-            read -rp "SMTP 端口 [465]: " CUSTOM_SMTP_PORT
-            CUSTOM_SMTP_PORT="${CUSTOM_SMTP_PORT:-465}"
-            read -rp "SMTP 使用 SSL？[Y/n]: " _ssl
-            [[ "$_ssl" =~ ^[Nn] ]] && CUSTOM_SMTP_SSL="false" || CUSTOM_SMTP_SSL="true"
+            info "正在查询 $DOMAIN 的邮件服务器配置..."
+            _ac=$(autoconfig_lookup "$DOMAIN")
+            if [ -n "$_ac" ]; then
+                IFS='|' read -r CUSTOM_IMAP_SERVER CUSTOM_IMAP_PORT \
+                                 CUSTOM_SMTP_SERVER CUSTOM_SMTP_PORT CUSTOM_SMTP_SSL <<< "$_ac"
+                info "自动获取成功："
+                echo "    IMAP  $CUSTOM_IMAP_SERVER:$CUSTOM_IMAP_PORT"
+                echo "    SMTP  $CUSTOM_SMTP_SERVER:$CUSTOM_SMTP_PORT  SSL=$CUSTOM_SMTP_SSL"
+                read -rp "使用以上配置？[Y/n]: " _confirm
+                if [[ "$_confirm" =~ ^[Nn] ]]; then
+                    _ac=""   # 用户拒绝，走手动流程
+                fi
+            fi
+            if [ -z "$_ac" ]; then
+                warn "未能自动获取配置，请手动填写服务器信息"
+                echo ""
+                read -rp "IMAP 服务器（如 imap.example.com）: " CUSTOM_IMAP_SERVER
+                [ -z "$CUSTOM_IMAP_SERVER" ] && { error "IMAP 服务器不能为空"; exit 1; }
+                read -rp "IMAP 端口 [993]: " CUSTOM_IMAP_PORT
+                CUSTOM_IMAP_PORT="${CUSTOM_IMAP_PORT:-993}"
+                read -rp "SMTP 服务器（如 smtp.example.com）: " CUSTOM_SMTP_SERVER
+                [ -z "$CUSTOM_SMTP_SERVER" ] && { error "SMTP 服务器不能为空"; exit 1; }
+                read -rp "SMTP 端口 [465]: " CUSTOM_SMTP_PORT
+                CUSTOM_SMTP_PORT="${CUSTOM_SMTP_PORT:-465}"
+                read -rp "SMTP 使用 SSL？[Y/n]: " _ssl
+                [[ "$_ssl" =~ ^[Nn] ]] && CUSTOM_SMTP_SSL="false" || CUSTOM_SMTP_SSL="true"
+            fi
             ;;
     esac
 
