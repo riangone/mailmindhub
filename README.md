@@ -341,6 +341,29 @@ python3 email_daemon.py --mailbox outlook --auth
 
 ---
 
+### ⏰ 定期タスク（デフォルト）
+
+対応タスク：`email` / `ai_job` / `weather` / `news` / `web_search` / `report`  
+定時実行の結果はメール送信＋`reports/` にアーカイブ可能。
+
+**環境変数（デフォルト）**
+```bash
+export WEATHER_API_KEY="your_weatherapi_key"
+export NEWS_API_KEY="your_newsapi_key"
+export BING_API_KEY="your_bing_search_key"
+export TASK_DEFAULT_AI="openai"
+```
+
+**自動判定**
+- キーワード：天気/ニュース/検索/レポート/AI
+- 時間解析：`毎日 18:00`、`毎週月曜 10:00`、`今日/明日/今夜`
+- マルチタスク：`;` または改行で分割
+
+**例**
+```
+毎日 18:00 日報：天気 Tokyo、ニュース AI、検索 OpenAI 発表
+```
+
 ### 🚀 使い方
 
 ```bash
@@ -481,6 +504,29 @@ The terminal shows a **short code** and a URL → Open https://microsoft.com/dev
 
 ---
 
+### ⏰ Scheduled Tasks (Default)
+
+Supported types: `email` / `ai_job` / `weather` / `news` / `web_search` / `report`  
+Results can be emailed and archived to `reports/`.
+
+**Env (default)**
+```bash
+export WEATHER_API_KEY="your_weatherapi_key"
+export NEWS_API_KEY="your_newsapi_key"
+export BING_API_KEY="your_bing_search_key"
+export TASK_DEFAULT_AI="openai"
+```
+
+**Auto-detect**
+- Keywords: weather/news/search/report/AI
+- Time parsing: `every day 18:00`, `every Monday 10:00`, `today/tomorrow/tonight`
+- Multi-task: split by `;` or newline
+
+**Example**
+```
+Every day 18:00: report with weather Tokyo, AI news, and web search OpenAI event.
+```
+
 ### 🚀 Usage
 
 ```bash
@@ -612,6 +658,29 @@ python3 email_daemon.py --mailbox outlook --auth
 `token_outlook.json` 이 자동 저장됩니다.
 
 ---
+
+### ⏰ 정기 작업（기본）
+
+지원 유형: `email` / `ai_job` / `weather` / `news` / `web_search` / `report`  
+결과는 이메일 발송 및 `reports/` 아카이브 가능.
+
+**환경 변수（기본）**
+```bash
+export WEATHER_API_KEY="your_weatherapi_key"
+export NEWS_API_KEY="your_newsapi_key"
+export BING_API_KEY="your_bing_search_key"
+export TASK_DEFAULT_AI="openai"
+```
+
+**자동 인식**
+- 키워드: 날씨/뉴스/검색/리포트/AI
+- 시간 해석: `매일 18:00`, `매주 월요일 10:00`, `오늘/내일/오늘 밤`
+- 멀티 태스크: `;` 또는 줄바꿈으로 분리
+
+**예시**
+```
+매일 18:00 리포트: 날씨 Tokyo, AI 뉴스, 웹 검색 OpenAI 발표
+```
 
 ### 🚀 사용법
 
