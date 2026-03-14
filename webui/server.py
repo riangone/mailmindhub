@@ -91,14 +91,13 @@ templates = Jinja2Templates(directory=str(WEBUI_DIR / "templates"))
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def read_env() -> dict[str, str]:
-    """Parse .env file into a dict, stripping surrounding quotes from values."""
+    """Parse .env file into a dict, correctly handling inline comments and quotes."""
     result: dict[str, str] = {}
     if not ENV_FILE.exists():
         return result
     with ENV_FILE.open("r", encoding="utf-8") as f:
         for raw_line in f:
             line = raw_line.strip()
-            # Skip comments and blank lines
             if not line or line.startswith("#"):
                 continue
             if "=" not in line:
@@ -106,12 +105,14 @@ def read_env() -> dict[str, str]:
             key, _, value = line.partition("=")
             key = key.strip()
             value = value.strip()
-            # Strip inline comment (only if value is not quoted)
-            if value and value[0] not in ('"', "'"):
+            if value and value[0] in ('"', "'"):
+                # Quoted value: extract content up to the matching closing quote
+                q = value[0]
+                end = value.find(q, 1)
+                value = value[1:end] if end != -1 else value[1:]
+            else:
+                # Unquoted value: strip inline comment
                 value = value.split("#")[0].strip()
-            # Strip surrounding quotes
-            if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
-                value = value[1:-1]
             result[key] = value
     return result
 
