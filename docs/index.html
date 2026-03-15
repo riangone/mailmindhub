@@ -368,6 +368,47 @@
     .step h3 { font-size: 1.05rem; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
     .step p { font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; font-weight: 300; color: var(--muted); line-height: 1.8; }
 
+    /* ── WEB UI ── */
+    #webui { padding: 90px 48px; }
+    .webui-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+    .webui-features { display: flex; flex-direction: column; gap: 22px; }
+    .webui-feat { display: flex; gap: 16px; align-items: flex-start; }
+    .webui-feat-icon { width: 38px; height: 38px; border-radius: 8px; background: var(--cyan-dim); border: 1px solid rgba(0,229,195,0.2); display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .webui-feat-content h4 { font-size: 0.93rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .webui-feat-content p { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 300; color: var(--muted); line-height: 1.75; }
+
+    /* Browser mockup */
+    .browser-mock { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
+    [data-theme="light"] .browser-mock { box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
+    .browser-bar { background: var(--bg3); border-bottom: 1px solid var(--border); padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+    .browser-dots { display: flex; gap: 6px; }
+    .browser-url { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--muted); text-align: center; }
+    .browser-body { background: #0f0f0f; }
+    /* Mini WebUI header */
+    .wui-header { background: #0f0f0f; border-bottom: 1px solid #222; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .wui-logo { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600; color: #fff; letter-spacing: 0.08em; }
+    .wui-status { display: flex; align-items: center; gap: 8px; }
+    .wui-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: pulse-g 2s ease-in-out infinite; }
+    @keyframes pulse-g { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .wui-pid { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: #888; }
+    .wui-btns { display: flex; gap: 5px; }
+    .wui-btn { font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; padding: 3px 8px; border-radius: 3px; border: 1px solid #333; background: #1a1a1a; color: #aaa; cursor: default; }
+    .wui-btn.green { border-color: #22c55e44; color: #22c55e; }
+    /* Tabs */
+    .wui-tabs { background: #141414; border-bottom: 1px solid #222; display: flex; gap: 0; }
+    .wui-tab { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; padding: 8px 16px; color: #555; border-right: 1px solid #222; cursor: default; letter-spacing: 0.06em; text-transform: uppercase; }
+    .wui-tab.active { color: #fff; background: #0f0f0f; border-bottom: 1px solid #0f0f0f; margin-bottom: -1px; }
+    /* Content */
+    .wui-content { padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .wui-field { display: flex; flex-direction: column; gap: 5px; }
+    .wui-label { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: #555; }
+    .wui-input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 0; padding: 7px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: #ccc; }
+    .wui-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .wui-badge { display: inline-block; padding: 2px 8px; background: #0d2d1a; border: 1px solid #22c55e44; border-left: 2px solid #22c55e; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; color: #22c55e; letter-spacing: 0.04em; }
+    .wui-save { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; background: #fff; color: #0f0f0f; border: none; padding: 7px 16px; cursor: default; margin-top: 4px; letter-spacing: 0.06em; font-weight: 600; }
+    /* Log strip */
+    .wui-log { background: #0d0d0d; padding: 10px 14px; border-top: 1px solid #1a1a1a; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; color: #a3e635; line-height: 1.8; }
+
     /* ── AI BACKENDS ── */
     #ai { padding: 90px 48px; }
     .cli-note {
@@ -492,8 +533,9 @@
       .nav-cta { display: none; }
       .nav-controls { gap: 8px; }
       .lang-btn { padding: 4px 6px; font-size: 0.6rem; }
-      #features, #ai, #start, #cta, #tasks, #compare { padding: 60px 20px; }
+      #features, #ai, #start, #cta, #tasks, #compare, #webui { padding: 60px 20px; }
       #how, #mailboxes { padding: 60px 20px; }
+      .webui-inner { grid-template-columns: 1fr; gap: 36px; }
       .steps { grid-template-columns: 1fr; gap: 30px; }
       .steps::before { display: none; }
       .tasks-inner, .start-inner { grid-template-columns: 1fr; gap: 36px; }
@@ -515,6 +557,7 @@
   <ul class="nav-links">
     <li><a href="#features" data-i18n="nav_features"></a></li>
     <li><a href="#how" data-i18n="nav_how"></a></li>
+    <li><a href="#webui" data-i18n="nav_webui"></a></li>
     <li><a href="#ai" data-i18n="nav_ai"></a></li>
     <li><a href="#compare" data-i18n="nav_compare"></a></li>
     <li><a href="#start" data-i18n="nav_start"></a></li>
@@ -600,6 +643,94 @@
       <div class="step reveal"><div class="step-num">01</div><h3 data-i18n="s1_h"></h3><p data-i18n="s1_p"></p></div>
       <div class="step reveal"><div class="step-num">02</div><h3 data-i18n="s2_h"></h3><p data-i18n="s2_p"></p></div>
       <div class="step reveal"><div class="step-num">03</div><h3 data-i18n="s3_h"></h3><p data-i18n="s3_p"></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ WEB UI ══ -->
+<section id="webui">
+  <div class="section-wrap">
+    <div class="webui-inner">
+      <div class="webui-features reveal">
+        <span class="section-label" data-i18n="webui_label"></span>
+        <h2 class="section-title" style="font-size:clamp(1.7rem,3.2vw,2.4rem);margin-bottom:28px;" data-i18n="webui_title"></h2>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;font-weight:300;color:var(--muted);line-height:1.85;margin-bottom:28px;" data-i18n="webui_desc"></p>
+        <div class="webui-feat"><div class="webui-feat-icon">🖥️</div><div class="webui-feat-content"><h4 data-i18n="wf1_h"></h4><p data-i18n="wf1_p"></p></div></div>
+        <div class="webui-feat"><div class="webui-feat-icon">⚡</div><div class="webui-feat-content"><h4 data-i18n="wf2_h"></h4><p data-i18n="wf2_p"></p></div></div>
+        <div class="webui-feat"><div class="webui-feat-icon">📋</div><div class="webui-feat-content"><h4 data-i18n="wf3_h"></h4><p data-i18n="wf3_p"></p></div></div>
+        <div class="webui-feat"><div class="webui-feat-icon">🔍</div><div class="webui-feat-content"><h4 data-i18n="wf4_h"></h4><p data-i18n="wf4_p"></p></div></div>
+        <div class="webui-feat"><div class="webui-feat-icon">🔐</div><div class="webui-feat-content"><h4 data-i18n="wf5_h"></h4><p data-i18n="wf5_p"></p></div></div>
+        <div style="margin-top:8px;">
+          <div class="terminal" style="display:inline-block;width:100%;">
+            <div class="terminal-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="terminal-title" data-i18n="webui_term_title"></span></div>
+            <div class="terminal-body" style="padding:14px 18px;line-height:1.9;">
+              <span class="t-prompt">$</span> <span class="t-cmd">bash manage.sh webui</span><br/>
+              <span class="t-out">&nbsp;&nbsp;✓ WebUI started at http://localhost:8765</span><span class="cursor"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Browser mockup -->
+      <div class="reveal">
+        <div class="browser-mock">
+          <div class="browser-bar">
+            <div class="browser-dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+            <div class="browser-url">localhost:8765</div>
+          </div>
+          <div class="browser-body">
+            <!-- WebUI header -->
+            <div class="wui-header">
+              <span class="wui-logo">MAILMIND</span>
+              <div class="wui-status">
+                <span class="wui-dot"></span>
+                <span class="wui-pid">PID:2847 · gmail · deepseek · IDLE</span>
+              </div>
+              <div class="wui-btns">
+                <span class="wui-btn green">▶ START</span>
+                <span class="wui-btn">■ STOP</span>
+                <span class="wui-btn">↺ RESTART</span>
+              </div>
+            </div>
+            <!-- Tabs -->
+            <div class="wui-tabs">
+              <span class="wui-tab active" data-i18n="wui_tab1"></span>
+              <span class="wui-tab" data-i18n="wui_tab2"></span>
+              <span class="wui-tab" data-i18n="wui_tab3"></span>
+            </div>
+            <!-- Form content -->
+            <div class="wui-content">
+              <div class="wui-field">
+                <span class="wui-label" data-i18n="wui_field1"></span>
+                <div class="wui-input">your@gmail.com</div>
+              </div>
+              <span class="wui-badge" data-i18n="wui_badge"></span>
+              <div class="wui-row">
+                <div class="wui-field">
+                  <span class="wui-label">IMAP SERVER</span>
+                  <div class="wui-input">imap.gmail.com:993</div>
+                </div>
+                <div class="wui-field">
+                  <span class="wui-label">SMTP SERVER</span>
+                  <div class="wui-input">smtp.gmail.com:465</div>
+                </div>
+              </div>
+              <div class="wui-field">
+                <span class="wui-label" data-i18n="wui_field2"></span>
+                <div class="wui-input">your@gmail.com</div>
+              </div>
+              <button class="wui-save" data-i18n="wui_save"></button>
+            </div>
+            <!-- Log strip -->
+            <div class="wui-log">
+              [08:01:32] IDLE listening on gmail...<br/>
+              [08:03:11] New mail from you@gmail.com<br/>
+              [08:03:12] → deepseek processing...<br/>
+              [08:03:14] ✓ Reply sent
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -783,7 +914,7 @@
 const T = {
   en: {
     wip_text: '🚧 Under active development — current version may have bugs &nbsp;·&nbsp; <a href="https://github.com/riangone/MailMindAgent/issues" target="_blank">Report an issue</a> &nbsp;·&nbsp; <a href="https://github.com/riangone/MailMindAgent/pulls" target="_blank">Submit a PR</a> &nbsp;·&nbsp; Updates ship regularly',
-    nav_features: 'Features', nav_how: 'How it works', nav_ai: 'AI Backends', nav_compare: 'vs OpenClaw', nav_start: 'Quick Start',
+    nav_features: 'Features', nav_how: 'How it works', nav_webui: 'Web UI', nav_ai: 'AI Backends', nav_compare: 'vs OpenClaw', nav_start: 'Quick Start',
     hero_badge: 'open source · email-to-ai bridge',
     hero_h1: 'Your inbox is now<br/><em>an AI interface</em>',
     hero_sub: 'Send an email with any instruction. MailMind routes it to Claude, GPT, Gemini, or Qwen — and replies with the result. No app. No new interface. Just email.',
@@ -800,6 +931,18 @@ const T = {
     f6_h: 'One-Script Management', f6_p: 'manage.sh start|stop|restart|log|status — plus systemd install for auto-start on boot. Interactive setup wizard included.',
     f7_h: 'Web Search Injection', f7_p: 'Inject live search results into AI context. Supports DuckDuckGo, Bing, Google, and Wikipedia per query.',
     f8_h: 'Report Archiving', f8_p: 'Scheduled tasks can archive results to reports/ as timestamped files — perfect for daily digests and monitoring.',
+    webui_label: 'Web UI', webui_title: 'Browser-based<br/>control panel',
+    webui_desc: 'No need to memorize CLI commands. MailMind includes a built-in web admin panel — launch it with one command and manage everything from your browser.',
+    wf1_h: 'Daemon control', wf1_p: 'Start, stop, and restart the daemon directly from the browser header. Live status indicator shows PID, mailbox, AI backend, and mode.',
+    wf2_h: 'Real-time log stream', wf2_p: 'Log output pushed to the browser via SSE (Server-Sent Events) — no manual refresh needed. Watch AI processing happen live.',
+    wf3_h: 'Mail & AI settings', wf3_p: 'Edit mailbox credentials, IMAP/SMTP servers, whitelist, and AI backend selection through a clean tabbed form.',
+    wf4_h: 'Auto-detect mailbox config', wf4_p: 'Enter your email address and MailMind auto-detects IMAP/SMTP server addresses — no manual lookup required.',
+    wf5_h: 'Password-protected access', wf5_p: 'Session-based login protects the panel. Set WEBUI_PASSWORD in .env to secure remote access.',
+    webui_term_title: 'start webui',
+    wui_tab1: 'Mail', wui_tab2: 'AI', wui_tab3: 'Logs',
+    wui_field1: 'Mailbox Address', wui_field2: 'Allowed Senders',
+    wui_badge: '▌AUTO  Auto-detected successfully',
+    wui_save: 'SAVE MAIL SETTINGS',
     how_label: 'The Process',
     how_title: 'Three steps.<br/>Zero friction.',
     s1_h: 'Configure once', s1_p: 'Run bash manage.sh setup — interactive wizard creates a venv, installs deps, and guides you through credentials. Done in minutes.',
@@ -845,7 +988,7 @@ const T = {
 
   zh: {
     wip_text: '🚧 项目持续更新中，当前版本可能存在 bug &nbsp;·&nbsp; <a href="https://github.com/riangone/MailMindAgent/issues" target="_blank">反馈问题</a> &nbsp;·&nbsp; <a href="https://github.com/riangone/MailMindAgent/pulls" target="_blank">提交 PR</a> &nbsp;·&nbsp; 欢迎共建',
-    nav_features: '功能', nav_how: '工作原理', nav_ai: 'AI 后端', nav_compare: '对比 OpenClaw', nav_start: '快速开始',
+    nav_features: '功能', nav_how: '工作原理', nav_webui: 'Web UI', nav_ai: 'AI 后端', nav_compare: '对比 OpenClaw', nav_start: '快速开始',
     hero_badge: '开源 · 邮件转 AI 网关',
     hero_h1: '你的收件箱<br/>现在是 <em>AI 接口</em>',
     hero_sub: '发一封邮件写下你的指令，MailMind 将其转发给 Claude、GPT、Gemini 或 Qwen，然后把结果回复到你的邮箱。无需安装 App，无需学习新界面，邮件就是一切。',
@@ -862,6 +1005,18 @@ const T = {
     f6_h: '一键管理', f6_p: 'manage.sh start|stop|restart|log|status — 支持 systemd 开机自启，内置交互式配置向导。',
     f7_h: '网页搜索注入', f7_p: '可将实时搜索结果注入 AI 上下文。支持 DuckDuckGo、Bing、Google 和 Wikipedia。',
     f8_h: '报告归档', f8_p: '定时任务结果可归档到 reports/ 目录，以时间戳命名，适合日报、监控场景。',
+    webui_label: 'Web UI', webui_title: '浏览器管理面板',
+    webui_desc: '无需记忆命令行。MailMind 内置 Web 管理界面，一条命令启动，在浏览器中完成所有配置和监控。',
+    wf1_h: '守护进程控制', wf1_p: '直接在浏览器顶栏启动、停止、重启守护进程。状态栏实时显示 PID、邮箱、AI 后端和运行模式。',
+    wf2_h: '实时日志推流', wf2_p: '通过 SSE（服务器推送事件）将日志实时推送到浏览器，无需手动刷新，AI 处理过程一览无余。',
+    wf3_h: '邮件与 AI 配置', wf3_p: '通过清晰的选项卡表单编辑邮箱凭据、IMAP/SMTP 服务器、白名单和 AI 后端选择。',
+    wf4_h: '自动检测邮箱配置', wf4_p: '输入邮箱地址，MailMind 自动识别 IMAP/SMTP 服务器地址，无需手动查找。',
+    wf5_h: '密码保护访问', wf5_p: '基于 Session 的登录保护面板安全。在 .env 中设置 WEBUI_PASSWORD 即可启用远程访问保护。',
+    webui_term_title: '启动 WebUI',
+    wui_tab1: '邮件设置', wui_tab2: 'AI 设置', wui_tab3: '日志',
+    wui_field1: '邮箱地址', wui_field2: '白名单发件人',
+    wui_badge: '▌AUTO  自动检测成功',
+    wui_save: '保存邮件设置',
     how_label: '工作流程',
     how_title: '三步完成。<br/>零摩擦上手。',
     s1_h: '一次配置', s1_p: '运行 bash manage.sh setup，交互式向导自动创建虚拟环境、安装依赖、引导你填写凭据，几分钟搞定。',
@@ -907,7 +1062,7 @@ const T = {
 
   ja: {
     wip_text: '🚧 継続開発中 — 現バージョンにはバグが含まれる可能性があります &nbsp;·&nbsp; <a href="https://github.com/riangone/MailMindAgent/issues" target="_blank">Issue を報告</a> &nbsp;·&nbsp; <a href="https://github.com/riangone/MailMindAgent/pulls" target="_blank">PR を送る</a> &nbsp;·&nbsp; 定期更新中',
-    nav_features: '機能', nav_how: '仕組み', nav_ai: 'AI バックエンド', nav_compare: 'vs OpenClaw', nav_start: 'クイックスタート',
+    nav_features: '機能', nav_how: '仕組み', nav_webui: 'Web UI', nav_ai: 'AI バックエンド', nav_compare: 'vs OpenClaw', nav_start: 'クイックスタート',
     hero_badge: 'オープンソース · メール to AI ブリッジ',
     hero_h1: 'あなたの受信箱が<br/><em>AI インターフェース</em>に',
     hero_sub: 'メールで指示を送るだけ。MailMind が Claude、GPT、Gemini、Qwen に橋渡しし、結果をメールで返信します。アプリ不要。新しいUIも不要。メールだけ。',
@@ -924,6 +1079,18 @@ const T = {
     f6_h: 'ワンスクリプト管理', f6_p: 'manage.sh start|stop|restart|log|status。systemdサービス登録・セットアップウィザードも内蔵。',
     f7_h: 'Web検索インジェクション', f7_p: 'DuckDuckGo、Bing、Google、Wikipediaの検索結果をAIコンテキストに注入。',
     f8_h: 'レポートアーカイブ', f8_p: '定期タスクの結果をreports/にタイムスタンプ付きで保存。日次ダイジェストやモニタリングに最適。',
+    webui_label: 'Web UI', webui_title: 'ブラウザで操作する<br/>管理パネル',
+    webui_desc: 'CLIコマンドを覚える必要はありません。MailMindには組み込みのWeb管理パネルが付属しています。コマンド1つで起動し、ブラウザからすべてを管理できます。',
+    wf1_h: 'デーモン制御', wf1_p: 'ブラウザのヘッダーから直接デーモンを起動・停止・再起動。ステータスバーにPID・メールボックス・AIバックエンド・動作モードをリアルタイム表示。',
+    wf2_h: 'リアルタイムログ', wf2_p: 'SSE（サーバー送信イベント）でログをブラウザへプッシュ。手動更新不要でAI処理の様子をライブで確認。',
+    wf3_h: 'メール・AI設定', wf3_p: 'タブ形式のフォームでメール認証情報・IMAP/SMTPサーバー・ホワイトリスト・AIバックエンドを編集。',
+    wf4_h: 'メール設定の自動検出', wf4_p: 'メールアドレスを入力するだけでIMAP/SMTPサーバーを自動検出。手動調査は不要。',
+    wf5_h: 'パスワード保護', wf5_p: 'セッションベースのログインでパネルを保護。.envにWEBUI_PASSWORDを設定するとリモートアクセスも安全。',
+    webui_term_title: 'WebUI起動',
+    wui_tab1: 'メール設定', wui_tab2: 'AI設定', wui_tab3: 'ログ',
+    wui_field1: 'メールアドレス', wui_field2: '許可する送信者',
+    wui_badge: '▌AUTO  自動検出成功',
+    wui_save: 'メール設定を保存',
     how_label: 'プロセス',
     how_title: '3ステップ。<br/>ゼロ摩擦。',
     s1_h: '一度設定', s1_p: 'bash manage.sh setup で対話型ウィザードを起動。仮想環境作成・依存関係インストール・認証情報設定を自動ガイド。',
@@ -986,6 +1153,18 @@ const T = {
     f6_h: '단일 스크립트 관리', f6_p: 'manage.sh start|stop|restart|log|status — systemd 서비스 등록, 대화형 설정 마법사 포함.',
     f7_h: '웹 검색 주입', f7_p: 'DuckDuckGo, Bing, Google, Wikipedia 검색 결과를 AI 컨텍스트에 주입.',
     f8_h: '보고서 아카이브', f8_p: '예약 작업 결과를 reports/에 타임스탬프로 저장. 일간 다이제스트, 모니터링에 최적.',
+    webui_label: 'Web UI', webui_title: '브라우저 기반<br/>관리 패널',
+    webui_desc: 'CLI 명령어를 외울 필요가 없습니다. MailMind에는 내장 웹 관리 패널이 포함되어 있습니다. 명령어 하나로 실행하고 브라우저에서 모든 것을 관리하세요.',
+    wf1_h: '데몬 제어', wf1_p: '브라우저 헤더에서 직접 데몬을 시작·정지·재시작. 상태 표시줄에 PID·메일박스·AI 백엔드·동작 모드를 실시간 표시.',
+    wf2_h: '실시간 로그 스트림', wf2_p: 'SSE(서버 전송 이벤트)로 로그를 브라우저에 푸시. 새로고침 없이 AI 처리 과정을 실시간으로 확인.',
+    wf3_h: '메일 & AI 설정', wf3_p: '탭 형식 폼으로 메일 인증 정보·IMAP/SMTP 서버·화이트리스트·AI 백엔드를 편집.',
+    wf4_h: '메일박스 자동 감지', wf4_p: '이메일 주소를 입력하면 IMAP/SMTP 서버를 자동으로 감지. 수동 조회 불필요.',
+    wf5_h: '비밀번호 보호 접근', wf5_p: '세션 기반 로그인으로 패널을 보호. .env에 WEBUI_PASSWORD를 설정하면 원격 접근도 안전.',
+    webui_term_title: 'WebUI 시작',
+    wui_tab1: '메일 설정', wui_tab2: 'AI 설정', wui_tab3: '로그',
+    wui_field1: '메일박스 주소', wui_field2: '허용 발신자',
+    wui_badge: '▌AUTO  자동 감지 성공',
+    wui_save: '메일 설정 저장',
     how_label: '프로세스',
     how_title: '3단계.<br/>마찰 제로.',
     s1_h: '한 번 설정', s1_p: 'bash manage.sh setup으로 대화형 마법사 실행. 가상환경 생성·의존성 설치·인증 정보 설정을 자동 안내.',
