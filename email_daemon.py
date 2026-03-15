@@ -53,6 +53,7 @@ MAILBOXES = {
         "imap_id":         True,
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_126_ALLOWED", "").split(",") if s.strip()],
+        "spam_folder":     os.environ.get("MAIL_126_SPAM_FOLDER", "Junk"),
     },
     "163": {
         "address":         os.environ.get("MAIL_163_ADDRESS", ""),
@@ -65,6 +66,7 @@ MAILBOXES = {
         "imap_id":         True,
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_163_ALLOWED", "").split(",") if s.strip()],
+        "spam_folder":     os.environ.get("MAIL_163_SPAM_FOLDER", "Junk"),
     },
     "qq": {
         "address":         os.environ.get("MAIL_QQ_ADDRESS", ""),
@@ -77,6 +79,7 @@ MAILBOXES = {
         "imap_id":         False,
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_QQ_ALLOWED", "").split(",") if s.strip()],
+        "spam_folder":     os.environ.get("MAIL_QQ_SPAM_FOLDER", "Junk"),
     },
     "gmail": {
         "address":         os.environ.get("MAIL_GMAIL_ADDRESS", ""),
@@ -91,6 +94,7 @@ MAILBOXES = {
         "oauth_token_file": os.path.join(os.path.dirname(__file__), "token_gmail.json"),
         "oauth_creds_file": os.path.join(os.path.dirname(__file__), "credentials_gmail.json"),
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_GMAIL_ALLOWED", "").split(",") if s.strip()],
+        "spam_folder":     os.environ.get("MAIL_GMAIL_SPAM_FOLDER", "[Gmail]/Spam"),
     },
     "outlook": {
         "address":         os.environ.get("MAIL_OUTLOOK_ADDRESS", ""),
@@ -104,6 +108,7 @@ MAILBOXES = {
         "oauth_token_file": os.path.join(os.path.dirname(__file__), "token_outlook.json"),
         "oauth_client_id":  os.environ.get("OUTLOOK_CLIENT_ID", ""),
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_OUTLOOK_ALLOWED", "").split(",") if s.strip()],
+        "spam_folder":     os.environ.get("MAIL_OUTLOOK_SPAM_FOLDER", "Junk"),
     },
     "icloud": {
         "address":         os.environ.get("MAIL_ICLOUD_ADDRESS", ""),
@@ -116,6 +121,7 @@ MAILBOXES = {
         "imap_id":         False,
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_ICLOUD_ALLOWED", "").split(",") if s.strip()],
+        "spam_folder":     os.environ.get("MAIL_ICLOUD_SPAM_FOLDER", "Junk"),
     },
     "proton": {
         "address":         os.environ.get("MAIL_PROTON_ADDRESS", ""),
@@ -128,6 +134,7 @@ MAILBOXES = {
         "imap_id":         False,
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_PROTON_ALLOWED", "").split(",") if s.strip()],
+        "spam_folder":     os.environ.get("MAIL_PROTON_SPAM_FOLDER", "Spam"),
     },
     "custom": {
         "address":         os.environ.get("MAIL_CUSTOM_ADDRESS", ""),
@@ -140,6 +147,7 @@ MAILBOXES = {
         "imap_id":         False,
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_CUSTOM_ALLOWED", "").split(",") if s.strip()],
+        "spam_folder":     os.environ.get("MAIL_CUSTOM_SPAM_FOLDER", ""),
     },
 }
 
@@ -164,7 +172,7 @@ AI_BACKENDS = {
     "claude":      {"type": "cli", "cmd": os.environ.get("CLAUDE_CMD", "claude"), "args": ["--print"]},
     "codex":       {"type": "cli", "cmd": os.environ.get("CODEX_CMD",  "codex"),  "args": ["exec", "--skip-git-repo-check"]},
     "gemini":      {"type": "cli", "cmd": os.environ.get("GEMINI_CMD", "gemini"), "args": ["-p"]},
-    "qwen":        {"type": "cli", "cmd": os.environ.get("QWEN_CMD",   "qwen"),   "args": ["--prompt"]},
+    "qwen":        {"type": "cli", "cmd": os.environ.get("QWEN_CMD",   "qwen"),   "args": ["--prompt", "--web-search-default", "--yolo"], "native_web_search": True},
     "anthropic":   {"type": "api_anthropic", "api_key": os.environ.get("ANTHROPIC_API_KEY", ""),  "model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")},
     "openai":      {"type": "api_openai",    "api_key": os.environ.get("OPENAI_API_KEY", ""),     "model": os.environ.get("OPENAI_MODEL",     "gpt-4o"),            "url": "https://api.openai.com/v1/chat/completions"},
     "gemini-api":  {"type": "api_gemini",    "api_key": os.environ.get("GEMINI_API_KEY", ""),     "model": os.environ.get("GEMINI_MODEL",     "gemini-3-flash-preview")},
@@ -178,163 +186,133 @@ AI_BACKENDS = {
 #  Web Search / Weather / News 配置
 # ────────────────────────────────────────────────────────────────
 
+# [WEB_SEARCH DISABLED]
 WEB_SEARCH_ENABLED = os.environ.get("WEB_SEARCH", "false").lower() == "true"
-WEB_SEARCH_ENGINE = os.environ.get("WEB_SEARCH_ENGINE", "duckduckgo")  # duckduckgo / google / bing
+WEB_SEARCH_ENGINE = os.environ.get("WEB_SEARCH_ENGINE", "google")  # google（默认，无需 API Key）/ duckduckgo / brave / wikipedia / bing
 SEARCH_RESULTS_COUNT = int(os.environ.get("SEARCH_RESULTS_COUNT", "5"))
 WEB_SEARCH_TIMEOUT = int(os.environ.get("WEB_SEARCH_TIMEOUT", "10"))
+BRAVE_API_KEY = os.environ.get("BRAVE_API_KEY", "")
 
-WEATHER_API_KEY = os.environ.get("WEATHER_API_KEY", "")
+# WEATHER_API_KEY = os.environ.get("WEATHER_API_KEY", "")  # 已停用，统一由 AI 查询天气
 WEATHER_DEFAULT_LOCATION = os.environ.get("WEATHER_DEFAULT_LOCATION", "Tokyo")
 
-NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
+# NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")  # 已停用，统一由 AI 查询新闻
 NEWS_DEFAULT_QUERY = os.environ.get("NEWS_DEFAULT_QUERY", "technology OR AI")
-NEWS_DEFAULT_LANGUAGE = os.environ.get("NEWS_DEFAULT_LANGUAGE", "zh")
-NEWS_DEFAULT_COUNTRY = os.environ.get("NEWS_DEFAULT_COUNTRY", "")
-NEWS_DEFAULT_PAGE_SIZE = int(os.environ.get("NEWS_DEFAULT_PAGE_SIZE", "8"))
 
 # 搜索提示词模板
-WEB_SEARCH_PROMPT = """
-【网络搜索结果】（来自 {engine}，共 {count} 条）：
-{search_results}
+# [WEB_SEARCH DISABLED]
+# WEB_SEARCH_PROMPT = """
+# 【网络搜索结果】（来自 {engine}，共 {count} 条）：
+# {search_results}
+#
+# ---
+# 以上为网络搜索结果，请结合上述信息回答用户的问题。
+# """
 
----
-以上为网络搜索结果，请结合上述信息回答用户的问题。
-"""
 
-
+# [WEB_SEARCH] 用于定时任务（news/web_search/report）；AI 提示词内联注入已停用
 def web_search(query: str, num_results: int = 5, engine: Optional[str] = None) -> list:
-    """
-    执行网络搜索，返回搜索结果列表
-    """
     results = []
     engine = (engine or WEB_SEARCH_ENGINE).lower().strip()
 
-    if engine == "duckduckgo":
+    if engine == "brave":
+        if not BRAVE_API_KEY:
+            log.warning("Brave Search: 未配置 BRAVE_API_KEY")
+            return results
         try:
-            headers = {"User-Agent": "Mozilla/5.0"}
-            url = f"https://api.duckduckgo.com/?q={requests.utils.quote(query)}&format=json&no_html=1"
-            resp = requests.get(url, headers=headers, timeout=WEB_SEARCH_TIMEOUT)
+            url = "https://api.search.brave.com/res/v1/web/search"
+            headers = {"X-Subscription-Token": BRAVE_API_KEY, "Accept": "application/json"}
+            params = {"q": query, "count": num_results, "text_decorations": False}
+            resp = requests.get(url, headers=headers, params=params, timeout=WEB_SEARCH_TIMEOUT)
             resp.raise_for_status()
-            data = resp.json()
-            if data.get("AbstractText"):
-                results.append({
-                    "title": data.get("Heading", "摘要"),
-                    "snippet": data.get("AbstractText", ""),
-                    "url": data.get("AbstractURL", "")
-                })
-            for item in data.get("RelatedTopics", [])[:num_results]:
-                if isinstance(item, dict) and "Text" in item:
-                    results.append({
-                        "title": item.get("Text", "")[:100] + "...",
-                        "snippet": item.get("Text", ""),
-                        "url": item.get("FirstURL", "")
-                    })
+            for item in resp.json().get("web", {}).get("results", [])[:num_results]:
+                results.append({"title": item.get("title", ""), "snippet": item.get("description", ""), "url": item.get("url", "")})
+        except Exception as e:
+            log.warning(f"Brave 搜索失败：{e}")
+
+    elif engine == "duckduckgo":
+        try:
+            from ddgs import DDGS
+            with DDGS() as ddgs_client:
+                for item in ddgs_client.text(query, max_results=num_results):
+                    results.append({"title": item.get("title", ""), "snippet": item.get("body", ""), "url": item.get("href", "")})
+        except ImportError:
+            log.warning("DuckDuckGo 搜索：未安装 ddgs，请运行 pip install ddgs")
         except Exception as e:
             log.warning(f"DuckDuckGo 搜索失败：{e}")
-            
+
     elif engine == "wikipedia":
         try:
-            lang = os.environ.get('WIKIPEDIA_LANG', 'zh')
-            url = f"https://{lang}.wikipedia.org/w/api.php"
+            lang = os.environ.get("WIKIPEDIA_LANG", "zh")
             params = {"action": "query", "list": "search", "srsearch": query, "format": "json", "srlimit": num_results}
-            headers = {"User-Agent": "MailMind/1.0"}
-            resp = requests.get(url, params=params, headers=headers, timeout=WEB_SEARCH_TIMEOUT)
-            data = resp.json()
-            for item in data.get("query", {}).get("search", [])[:num_results]:
-                results.append({
-                    "title": item.get("title", ""),
-                    "snippet": item.get("snippet", "").replace('<span class="searchmatch">', '').replace('</span>', ''),
-                    "url": f"https://{lang}.wikipedia.org/wiki/{item.get('title', '')}"
-                })
+            resp = requests.get(f"https://{lang}.wikipedia.org/w/api.php", params=params, headers={"User-Agent": "MailMind/1.0"}, timeout=WEB_SEARCH_TIMEOUT)
+            for item in resp.json().get("query", {}).get("search", [])[:num_results]:
+                results.append({"title": item.get("title", ""), "snippet": item.get("snippet", "").replace('<span class="searchmatch">', "").replace("</span>", ""), "url": f"https://{lang}.wikipedia.org/wiki/{item.get('title', '')}"})
         except Exception as e:
             log.warning(f"Wikipedia 搜索失败：{e}")
 
     elif engine == "google":
-        api_key = os.environ.get("GOOGLE_API_KEY", "")
-        cse_id = os.environ.get("GOOGLE_CSE_ID", "")
-        if api_key and cse_id:
+        google_ok = False
+        try:
+            from googlesearch import search as google_search
+            headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            urls = list(google_search(query, num_results=num_results, lang="zh-CN"))
+            for url in urls:
+                try:
+                    resp = requests.get(url, headers=headers, timeout=5, allow_redirects=True)
+                    title, snippet = url, ""
+                    if resp.ok and "text/html" in resp.headers.get("Content-Type", ""):
+                        import re as _re
+                        m_title = _re.search(r"<title[^>]*>([^<]{1,200})</title>", resp.text, _re.I)
+                        if m_title:
+                            title = m_title.group(1).strip()
+                        m_desc = _re.search(r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']{1,300})', resp.text, _re.I)
+                        if not m_desc:
+                            m_desc = _re.search(r'<meta[^>]+content=["\']([^"\']{1,300})[^>]+name=["\']description["\']', resp.text, _re.I)
+                        if m_desc:
+                            snippet = m_desc.group(1).strip()
+                except Exception:
+                    title, snippet = url, ""
+                results.append({"title": title, "snippet": snippet, "url": url})
+            google_ok = bool(results)
+        except ImportError:
+            log.warning("Google 搜索：未安装 googlesearch-python，请运行 pip install googlesearch-python")
+        except Exception as e:
+            log.warning(f"Google 爬虫搜索失败（{e}），自动回退至 DuckDuckGo")
+        if not google_ok:
+            # Google 被限速/封锁时自动回退到 DuckDuckGo
             try:
-                url = f"https://www.googleapis.com/customsearch/v1?key={api_key}&cx={cse_id}&q={requests.utils.quote(query)}"
-                resp = requests.get(url, timeout=WEB_SEARCH_TIMEOUT)
-                data = resp.json()
-                for item in data.get("items", [])[:num_results]:
-                    results.append({"title": item.get("title", ""), "snippet": item.get("snippet", ""), "url": item.get("link", "")})
-            except Exception as e:
-                log.warning(f"Google 搜索失败：{e}")
-            
+                from ddgs import DDGS
+                with DDGS() as ddgs_client:
+                    for item in ddgs_client.text(query, max_results=num_results):
+                        results.append({"title": item.get("title", ""), "snippet": item.get("body", ""), "url": item.get("href", "")})
+                if results:
+                    log.info("Google 不可用，已使用 DuckDuckGo 替代")
+            except Exception as e2:
+                log.warning(f"DuckDuckGo 回退也失败：{e2}")
+
     elif engine == "bing":
         api_key = os.environ.get("BING_API_KEY", "")
         if api_key:
             try:
-                url = f"https://api.bing.microsoft.com/v7.0/search?q={requests.utils.quote(query)}"
-                headers = {"Ocp-Apim-Subscription-Key": api_key}
-                resp = requests.get(url, headers=headers, timeout=WEB_SEARCH_TIMEOUT)
-                data = resp.json()
-                for item in data.get("webPages", {}).get("value", [])[:num_results]:
+                resp = requests.get(f"https://api.bing.microsoft.com/v7.0/search?q={requests.utils.quote(query)}", headers={"Ocp-Apim-Subscription-Key": api_key}, timeout=WEB_SEARCH_TIMEOUT)
+                resp.raise_for_status()
+                for item in resp.json().get("webPages", {}).get("value", [])[:num_results]:
                     results.append({"title": item.get("name", ""), "snippet": item.get("snippet", ""), "url": item.get("url", "")})
             except Exception as e:
                 log.warning(f"Bing 搜索失败：{e}")
-    
+
     return results
 
 
-def fetch_weather(location: str) -> str:
-    if not WEATHER_API_KEY:
-        return "⚠️ 未配置 WEATHER_API_KEY，无法获取天气。"
-    loc = location or WEATHER_DEFAULT_LOCATION
-    try:
-        url = "https://api.weatherapi.com/v1/current.json"
-        params = {"key": WEATHER_API_KEY, "q": loc, "lang": "zh"}
-        resp = requests.get(url, params=params, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        cur = data.get("current", {})
-        loc_info = data.get("location", {})
-        return (
-            f"{loc_info.get('name', loc)} 天气：{cur.get('condition', {}).get('text', '')}，"
-            f"气温 {cur.get('temp_c', 'N/A')}℃，体感 {cur.get('feelslike_c', 'N/A')}℃，"
-            f"湿度 {cur.get('humidity', 'N/A')}%，风速 {cur.get('wind_kph', 'N/A')}km/h。"
-        )
-    except Exception as e:
-        return f"⚠️ 天气获取失败：{e}"
+# fetch_weather 已停用，统一由 AI 查询天气
+# def fetch_weather(location: str) -> str:
+#     ...（WeatherAPI 调用已移除）
 
 
-def fetch_news(query: Optional[str] = None, page_size: Optional[int] = None, language: Optional[str] = None, country: Optional[str] = None, sources: Optional[str] = None) -> str:
-    if not NEWS_API_KEY:
-        return "⚠️ 未配置 NEWS_API_KEY，无法获取新闻。"
-    q = query or NEWS_DEFAULT_QUERY
-    page_size = page_size or NEWS_DEFAULT_PAGE_SIZE
-    language = (language or NEWS_DEFAULT_LANGUAGE).strip()
-    country = (country or NEWS_DEFAULT_COUNTRY).strip()
-    try:
-        url = "https://newsapi.org/v2/everything"
-        params = {
-            "q": q,
-            "language": language if language else None,
-            "pageSize": page_size,
-            "sortBy": "publishedAt",
-        }
-        if sources:
-            params["sources"] = sources
-        if country:
-            url = "https://newsapi.org/v2/top-headlines"
-            params = {"q": q, "country": country, "pageSize": page_size}
-        headers = {"X-Api-Key": NEWS_API_KEY}
-        resp = requests.get(url, params=params, headers=headers, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        items = data.get("articles", [])[:page_size]
-        if not items:
-            return "没有找到相关新闻。"
-        lines = []
-        for i, it in enumerate(items, 1):
-            title = it.get("title", "无标题")
-            source = it.get("source", {}).get("name", "")
-            url = it.get("url", "")
-            lines.append(f"{i}. {title} ({source})\n   🔗 链接: {url}")
-        return "\n".join(lines)
-    except Exception as e:
-        return f"⚠️ 新闻获取失败：{e}"
+# fetch_news 已停用，统一由 AI 查询新闻
+# def fetch_news(...):
+#     ...（NewsAPI 调用已移除）
 
 
 def _read_meminfo_kb() -> dict:
@@ -442,6 +420,7 @@ def fetch_system_status(payload: Optional[dict] = None) -> str:
     return "\n".join(lines).strip()
 
 
+# [WEB_SEARCH DISABLED]
 def format_search_results(results: list) -> str:
     lines = []
     for i, r in enumerate(results, 1):
@@ -455,7 +434,6 @@ def search_web_if_needed(instruction: str) -> str:
     search_keywords = ["搜索", "查找", "查询", "最新", "最近", "news", "search", "look up", "find"]
     if not any(kw in instruction.lower() for kw in search_keywords):
         return ""
-    
     log.info("🔍 检测到搜索意图，执行网络搜索...")
     search_query = instruction[:50].replace("\n", " ").strip()
     results = web_search(search_query, SEARCH_RESULTS_COUNT)
@@ -1030,18 +1008,46 @@ def _archive_output(output: dict, subject: str, body: str, attachments: Optional
 
 def fetch_unread_emails(mailbox: dict):
     mail = imap_login(mailbox)
-    mail.select("INBOX")
-    _, ids = mail.search(None, "UNSEEN")
+    allowed = mailbox.get("allowed_senders", [])
     emails = []
-    for mid in ids[0].split():
-        if mid.decode() in processed_ids: continue
-        _, data = mail.fetch(mid, "(RFC822)")
-        msg = email.message_from_bytes(data[0][1])
-        sender = decode_str(msg.get("From", ""))
-        sender_email = parseaddr(sender)[1].strip()
-        if not is_sender_allowed(sender_email, mailbox.get("allowed_senders", [])): continue
-        body, atts = get_body_and_attachments(msg)
-        emails.append({"id": mid.decode(), "from": sender, "from_email": sender_email, "subject": decode_str(msg.get("Subject", "(无主题)")), "message_id": msg.get("Message-ID", ""), "body": body, "attachments": atts})
+
+    def _fetch_folder(folder: str, id_prefix: str = ""):
+        try:
+            status, _ = mail.select(folder)
+            if status != "OK":
+                return
+        except Exception:
+            return
+        _, ids = mail.search(None, "UNSEEN")
+        for mid in ids[0].split():
+            eid = id_prefix + mid.decode()
+            if eid in processed_ids:
+                continue
+            _, data = mail.fetch(mid, "(RFC822)")
+            msg = email.message_from_bytes(data[0][1])
+            sender = decode_str(msg.get("From", ""))
+            sender_email = parseaddr(sender)[1].strip()
+            if not is_sender_allowed(sender_email, allowed):
+                continue
+            if id_prefix:
+                # Email from allowed sender is in spam — move to INBOX
+                try:
+                    mail.copy(mid, "INBOX")
+                    mail.store(mid, "+FLAGS", "\\Deleted")
+                    mail.expunge()
+                    log.info(f"📥 垃圾邮件移入收件箱: {sender_email}")
+                except Exception as e:
+                    log.warning(f"移动垃圾邮件失败: {e}")
+            body, atts = get_body_and_attachments(msg)
+            emails.append({"id": eid, "from": sender, "from_email": sender_email,
+                           "subject": decode_str(msg.get("Subject", "(无主题)")),
+                           "message_id": msg.get("Message-ID", ""), "body": body, "attachments": atts})
+
+    _fetch_folder("INBOX")
+    spam_folder = mailbox.get("spam_folder", "")
+    if spam_folder:
+        _fetch_folder(spam_folder, id_prefix="spam:")
+
     mail.logout()
     return emails
 
@@ -1087,10 +1093,31 @@ def call_ai_text(ai_name: str, backend: dict, prompt: str) -> str:
                 timeout=180,
                 env=env
             ).stdout.strip()
-        elif backend["type"].startswith("api_"):
-            # 简化版：这里假设原有的 API 调用逻辑已在 email_daemon.py 中（实际开发时应保留原有各 API 函数）
-            # 为了简洁，此处仅示意逻辑结构
-            return "AI API 调用结果待集成"
+        elif backend["type"] == "api_openai":
+            url = backend.get("url", "https://api.openai.com/v1/chat/completions")
+            headers = {"Authorization": f"Bearer {backend['api_key']}", "Content-Type": "application/json"}
+            data = {"model": backend["model"], "messages": [{"role": "user", "content": prompt}]}
+            resp = requests.post(url, json=data, headers=headers, timeout=180)
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"].strip()
+        elif backend["type"] == "api_anthropic":
+            headers = {"x-api-key": backend["api_key"], "anthropic-version": "2023-06-01", "content-type": "application/json"}
+            data = {"model": backend["model"], "max_tokens": 8096, "messages": [{"role": "user", "content": prompt}]}
+            resp = requests.post("https://api.anthropic.com/v1/messages", json=data, headers=headers, timeout=180)
+            resp.raise_for_status()
+            return resp.json()["content"][0]["text"].strip()
+        elif backend["type"] == "api_gemini":
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{backend['model']}:generateContent?key={backend['api_key']}"
+            data = {"contents": [{"parts": [{"text": prompt}]}]}
+            resp = requests.post(url, json=data, timeout=180)
+            resp.raise_for_status()
+            return resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+        elif backend["type"] == "api_qwen":
+            headers = {"Authorization": f"Bearer {backend['api_key']}", "Content-Type": "application/json"}
+            data = {"model": backend["model"], "messages": [{"role": "user", "content": prompt}]}
+            resp = requests.post("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", json=data, headers=headers, timeout=180)
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"].strip()
         return ""
     except Exception as e:
         log.error(f"AI 调用失败: {e}")
@@ -1115,34 +1142,22 @@ def _pick_task_ai(task_payload: dict):
 def _compose_report_sections(payload: dict) -> str:
     sections = []
     
-    # 天气板块：仅当配置了 Key 且有位置时才添加
-    locations = payload.get("weather_locations") or []
-    if isinstance(locations, str): locations = [locations]
-    if WEATHER_API_KEY and locations:
-        weather_lines = [fetch_weather(loc) for loc in locations]
-        sections.append("【天气】\n" + "\n".join(weather_lines))
+    # 天气板块已停用（fetch_weather 移除），由 AI 负责查询天气
+    # locations = payload.get("weather_locations") or []
+    # if isinstance(locations, str): locations = [locations]
+    # if locations:
+    #     weather_lines = [fetch_weather(loc) for loc in locations]
+    #     sections.append("【天气】\n" + "\n".join(weather_lines))
     
-    # 新闻板块：仅当配置了 Key 时添加
-    news_query = payload.get("news_query")
-    if NEWS_API_KEY:
-        if news_query is True:
-            news_query = NEWS_DEFAULT_QUERY
-        if isinstance(news_query, str) and news_query.strip():
-            news_text = fetch_news(
-                query=news_query,
-                page_size=payload.get("news_page_size"),
-                language=payload.get("news_language"),
-                country=payload.get("news_country"),
-                sources=payload.get("news_sources"),
-            )
-            if news_text and "⚠️" not in news_text:
-                sections.append("【新闻】\n" + news_text)
+    # 新闻板块已停用（fetch_news 移除），由 AI 负责查询新闻
+    # news_query = payload.get("news_query")
+    # if news_query: ...fetch_news...
     
-    # 网页检索板块
-    if payload.get("web_query"):
-        results = web_search(payload.get("web_query"), payload.get("web_count", 5), payload.get("web_engine"))
-        if results:
-            sections.append("【网页检索】\n" + format_search_results(results))
+    # 网页检索板块 [WEB_SEARCH DISABLED]
+    # if payload.get("web_query"):
+    #     results = web_search(payload.get("web_query"), payload.get("web_count", 5), payload.get("web_engine"))
+    #     if results:
+    #         sections.append("【网页检索】\n" + format_search_results(results))
             
     # 系统运行状态板块
     if payload.get("include_system_status"):
@@ -1166,30 +1181,31 @@ def execute_task(task: dict):
         pass
     elif task_type == "weather":
         location = payload.get("location") or WEATHER_DEFAULT_LOCATION
-        if WEATHER_API_KEY:
-            body = fetch_weather(location)
-        else:
-            # Fallback: 天气 Key 缺失时，转由 AI 查询
-            log.info("ℹ️ WEATHER_API_KEY 缺失，回退至 AI 任务")
-            ai_name, backend = _pick_task_ai(payload)
-            prompt = f"请搜索并告诉我现在 {location} 的天气情况，包括温度和天气现象。"
-            body = call_ai_text(ai_name, backend, prompt)
+        ai_name, backend = _pick_task_ai(payload)
+        prompt = f"请搜索并告诉我现在 {location} 的天气情况，包括温度和天气现象。"
+        body = call_ai_text(ai_name, backend, prompt)
         subject = subject or f"天气更新：{location}"
     elif task_type == "news":
-        if NEWS_API_KEY:
-            body = fetch_news(
-                query=payload.get("query"),
-                page_size=payload.get("page_size"),
-                language=payload.get("language"),
-                country=payload.get("country"),
-                sources=payload.get("sources"),
-            )
-        else:
-            # Fallback: 如果没有 NewsAPI Key，转为 AI 任务（利用 Qwen 等的原生搜索）
-            log.info("ℹ️ NEWS_API_KEY 缺失，回退至 AI 任务")
-            ai_name, backend = _pick_task_ai(payload)
-            q = payload.get("query") or body or "最新的新闻"
+        ai_name, backend = _pick_task_ai(payload)
+        q = payload.get("query") or body or "最新的新闻"
+        if backend.get("native_web_search"):
+            # qwen 等带原生搜索能力的 CLI，直接让 AI 自行检索
             prompt = f"请搜索并总结关于以下主题的最新新闻：{q}。重要提示：必须在回复中包含每条新闻的原始链接（URL），不要删减链接信息。"
+            body = call_ai_text(ai_name, backend, prompt)
+        else:
+            # API 系及不支持原生搜索的 CLI：先用 web_search() 抓取结果，再让 AI 汇总
+            results = web_search(q, SEARCH_RESULTS_COUNT)
+            if results:
+                search_ctx = format_search_results(results)
+                prompt = (
+                    f"以下是关于「{q}」的网络搜索结果，请将其整理为新闻摘要，"
+                    f"按重要性排列，保留并完整显示每条的原始链接（URL）。\n\n"
+                    f"{search_ctx}"
+                )
+                log.info(f"📰 news: web_search 获取 {len(results)} 条结果，交由 {ai_name} 汇总")
+            else:
+                log.warning("📰 news: web_search 无结果，直接由 AI 搜索")
+                prompt = f"请搜索并总结关于以下主题的最新新闻：{q}。重要提示：必须在回复中包含每条新闻的原始链接（URL），不要删减链接信息。"
             body = call_ai_text(ai_name, backend, prompt)
         subject = subject or "新闻汇总"
     elif task_type == "web_search":
@@ -1243,9 +1259,10 @@ def process_email(mailbox_name, ai_name, backend, em):
     
     # 如果是 Qwen 且启用了搜索，可以让 Qwen 自己处理原生搜索 (利用 Tavily/DashScope 等)
     # 此时跳过 MailMind 的预置搜索，避免逻辑重叠
-    if ai_name != "qwen":
-        search_res = search_web_if_needed(instr)
-        if search_res: instr = search_res + "\n\n" + instr
+    # [WEB_SEARCH DISABLED]
+    # if ai_name != "qwen":
+    #     search_res = search_web_if_needed(instr)
+    #     if search_res: instr = search_res + "\n\n" + instr
     
     sub, body, sch_at, sch_every, sch_until, atts, task_type, task_payload, output = call_ai(ai_name, backend, instr)
     detected_tasks = []

@@ -469,9 +469,9 @@ do_uninstall() {
 
 _ensure_webui_deps() {
     ensure_venv
-    if ! "$VENV_PYTHON" -c "import fastapi" 2>/dev/null; then
+    if ! "$VENV_PYTHON" -c "import fastapi, itsdangerous" 2>/dev/null; then
         info "正在安装 Web UI 依赖..."
-        "$VENV_PIP" install "fastapi>=0.110.0" "uvicorn[standard]>=0.29.0" "jinja2>=3.1.0" "python-multipart>=0.0.9" --quiet || {
+        "$VENV_PIP" install "fastapi>=0.110.0" "uvicorn[standard]>=0.29.0" "jinja2>=3.1.0" "python-multipart>=0.0.9" "itsdangerous>=2.1.0" --quiet || {
             error "依赖安装失败"
             exit 1
         }

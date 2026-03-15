@@ -12,6 +12,7 @@ import asyncio
 import html
 import os
 import re
+import secrets
 import signal
 import subprocess
 import sys
@@ -21,10 +22,11 @@ from typing import AsyncGenerator, Optional
 
 import httpx
 import uvicorn
-from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import Depends, FastAPI, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).parent.parent
@@ -80,12 +82,57 @@ MAILBOX_PREFIX: dict[str, str] = {
     "custom": "MAIL_CUSTOM",
 }
 
+# ─── Auth ─────────────────────────────────────────────────────────────────────
+_SESSION_SECRET = os.environ.get("WEBUI_SECRET") or secrets.token_hex(32)
+WEBUI_PASSWORD: str = ""  # loaded lazily from .env
+
+
+def _get_password() -> str:
+    """Read WEBUI_PASSWORD from env or .env file at runtime."""
+    val = os.environ.get("WEBUI_PASSWORD", "")
+    if val:
+        return val
+    env = {}
+    if ENV_FILE.exists():
+        with ENV_FILE.open("r", encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                k = k.strip(); v = v.strip()
+                if v and v[0] in ('"', "'"):
+                    q = v[0]; end = v.find(q, 1)
+                    v = v[1:end] if end != -1 else v[1:]
+                else:
+                    v = v.split("#")[0].strip()
+                env[k] = v
+    return env.get("WEBUI_PASSWORD", "")
+
+
+def require_auth(request: Request):
+    """Dependency: redirect to /login if not authenticated."""
+    pw = _get_password()
+    if pw and not request.session.get("authenticated"):
+        raise _LoginRedirect()
+
+
+class _LoginRedirect(Exception):
+    pass
+
+
 # ─── FastAPI app ──────────────────────────────────────────────────────────────
 app = FastAPI(title="MailMind Web UI")
+app.add_middleware(SessionMiddleware, secret_key=_SESSION_SECRET, max_age=86400 * 30)
 
 app.mount("/static", StaticFiles(directory=str(WEBUI_DIR / "static")), name="static")
 
 templates = Jinja2Templates(directory=str(WEBUI_DIR / "templates"))
+
+
+@app.exception_handler(_LoginRedirect)
+async def login_redirect_handler(request: Request, exc: _LoginRedirect):
+    return RedirectResponse(url="/login", status_code=303)
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -125,30 +172,41 @@ def write_env(updates: dict[str, str]) -> None:
             lines = f.readlines()
 
     handled: set[str] = set()
+    # Track first commented-line index for each key (fallback if no active line exists)
+    first_commented: dict[str, int] = {}
 
-    # Update existing keys in-place (including commented-out lines)
+    # First pass: update active (non-commented) lines only
     for i, raw_line in enumerate(lines):
         line = raw_line.rstrip("\n")
-        # Match both active and commented-out key assignments
-        m = re.match(r'^(#\s*)?([A-Z_][A-Z0-9_]*)\s*=', line)
+        m = re.match(r'^(#\s*)([A-Z_][A-Z0-9_]*)\s*=', line)
         if m:
             key = m.group(2)
-            if key in updates:
-                value = updates[key]
-                # Escape double-quotes in value
-                safe_value = value.replace('"', '\\"')
+            if key in updates and key not in first_commented:
+                first_commented[key] = i
+            continue
+        m = re.match(r'^([A-Z_][A-Z0-9_]*)\s*=', line)
+        if m:
+            key = m.group(1)
+            if key in updates and key not in handled:
+                safe_value = updates[key].replace('"', '\\"')
                 lines[i] = f'{key}="{safe_value}"\n'
                 handled.add(key)
 
-    # Append new keys that weren't in the file
+    # Second pass: activate the first commented line for keys not yet handled
+    for key, idx in first_commented.items():
+        if key not in handled:
+            safe_value = updates[key].replace('"', '\\"')
+            lines[idx] = f'{key}="{safe_value}"\n'
+            handled.add(key)
+
+    # Append new keys that weren't in the file at all
     new_keys = [k for k in updates if k not in handled]
     if new_keys:
         if lines and not lines[-1].endswith("\n"):
             lines.append("\n")
         lines.append("\n# ─── Web UI additions ────────────────────────────────\n")
         for key in new_keys:
-            value = updates[key]
-            safe_value = value.replace('"', '\\"')
+            safe_value = updates[key].replace('"', '\\"')
             lines.append(f'{key}="{safe_value}"\n')
 
     with ENV_FILE.open("w", encoding="utf-8") as f:
@@ -245,8 +303,28 @@ def strip_ansi(text: str) -> str:
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
 
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, error: str = ""):
+    return templates.TemplateResponse("login.html", {"request": request, "error": error})
+
+
+@app.post("/login", response_class=HTMLResponse)
+async def login_submit(request: Request, password: str = Form("")):
+    pw = _get_password()
+    if pw and secrets.compare_digest(password, pw):
+        request.session["authenticated"] = True
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse("login.html", {"request": request, "error": "密码错误"})
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=303)
+
+
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+async def index(request: Request, _auth=Depends(require_auth)):
     env = read_env()
     status = get_status()
     mail_config = get_mail_config(env)
@@ -260,7 +338,7 @@ async def index(request: Request):
 
 
 @app.get("/partials/header_status", response_class=HTMLResponse)
-async def header_status(request: Request):
+async def header_status(request: Request, _auth=Depends(require_auth)):
     status = get_status()
     return templates.TemplateResponse("partials/header_status.html", {
         "request": request,
@@ -271,7 +349,7 @@ async def header_status(request: Request):
 
 
 @app.get("/tabs/mail", response_class=HTMLResponse)
-async def tab_mail(request: Request):
+async def tab_mail(request: Request, _auth=Depends(require_auth)):
     env = read_env()
     mail_config = get_mail_config(env)
     return templates.TemplateResponse("partials/tab_mail.html", {
@@ -283,7 +361,7 @@ async def tab_mail(request: Request):
 
 
 @app.get("/tabs/ai", response_class=HTMLResponse)
-async def tab_ai(request: Request):
+async def tab_ai(request: Request, _auth=Depends(require_auth)):
     env = read_env()
     return templates.TemplateResponse("partials/tab_ai.html", {
         "request": request,
@@ -294,14 +372,14 @@ async def tab_ai(request: Request):
 
 
 @app.get("/tabs/logs", response_class=HTMLResponse)
-async def tab_logs(request: Request):
+async def tab_logs(request: Request, _auth=Depends(require_auth)):
     return templates.TemplateResponse("partials/tab_logs.html", {
         "request": request,
     })
 
 
 @app.post("/autoconfig", response_class=HTMLResponse)
-async def autoconfig(request: Request, email_input: str = Form("")):
+async def autoconfig(request: Request, email_input: str = Form(""), _auth=Depends(require_auth)):
     email_address = email_input.strip()
     domain = ""
     mailbox_type = ""
@@ -332,7 +410,7 @@ async def autoconfig(request: Request, email_input: str = Form("")):
 
 
 @app.post("/config/mail", response_class=HTMLResponse)
-async def config_mail(request: Request):
+async def config_mail(request: Request, _auth=Depends(require_auth)):
     form = await request.form()
     data = dict(form)
     env = read_env()
@@ -377,7 +455,13 @@ async def config_mail(request: Request):
 
     try:
         write_env(updates)
-        feedback = {"ok": True, "message": "邮件设置已保存"}
+        was_running = get_status()["running"]
+        if was_running:
+            subprocess.run(["bash", str(ROOT / "manage.sh"), "restart"],
+                           capture_output=True, timeout=30, cwd=str(ROOT))
+            feedback = {"ok": True, "message": "邮件设置已保存，守护进程已自动重启"}
+        else:
+            feedback = {"ok": True, "message": "邮件设置已保存"}
     except Exception as e:
         feedback = {"ok": False, "message": f"保存失败: {e}"}
 
@@ -392,7 +476,7 @@ async def config_mail(request: Request):
 
 
 @app.post("/config/ai", response_class=HTMLResponse)
-async def config_ai(request: Request):
+async def config_ai(request: Request, _auth=Depends(require_auth)):
     form = await request.form()
     data = dict(form)
     env = read_env()
@@ -414,7 +498,13 @@ async def config_ai(request: Request):
 
     try:
         write_env(updates)
-        feedback = {"ok": True, "message": "AI 设置已保存"}
+        was_running = get_status()["running"]
+        if was_running:
+            subprocess.run(["bash", str(ROOT / "manage.sh"), "restart"],
+                           capture_output=True, timeout=30, cwd=str(ROOT))
+            feedback = {"ok": True, "message": "AI 设置已保存，守护进程已自动重启"}
+        else:
+            feedback = {"ok": True, "message": "AI 设置已保存"}
     except Exception as e:
         feedback = {"ok": False, "message": f"保存失败: {e}"}
 
@@ -428,7 +518,7 @@ async def config_ai(request: Request):
 
 
 @app.post("/daemon/{action}", response_class=HTMLResponse)
-async def daemon_action(request: Request, action: str):
+async def daemon_action(request: Request, action: str, _auth=Depends(require_auth)):
     if action not in ("start", "stop", "restart"):
         status = get_status()
         return templates.TemplateResponse("partials/header_status.html", {
@@ -475,13 +565,33 @@ async def daemon_action(request: Request, action: str):
 
 
 @app.get("/logs/stream")
-async def logs_stream(request: Request):
+async def logs_stream(request: Request, _auth=Depends(require_auth)):
     """SSE endpoint: tail daemon.log and push each new line to client."""
 
     async def event_generator() -> AsyncGenerator[str, None]:
-        # Start from end of file
+        TAIL_LINES = 200
+
+        def _classify(line: str) -> str:
+            lower = line.lower()
+            if any(w in lower for w in ("error", "exception", "traceback", "failed", "critical")):
+                return "ll error"
+            if any(w in lower for w in ("warn", "warning")):
+                return "ll warn"
+            return "ll"
+
+        def _make_event(line: str) -> str:
+            div = f'<div class="{_classify(line)}">{html.escape(line)}</div>'
+            return f"data: {div}\n\n"
+
+        # Send last TAIL_LINES lines immediately
         if LOG_FILE.exists():
-            offset = LOG_FILE.stat().st_size
+            with LOG_FILE.open("r", encoding="utf-8", errors="replace") as f:
+                all_lines = f.readlines()
+                offset = f.tell()
+            for line in all_lines[-TAIL_LINES:]:
+                line = line.rstrip()
+                if line:
+                    yield _make_event(line)
         else:
             offset = 0
 
@@ -509,18 +619,7 @@ async def logs_stream(request: Request):
                             line = line.rstrip()
                             if not line:
                                 continue
-                            # Classify line for CSS
-                            lower = line.lower()
-                            if any(w in lower for w in ("error", "exception", "traceback", "failed", "critical")):
-                                css_class = "ll error"
-                            elif any(w in lower for w in ("warn", "warning")):
-                                css_class = "ll warn"
-                            else:
-                                css_class = "ll"
-
-                            escaped = html.escape(line)
-                            div = f'<div class="{css_class}">{escaped}</div>'
-                            yield f"data: {div}\n\n"
+                            yield _make_event(line)
                             last_keepalive = now
                 except Exception:
                     pass
