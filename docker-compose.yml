@@ -1,0 +1,13 @@
+services:
+  mailmind:
+    build: .
+    container_name: mailmind
+    env_file: .env
+    volumes:
+      - ./reports:/app/reports
+      - ./tasks.db:/app/tasks.db
+      - ./processed_ids_126.json:/app/processed_ids_126.json
+      - ./processed_ids_gmail.json:/app/processed_ids_gmail.json
+    restart: unless-stopped
+    # 也可以运行 Web UI
+    # command: python webui/server.py

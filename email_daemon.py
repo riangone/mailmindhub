@@ -14,13 +14,17 @@ from typing import Optional
 # 核心配置与模块
 from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE
 from core.validator import validate_config
-from core.mail_client import fetch_unread_emails, imap_login, get_oauth_token
+from core.mail_client import fetch_unread_emails, imap_login, get_oauth_token, fetch_message_content_by_id
 from core.mail_sender import send_reply, archive_output
 from ai.providers import get_ai_provider
 from utils.parser import parse_ai_response, auto_detect_tasks
 from utils.logger import log
 from tasks.scheduler import scheduler
 from tasks.registry import execute_task_logic
+from concurrent.futures import ThreadPoolExecutor
+
+# 初始化线程池
+executor = ThreadPoolExecutor(max_workers=5)
 
 # 已处理 ID 路径
 PROCESSED_IDS_PATH: Optional[str] = None
@@ -58,7 +62,18 @@ def call_ai(ai_name: str, backend: dict, instruction: str):
 
 def process_email(mailbox_name, ai_name, backend, em):
     log.info(f"📨 收到指令: [{em['subject']}] 来自 {em['from_email']}")
-    instr = f"发件人：{em['from']}\n主题：{em['subject']}\n\n{em['body']}"
+    
+    # 尝试获取会话上下文
+    context_msg = ""
+    if em.get("in_reply_to"):
+        log.info(f"🔍 检测到回复，正在获取上下文: {em['in_reply_to']}")
+        context_msg = fetch_message_content_by_id(MAILBOXES[mailbox_name], em["in_reply_to"])
+    
+    instr = f"发件人：{em['from']}\n主题：{em['subject']}\n\n"
+    if context_msg:
+        instr += f"--- 上下文（上一封邮件内容） ---\n{context_msg}\n\n--- 当前邮件内容 ---\n"
+    
+    instr += em['body']
     for att in em.get("attachments", []):
         if att["is_text"]: instr += f"\n\n--- 附件：{att['filename']} ---\n{att['content']}"
     
@@ -123,12 +138,18 @@ def run_poll(mailbox_name, ai_name, backend):
     mailbox = MAILBOXES[mailbox_name]
     interval = POLL_INTERVAL
     log.info(f"✅ {mailbox_name} 轮询模式就绪（每 {interval} 秒）")
+    retries = 0
     while True:
         try:
             for em in fetch_unread_emails(mailbox, processed_ids):
-                process_email(mailbox_name, ai_name, backend, em)
+                executor.submit(process_email, mailbox_name, ai_name, backend, em)
+            retries = 0 # 成功后重置
         except Exception as e:
-            log.error(f"轮询异常: {e}")
+            retries += 1
+            wait_time = min(2 ** retries, 300)
+            log.error(f"轮询异常: {e}。{wait_time} 秒后重试 ({retries})...")
+            time.sleep(wait_time)
+            continue
         time.sleep(interval)
 
 def run_idle(mailbox_name, ai_name, backend):
@@ -140,6 +161,7 @@ def run_idle(mailbox_name, ai_name, backend):
         return
     
     mailbox = MAILBOXES[mailbox_name]
+    retries = 0
     while True:
         try:
             with imapclient.IMAPClient(mailbox["imap_server"], ssl=True) as client:
@@ -157,15 +179,18 @@ def run_idle(mailbox_name, ai_name, backend):
                     return
                 
                 log.info(f"✅ {mailbox_name} IDLE 就绪")
+                retries = 0 # 重置重试计数
                 while True:
                     for em in fetch_unread_emails(mailbox, processed_ids):
-                        process_email(mailbox_name, ai_name, backend, em)
+                        executor.submit(process_email, mailbox_name, ai_name, backend, em)
                     client.idle()
                     client.idle_check(timeout=300)
                     client.idle_done()
         except Exception as e:
-            log.error(f"IDLE 异常: {e}")
-            time.sleep(10)
+            retries += 1
+            wait_time = min(2 ** retries, 300) # 指数退避，最高 5 分钟
+            log.error(f"IDLE 异常: {e}。{wait_time} 秒后重试 ({retries})...")
+            time.sleep(wait_time)
 
 def main():
     parser = argparse.ArgumentParser()

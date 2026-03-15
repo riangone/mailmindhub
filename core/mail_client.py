@@ -3,6 +3,7 @@ import email
 import os
 import json
 import logging
+import base64
 from email.header import decode_header as _decode_header
 from email.utils import parseaddr
 from core.config import MAILBOXES
@@ -56,7 +57,6 @@ def get_oauth_token(mailbox: dict) -> str:
     return ""
 
 def make_oauth_string(address: str, token: str) -> str:
-    import base64
     return base64.b64encode(f"user={address}\x01auth=Bearer {token}\x01\x01".encode()).decode()
 
 def decode_str(s: str) -> str:
@@ -144,7 +144,6 @@ def fetch_unread_emails(mailbox: dict, processed_ids: set):
             if not is_sender_allowed(sender_email, allowed):
                 continue
             if id_prefix:
-                # Email from allowed sender is in spam — move to INBOX
                 try:
                     mail.copy(mid, "INBOX")
                     mail.store(mid, "+FLAGS", "\\Deleted")
@@ -153,9 +152,23 @@ def fetch_unread_emails(mailbox: dict, processed_ids: set):
                 except Exception as e:
                     log.warning(f"移动垃圾邮件失败: {e}")
             body, atts = get_body_and_attachments(msg)
-            emails.append({"id": eid, "from": sender, "from_email": sender_email,
-                           "subject": decode_str(msg.get("Subject", "(无主题)")),
-                           "message_id": msg.get("Message-ID", ""), "body": body, "attachments": atts})
+            
+            # Extract headers for conversation context
+            message_id = msg.get("Message-ID", "")
+            in_reply_to = msg.get("In-Reply-To", "")
+            references = msg.get("References", "")
+            
+            emails.append({
+                "id": eid, 
+                "from": sender, 
+                "from_email": sender_email,
+                "subject": decode_str(msg.get("Subject", "(无主题)")),
+                "message_id": message_id, 
+                "in_reply_to": in_reply_to,
+                "references": references,
+                "body": body, 
+                "attachments": atts
+            })
 
     _fetch_folder("INBOX")
     spam_folder = mailbox.get("spam_folder", "")
@@ -164,3 +177,28 @@ def fetch_unread_emails(mailbox: dict, processed_ids: set):
 
     mail.logout()
     return emails
+
+def fetch_message_content_by_id(mailbox: dict, message_id: str) -> str:
+    """根据 Message-ID 获取邮件正文"""
+    if not message_id: return ""
+    mail = imap_login(mailbox)
+    content = ""
+    try:
+        # 尝试在收件箱和已发送中查找
+        for folder in ["INBOX", '"[Gmail]/Sent Mail"', "Sent"]:
+            try:
+                status, _ = mail.select(folder, readonly=True)
+                if status != "OK": continue
+                _, data = mail.search(None, f'HEADER Message-ID "{message_id}"')
+                ids = data[0].split()
+                if ids:
+                    _, msg_data = mail.fetch(ids[0], "(RFC822)")
+                    msg = email.message_from_bytes(msg_data[0][1])
+                    body, _ = get_body_and_attachments(msg)
+                    content = body
+                    break
+            except Exception:
+                continue
+    finally:
+        mail.logout()
+    return content
