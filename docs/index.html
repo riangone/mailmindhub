@@ -610,8 +610,8 @@
 
 <!-- ══ STATS ══ -->
 <div class="stats-bar" style="position:relative;z-index:1;margin:0 auto;max-width:960px;">
-  <div class="stat"><div class="stat-num">10+</div><div class="stat-label" data-i18n="stat_ai"></div></div>
-  <div class="stat"><div class="stat-num">6</div><div class="stat-label" data-i18n="stat_mail"></div></div>
+  <div class="stat"><div class="stat-num">18</div><div class="stat-label" data-i18n="stat_ai"></div></div>
+  <div class="stat"><div class="stat-num">8</div><div class="stat-label" data-i18n="stat_mail"></div></div>
   <div class="stat"><div class="stat-num">7</div><div class="stat-label" data-i18n="stat_task"></div></div>
   <div class="stat"><div class="stat-num">&lt;60s</div><div class="stat-label" data-i18n="stat_time"></div></div>
 </div>
@@ -751,12 +751,20 @@
       <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">Gemini CLI</div><div class="ai-desc" data-i18n="ai_gemini_cli_desc"></div><div class="ai-req" data-i18n="ai_cli_req"></div></div>
       <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">Codex CLI</div><div class="ai-desc" data-i18n="ai_codex_desc"></div><div class="ai-req" data-i18n="ai_cli_req"></div></div>
       <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">Qwen CLI</div><div class="ai-desc" data-i18n="ai_qwen_cli_desc"></div><div class="ai-req" data-i18n="ai_cli_req"></div></div>
+      <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">GitHub Copilot</div><div class="ai-desc" data-i18n="ai_copilot_desc"></div><div class="ai-req">GITHUB_COPILOT_TOKEN</div></div>
       <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Anthropic</div><div class="ai-desc" data-i18n="ai_anthropic_desc"></div><div class="ai-req">ANTHROPIC_API_KEY</div></div>
       <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">OpenAI</div><div class="ai-desc" data-i18n="ai_openai_desc"></div><div class="ai-req">OPENAI_API_KEY</div></div>
       <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Gemini API</div><div class="ai-desc" data-i18n="ai_gemini_desc"></div><div class="ai-req">GEMINI_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Qwen API</div><div class="ai-desc" data-i18n="ai_qwen_desc"></div><div class="ai-req">QWEN_API_KEY</div></div>
       <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">DeepSeek</div><div class="ai-desc" data-i18n="ai_deepseek_desc"></div><div class="ai-req">DEEPSEEK_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Copilot</div><div class="ai-desc" data-i18n="ai_copilot_desc"></div><div class="ai-req">GITHUB_COPILOT_TOKEN</div></div>
+      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Groq</div><div class="ai-desc" data-i18n="ai_groq_desc"></div><div class="ai-req">GROQ_API_KEY</div></div>
+      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Perplexity</div><div class="ai-desc" data-i18n="ai_perplexity_desc"></div><div class="ai-req">PERPLEXITY_API_KEY</div></div>
+      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Cohere</div><div class="ai-desc" data-i18n="ai_cohere_desc"></div><div class="ai-req">COHERE_API_KEY</div></div>
+      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Qwen API</div><div class="ai-desc" data-i18n="ai_qwen_desc"></div><div class="ai-req">QWEN_API_KEY</div></div>
+      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Moonshot Kimi</div><div class="ai-desc" data-i18n="ai_moonshot_desc"></div><div class="ai-req">MOONSHOT_API_KEY</div></div>
+      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">智谱 GLM</div><div class="ai-desc" data-i18n="ai_glm_desc"></div><div class="ai-req">GLM_API_KEY</div></div>
+      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">讯飞 Spark</div><div class="ai-desc" data-i18n="ai_spark_desc"></div><div class="ai-req">SPARK_API_KEY</div></div>
+      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">百度 Ernie</div><div class="ai-desc" data-i18n="ai_ernie_desc"></div><div class="ai-req">ERNIE_API_KEY</div></div>
+      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">零一万物 Yi</div><div class="ai-desc" data-i18n="ai_yi_desc"></div><div class="ai-req">YI_API_KEY</div></div>
     </div>
   </div>
 </section>
@@ -843,6 +851,8 @@
       <div class="mailbox-card reveal"><span class="mailbox-icon">💬</span><div class="mailbox-name">QQ Mail</div><div class="mailbox-auth">IMAP · App Password</div></div>
       <div class="mailbox-card reveal"><span class="mailbox-icon">✉️</span><div class="mailbox-name">Gmail</div><div class="mailbox-auth">OAuth 2.0 / App Password</div></div>
       <div class="mailbox-card reveal"><span class="mailbox-icon">🪟</span><div class="mailbox-name">Outlook</div><div class="mailbox-auth">OAuth 2.0 (device code)</div></div>
+      <div class="mailbox-card reveal"><span class="mailbox-icon">☁️</span><div class="mailbox-name">iCloud Mail</div><div class="mailbox-auth">IMAP · App-specific Password</div></div>
+      <div class="mailbox-card reveal"><span class="mailbox-icon">🔒</span><div class="mailbox-name">ProtonMail</div><div class="mailbox-auth">IMAP · Bridge Password</div></div>
       <div class="mailbox-card reveal"><span class="mailbox-icon">⚙️</span><div class="mailbox-name" data-i18n="mb_custom"></div><div class="mailbox-auth" data-i18n="mb_custom_auth"></div></div>
     </div>
   </div>
@@ -923,8 +933,8 @@ const T = {
     stat_ai: 'AI Backends', stat_mail: 'Email Providers', stat_task: 'Task Types', stat_time: 'Response Time',
     feat_label: 'Why MailMind',
     feat_title: 'Everything your inbox<br/>was missing',
-    f1_h: 'Multi-Mailbox Support', f1_p: 'Works natively with 126, 163, QQ Mail, Gmail (OAuth & App Password), Outlook (OAuth), and any custom IMAP provider. IMAP IDLE for instant push delivery.',
-    f2_h: '10+ AI Backends', f2_p: 'CLI mode uses local AI tools — requires installation & auth first. API mode calls cloud services directly with just an API key.',
+    f1_h: '8 Mailbox Providers', f1_p: 'Works natively with 126, 163, QQ Mail, Gmail (OAuth & App Password), Outlook (OAuth), iCloud (app-specific password), ProtonMail (Bridge), and any custom IMAP provider. IMAP IDLE for instant push delivery.',
+    f2_h: '18 AI Backends', f2_p: 'CLI mode uses local AI tools — requires installation & auth first. API mode calls cloud services directly with just an API key.',
     f3_h: 'Scheduled Tasks', f3_p: 'Natural language scheduling. "Every day 8am weather Tokyo" or "Every Monday AI news". Persisted across daemon restarts.',
     f4_h: 'Whitelist Security', f4_p: 'Per-mailbox sender whitelists. Only trusted addresses or domains trigger AI processing. Strangers are silently ignored.',
     f5_h: 'Attachment Support', f5_p: 'Attach .txt, .md, .csv to enrich AI context. AI can also return file attachments in its reply.',
@@ -953,6 +963,7 @@ const T = {
     ai_claude_desc: "Anthropic's coding agent", ai_gemini_cli_desc: 'Google Gemini local', ai_codex_desc: 'OpenAI Codex local', ai_qwen_cli_desc: 'Alibaba Qwen local',
     ai_cli_req: 'Requires CLI install + auth',
     ai_anthropic_desc: 'Claude via API key', ai_openai_desc: 'GPT-4o via API key', ai_gemini_desc: 'Gemini via API key', ai_qwen_desc: 'Qwen via API key', ai_deepseek_desc: 'DeepSeek via API key', ai_copilot_desc: 'GitHub Copilot token',
+    ai_groq_desc: 'Llama via Groq ultra-fast inference', ai_perplexity_desc: 'Perplexity search-augmented AI', ai_cohere_desc: 'Cohere enterprise API', ai_moonshot_desc: 'Moonshot Kimi API', ai_glm_desc: 'Zhipu GLM API', ai_spark_desc: 'iFlytek Spark API', ai_ernie_desc: 'Baidu Ernie API', ai_yi_desc: '01.AI Yi API',
     cmp_label: 'Compare',
     cmp_title: 'Choose your AI Experience',
     cmp_sub: 'Web-based tools like OpenClaw offer rich, real-time interactive experiences ideal for long creative sessions. MailMind is designed for a different purpose: asynchronous productivity within your existing workflow, working wherever your email does.',
@@ -997,8 +1008,8 @@ const T = {
     stat_ai: 'AI 后端', stat_mail: '邮箱支持', stat_task: '任务类型', stat_time: '响应时间',
     feat_label: '为什么选择 MailMind',
     feat_title: '你的收件箱缺少的<br/>一切，都在这里',
-    f1_h: '多邮箱支持', f1_p: '原生支持 126、163、QQ、Gmail（OAuth/应用密码）、Outlook（OAuth）及任意自定义 IMAP 邮箱。支持 IMAP IDLE 实时推送。',
-    f2_h: '10+ AI 后端', f2_p: 'CLI 模式使用本地 AI 工具，需提前安装并完成认证。API 模式只需填写 API Key，无需额外配置。',
+    f1_h: '8 邮箱支持', f1_p: '原生支持 126、163、QQ、Gmail（OAuth/应用密码）、Outlook（OAuth）、iCloud（应用专用密码）、ProtonMail（Bridge）及任意自定义 IMAP。支持 IMAP IDLE 实时推送。',
+    f2_h: '18 AI 后端', f2_p: 'CLI 模式使用本地 AI 工具，需提前安装并完成认证。API 模式只需填写 API Key，无需额外配置。',
     f3_h: '定时任务', f3_p: '自然语言时间解析。"每天 8:00 天气 Tokyo"。任务基于 SQLite 持久化，支持宕机自动补执行。',
     f4_h: '白名单安全', f4_p: '每个邮箱独立配置白名单。只有可信地址或域名才能触发 AI 处理，陌生人的邮件会被静默忽略。',
     f5_h: '上下文与附件', f5_p: '支持附件上下文，且 AI 现在能理解邮件回复的对话流（In-Reply-To 上下文追踪）。',
@@ -1027,6 +1038,7 @@ const T = {
     ai_claude_desc: 'Anthropic 编程助手', ai_gemini_cli_desc: 'Google Gemini 本地', ai_codex_desc: 'OpenAI Codex 本地', ai_qwen_cli_desc: '阿里通义千问 本地',
     ai_cli_req: '需安装 CLI 并完成认证',
     ai_anthropic_desc: 'Claude API 调用', ai_openai_desc: 'GPT-4o API 调用', ai_gemini_desc: 'Gemini API 调用', ai_qwen_desc: '通义千问 API 调用', ai_deepseek_desc: 'DeepSeek API 调用', ai_copilot_desc: 'GitHub Copilot Token',
+    ai_groq_desc: 'Groq 高速推理（Llama）', ai_perplexity_desc: 'Perplexity 搜索增强 AI', ai_cohere_desc: 'Cohere 企业级 API', ai_moonshot_desc: '月之暗面 Kimi API', ai_glm_desc: '智谱 GLM API', ai_spark_desc: '讯飞星火 API', ai_ernie_desc: '百度文心一言 API', ai_yi_desc: '零一万物 Yi API',
     cmp_label: '对比',
     cmp_title: '选择适合你的 AI 体验',
     cmp_sub: 'OpenClaw 等 Web 工具提供了丰富、直观的实时交互体验，非常适合沉浸式对话和长文本创作。而 MailMind 则专注于异步生产力：它无缝集成在你已有的收件箱中，让你无需等待响应，在任何设备上都能随时随地调度 AI。',
@@ -1071,8 +1083,8 @@ const T = {
     stat_ai: 'AI バックエンド', stat_mail: 'メールプロバイダー', stat_task: 'タスクタイプ', stat_time: '応答時間',
     feat_label: 'MailMind の特徴',
     feat_title: '受信箱に足りなかった<br/>すべてが揃う',
-    f1_h: 'マルチメールボックス', f1_p: '126、163、QQ、Gmail（OAuth/アプリパスワード）、Outlook（OAuth）、カスタムIMAPに対応。IMAP IDLEによるリアルタイム通知。',
-    f2_h: '10以上のAIバックエンド', f2_p: 'CLIモードはローカルAIツールを使用（事前インストール・認証が必要）。APIモードはAPIキーのみで利用可能。',
+    f1_h: '8 メールプロバイダー', f1_p: '126、163、QQ、Gmail（OAuth/アプリパスワード）、Outlook（OAuth）、iCloud（アプリ専用パスワード）、ProtonMail（Bridge）、カスタムIMAPに対応。IMAP IDLEによるリアルタイム通知。',
+    f2_h: '18 AIバックエンド', f2_p: 'CLIモードはローカルAIツールを使用（事前インストール・認証が必要）。APIモードはAPIキーのみで利用可能。',
     f3_h: '定期タスク', f3_p: '自然言語でスケジュール設定。「毎日8時 天気 Tokyo」「毎週月曜AIニュース」。デーモン再起動後も保持。',
     f4_h: 'ホワイトリスト保護', f4_p: 'メールボックスごとに送信者ホワイトリストを設定。信頼できるアドレス・ドメインのみAI処理を許可。',
     f5_h: '添付ファイル対応', f5_p: '.txt .md .csv ファイルをAIコンテキストとして添付可能。AIの返信にもファイルを添付できます。',
@@ -1101,13 +1113,14 @@ const T = {
     ai_claude_desc: 'Anthropic コーディングAI', ai_gemini_cli_desc: 'Google Gemini ローカル', ai_codex_desc: 'OpenAI Codex ローカル', ai_qwen_cli_desc: 'Alibaba Qwen ローカル',
     ai_cli_req: 'CLIインストール・認証が必要',
     ai_anthropic_desc: 'Claude APIキー', ai_openai_desc: 'GPT-4o APIキー', ai_gemini_desc: 'Gemini APIキー', ai_qwen_desc: 'Qwen APIキー', ai_deepseek_desc: 'DeepSeek APIキー', ai_copilot_desc: 'GitHub Copilotトークン',
+    ai_groq_desc: 'Groq 高速推論（Llama）', ai_perplexity_desc: 'Perplexity 検索拡張 AI', ai_cohere_desc: 'Cohere エンタープライズ API', ai_moonshot_desc: '月之暗面 Kimi API', ai_glm_desc: '智谱 GLM API', ai_spark_desc: '讯飞 Spark API', ai_ernie_desc: '百度 Ernie API', ai_yi_desc: '零一万物 Yi API',
     cmp_label: 'なぜ他のツールではなく？',
     cmp_title: 'MailMind vs OpenClaw<br/>& 類似ツール',
     cmp_sub: 'OpenClawなどのAIツールは通常、ブラウザ・専用アプリ・常時オンラインを必要とします。MailMindはメールを使います — どこでも使えるユニバーサルで非同期なインターフェース。',
     cmp_col_feat: '機能', cmp_col_others: 'OpenClaw / WebAIツール',
     cmp_r1_feat: 'インターフェース', cmp_r1_mm: 'メール — 新UIを学ばなくてよい', cmp_r1_ot: 'ブラウザ / 専用アプリ',
-    cmp_r2_feat: 'AIバックエンド柔軟性', cmp_r2_mm: '10以上（CLI & API）', cmp_r2_ot: '通常1つのAIに固定',
-    cmp_r3_feat: 'メールボックス連携', cmp_r3_mm: '5プロバイダー＋カスタム', cmp_r3_ot: 'なし',
+    cmp_r2_feat: 'AIバックエンド柔軟性', cmp_r2_mm: '18（CLI & API）', cmp_r2_ot: '通常1つのAIに固定',
+    cmp_r3_feat: 'メールボックス連携', cmp_r3_mm: '8 プロバイダー＋自動検出', cmp_r3_ot: 'なし',
     cmp_r4_feat: 'スケジュール自動化', cmp_r4_mm: '✓ 7タイプ内蔵', cmp_r4_ot: '✗ または有料',
     cmp_r5_feat: 'セルフホスト/オフライン', cmp_r5_mm: '✓ ローカル完全制御', cmp_r5_ot: '✗ クラウド依存',
     cmp_r6_feat: '添付ファイル', cmp_r6_mm: '✓ 送受信対応', cmp_r6_ot: 'ツールにより異なる',
@@ -1145,8 +1158,8 @@ const T = {
     stat_ai: 'AI 백엔드', stat_mail: '이메일 제공자', stat_task: '작업 유형', stat_time: '응답 시간',
     feat_label: 'MailMind를 선택하는 이유',
     feat_title: '받은 편지함에 부족했던<br/>모든 것',
-    f1_h: '멀티 메일박스 지원', f1_p: '126, 163, QQ, Gmail(OAuth/앱 비밀번호), Outlook(OAuth), 커스텀 IMAP 지원. IMAP IDLE 실시간 푸시 제공.',
-    f2_h: '10개 이상의 AI 백엔드', f2_p: 'CLI 모드는 로컬 AI 도구 사용(사전 설치·인증 필요). API 모드는 API 키만으로 바로 사용 가능.',
+    f1_h: '8개 메일박스 지원', f1_p: '126, 163, QQ, Gmail(OAuth/앱 비밀번호), Outlook(OAuth), iCloud(앱 전용 비밀번호), ProtonMail(Bridge), 커스텀 IMAP 지원. IMAP IDLE 실시간 푸시 제공.',
+    f2_h: '18개 AI 백엔드', f2_p: 'CLI 모드는 로컬 AI 도구 사용(사전 설치·인증 필요). API 모드는 API 키만으로 바로 사용 가능.',
     f3_h: '예약 작업', f3_p: '자연어 스케줄링. "매일 8시 날씨 Tokyo", "매주 월요일 AI 뉴스 요약". 데몬 재시작 후에도 유지.',
     f4_h: '화이트리스트 보안', f4_p: '메일박스별 발신자 화이트리스트. 신뢰할 수 있는 주소·도메인만 AI 처리를 트리거. 낯선 사람은 무시.',
     f5_h: '첨부 파일 지원', f5_p: '.txt .md .csv를 AI 컨텍스트로 첨부 가능. AI도 회신 시 파일 첨부 가능.',
@@ -1175,13 +1188,14 @@ const T = {
     ai_claude_desc: 'Anthropic 코딩 AI', ai_gemini_cli_desc: 'Google Gemini 로컬', ai_codex_desc: 'OpenAI Codex 로컬', ai_qwen_cli_desc: 'Alibaba Qwen 로컬',
     ai_cli_req: 'CLI 설치 및 인증 필요',
     ai_anthropic_desc: 'Claude API 키', ai_openai_desc: 'GPT-4o API 키', ai_gemini_desc: 'Gemini API 키', ai_qwen_desc: 'Qwen API 키', ai_deepseek_desc: 'DeepSeek API 키', ai_copilot_desc: 'GitHub Copilot 토큰',
+    ai_groq_desc: 'Groq 고속 추론（Llama）', ai_perplexity_desc: 'Perplexity 검색 증강 AI', ai_cohere_desc: 'Cohere 엔터프라이즈 API', ai_moonshot_desc: '월지암면 Kimi API', ai_glm_desc: '智谱 GLM API', ai_spark_desc: '讯飞 Spark API', ai_ernie_desc: '바이두 Ernie API', ai_yi_desc: '零一万物 Yi API',
     cmp_label: '왜 다른 도구는 안 될까요?',
     cmp_title: 'MailMind vs OpenClaw<br/>& 유사 도구',
     cmp_sub: 'OpenClaw 등 AI 도구는 대부분 브라우저, 전용 앱, 또는 상시 온라인을 요구합니다. MailMind는 이메일을 사용합니다 — 어디서든 동작하는 범용 비동기 인터페이스.',
     cmp_col_feat: '기능', cmp_col_others: 'OpenClaw / 웹 AI 도구',
     cmp_r1_feat: '인터페이스', cmp_r1_mm: '이메일 — 새 UI 불필요', cmp_r1_ot: '브라우저 / 전용 앱',
-    cmp_r2_feat: 'AI 백엔드 유연성', cmp_r2_mm: '10개 이상 (CLI & API)', cmp_r2_ot: '보통 하나의 AI에 고정',
-    cmp_r3_feat: '메일박스 연동', cmp_r3_mm: '5개 제공자 + 커스텀', cmp_r3_ot: '없음',
+    cmp_r2_feat: 'AI 백엔드 유연성', cmp_r2_mm: '18개 (CLI & API)', cmp_r2_ot: '보통 하나의 AI에 고정',
+    cmp_r3_feat: '메일박스 연동', cmp_r3_mm: '8개 제공자 + 자동 감지', cmp_r3_ot: '없음',
     cmp_r4_feat: '예약 자동화', cmp_r4_mm: '✓ 7가지 유형 내장', cmp_r4_ot: '✗ 또는 유료',
     cmp_r5_feat: '셀프호스트/오프라인', cmp_r5_mm: '✓ 완전 로컬 제어', cmp_r5_ot: '✗ 클라우드 의존',
     cmp_r6_feat: '첨부 파일', cmp_r6_mm: '✓ 송수신 지원', cmp_r6_ot: '도구마다 다름',
