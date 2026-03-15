@@ -212,22 +212,47 @@ do_setup() {
     # ── 4. 选择 AI 后端 + API Key ────────────────────────────
     echo ""
     echo -e "${CYAN}【4/4】选择 AI 后端：${NC}"
-    echo "  1) DeepSeek API（推荐，性价比高）"
-    echo "  2) OpenAI API（gpt-4o）"
-    echo "  3) Anthropic API（claude-sonnet）"
-    echo "  4) Gemini API"
-    echo "  5) claude CLI（需本地已安装 claude 命令）"
-    echo "  6) gemini CLI（需本地已安装 gemini 命令）"
+    echo "  --- 国际模型 ---"
+    echo "   1) DeepSeek API（推荐，性价比高）"
+    echo "   2) OpenAI API（gpt-4o）"
+    echo "   3) Anthropic API（claude-sonnet）"
+    echo "   4) Gemini API"
+    echo "   5) Groq API（Llama，速度快）"
+    echo "   6) Perplexity API（sonar-pro）"
+    echo "   7) Cohere API（command-r-plus）"
+    echo "  --- 中国模型 ---"
+    echo "   8) 通义千问 API（qwen-max）"
+    echo "   9) 月之暗面 Kimi API"
+    echo "  10) 智谱 GLM API"
+    echo "  11) 讯飞星火 API"
+    echo "  12) 百度文心一言 API"
+    echo "  13) 零一万物 Yi API"
+    echo "  --- CLI 工具 ---"
+    echo "  14) claude CLI（需本地已安装 claude 命令）"
+    echo "  15) gemini CLI（需本地已安装 gemini 命令）"
+    echo "  16) qwen CLI（需本地已安装 qwen 命令）"
+    echo "  17) codex CLI（需本地已安装 codex 命令）"
     echo ""
-    read -rp "请输入数字 [1-6]: " AI_CHOICE
+    read -rp "请输入数字 [1-17]: " AI_CHOICE
 
     case "$AI_CHOICE" in
-        1) AI_BACKEND="deepseek";   AI_KEY_VAR="DEEPSEEK_API_KEY";  AI_TYPE="api" ;;
-        2) AI_BACKEND="openai";     AI_KEY_VAR="OPENAI_API_KEY";    AI_TYPE="api" ;;
-        3) AI_BACKEND="anthropic";  AI_KEY_VAR="ANTHROPIC_API_KEY"; AI_TYPE="api" ;;
-        4) AI_BACKEND="gemini-api"; AI_KEY_VAR="GEMINI_API_KEY";    AI_TYPE="api" ;;
-        5) AI_BACKEND="claude";     AI_KEY_VAR="";                  AI_TYPE="cli" ;;
-        6) AI_BACKEND="gemini";     AI_KEY_VAR="";                  AI_TYPE="cli" ;;
+        1)  AI_BACKEND="deepseek";   AI_KEY_VAR="DEEPSEEK_API_KEY";    AI_TYPE="api" ;;
+        2)  AI_BACKEND="openai";     AI_KEY_VAR="OPENAI_API_KEY";      AI_TYPE="api" ;;
+        3)  AI_BACKEND="anthropic";  AI_KEY_VAR="ANTHROPIC_API_KEY";   AI_TYPE="api" ;;
+        4)  AI_BACKEND="gemini-api"; AI_KEY_VAR="GEMINI_API_KEY";      AI_TYPE="api" ;;
+        5)  AI_BACKEND="groq";       AI_KEY_VAR="GROQ_API_KEY";        AI_TYPE="api" ;;
+        6)  AI_BACKEND="perplexity"; AI_KEY_VAR="PERPLEXITY_API_KEY";  AI_TYPE="api" ;;
+        7)  AI_BACKEND="cohere";     AI_KEY_VAR="COHERE_API_KEY";      AI_TYPE="api" ;;
+        8)  AI_BACKEND="qwen-api";   AI_KEY_VAR="QWEN_API_KEY";        AI_TYPE="api" ;;
+        9)  AI_BACKEND="moonshot";   AI_KEY_VAR="MOONSHOT_API_KEY";    AI_TYPE="api" ;;
+        10) AI_BACKEND="glm";        AI_KEY_VAR="GLM_API_KEY";         AI_TYPE="api" ;;
+        11) AI_BACKEND="spark";      AI_KEY_VAR="SPARK_API_KEY";       AI_TYPE="api" ;;
+        12) AI_BACKEND="ernie";      AI_KEY_VAR="ERNIE_API_KEY";       AI_TYPE="api" ;;
+        13) AI_BACKEND="yi";         AI_KEY_VAR="YI_API_KEY";          AI_TYPE="api" ;;
+        14) AI_BACKEND="claude";     AI_KEY_VAR="";                    AI_TYPE="cli" ;;
+        15) AI_BACKEND="gemini";     AI_KEY_VAR="";                    AI_TYPE="cli" ;;
+        16) AI_BACKEND="qwen";       AI_KEY_VAR="";                    AI_TYPE="cli" ;;
+        17) AI_BACKEND="codex";      AI_KEY_VAR="";                    AI_TYPE="cli" ;;
         *) error "无效选项"; exit 1 ;;
     esac
 

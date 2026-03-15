@@ -20,7 +20,10 @@
 ### ✨ 功能特性
 
 - **多邮箱支持**：126、163、QQ、Gmail（OAuth/应用密码）、Outlook（OAuth）
-- **多 AI 支持**：Claude Code、Codex、Gemini、通义千问（CLI）；Anthropic、OpenAI、Gemini API、通义千问 API（API）
+- **多 AI 支持**：
+  - **CLI 方式**：Claude Code、Codex、Gemini、通义千问、GitHub Copilot
+  - **国际 API**：Anthropic、OpenAI、Gemini、DeepSeek、Groq、Perplexity、Cohere
+  - **中国 API**：通义千问、月之暗面 Kimi、智谱 GLM、讯飞星火、百度文心一言、零一万物 Yi
 - **白名单安全**：每个邮箱独立配置白名单，支持多个地址或域名
 - **AI 自动拟标题**：AI 根据回复内容自动生成邮件标题
 - **服务化管理**：一个脚本完成启动、停止、重启、日志、系统服务安装
@@ -234,16 +237,43 @@ bash manage.sh uninstall  # 卸载 systemd 服务
 
 ### 🤖 支持的 AI
 
-| 参数名 | 类型 | 说明 | 所需环境变量 |
-|--------|------|------|------------|
-| `claude` | CLI | Claude Code | 需安装 Claude Code |
-| `codex` | CLI | OpenAI Codex CLI | 需安装 Codex CLI |
-| `gemini` | CLI | Gemini CLI | 需安装 Gemini CLI |
-| `qwen` | CLI | 通义千问 CLI | 需安装 Qwen CLI |
-| `anthropic` | API | Anthropic API | `ANTHROPIC_API_KEY` |
-| `openai` | API | OpenAI API | `OPENAI_API_KEY` |
-| `gemini-api` | API | Gemini API | `GEMINI_API_KEY` |
-| `qwen-api` | API | 通义千问 API | `QWEN_API_KEY` |
+> **💡 如何选择 CLI 还是 API？**
+>
+> - **CLI 模式（推荐简单使用）**：AI 工具本身具备读取本地文件、联网搜索、执行代码等能力，MailMind 只需将你的邮件指令传递过去，AI 会自主收集所需上下文。配置最少，开箱即用。
+> - **API 模式（适合服务器/云部署）**：AI 只能处理你显式发送的文本内容。若需要天气、新闻、网页搜索等实时数据，必须在 `.env` 中单独配置对应的数据源（`WEATHER_API_KEY`、`NEWS_API_KEY`、`WEB_SEARCH` 等）。
+
+#### CLI 方式
+
+| 参数名 | 说明 | 所需环境 |
+|--------|------|----------|
+| `claude` | Claude Code | 需安装 Claude Code |
+| `codex` | OpenAI Codex CLI | 需安装 Codex CLI |
+| `gemini` | Gemini CLI | 需安装 Gemini CLI |
+| `qwen` | 通义千问 CLI | 需安装 Qwen CLI |
+| `copilot` | GitHub Copilot CLI | 需安装 Copilot CLI |
+
+#### API 方式 - 国际模型
+
+| 参数名 | 说明 | 所需环境变量 |
+|--------|------|--------------|
+| `anthropic` | Anthropic API | `ANTHROPIC_API_KEY` |
+| `openai` | OpenAI API | `OPENAI_API_KEY` |
+| `gemini-api` | Gemini API | `GEMINI_API_KEY` |
+| `deepseek` | DeepSeek API | `DEEPSEEK_API_KEY` |
+| `groq` | Groq 高速推理 | `GROQ_API_KEY` |
+| `perplexity` | Perplexity 搜索增强 | `PERPLEXITY_API_KEY` |
+| `cohere` | Cohere 企业级 | `COHERE_API_KEY` |
+
+#### API 方式 - 中国模型
+
+| 参数名 | 说明 | 所需环境变量 |
+|--------|------|--------------|
+| `qwen-api` | 通义千问（阿里云） | `QWEN_API_KEY` |
+| `moonshot` | 月之暗面 Kimi | `MOONSHOT_API_KEY` |
+| `glm` | 智谱 AI（清华系） | `GLM_API_KEY` |
+| `spark` | 讯飞星火 | `SPARK_API_KEY` |
+| `ernie` | 百度文心一言 | `ERNIE_API_KEY` |
+| `yi` | 零一万物 | `YI_API_KEY` |
 
 ### 🔒 安全建议
 
@@ -394,16 +424,43 @@ bash manage.sh uninstall  # systemd サービスを削除
 
 ### 🤖 対応 AI
 
-| パラメータ | タイプ | 必要な環境変数 |
-|-----------|--------|-------------|
-| `claude` | CLI | Claude Code インストール済み |
-| `codex` | CLI | Codex CLI インストール済み |
-| `gemini` | CLI | Gemini CLI インストール済み |
-| `qwen` | CLI | Qwen CLI インストール済み |
-| `anthropic` | API | `ANTHROPIC_API_KEY` |
-| `openai` | API | `OPENAI_API_KEY` |
-| `gemini-api` | API | `GEMINI_API_KEY` |
-| `qwen-api` | API | `QWEN_API_KEY` |
+> **💡 CLI と API、どちらを選ぶ？**
+>
+> - **CLI モード（シンプルに使いたい方に推奨）**：AIツール自身がローカルファイルの読み取り・Web 検索・コード実行などを自律的に行えます。MailMind はメール本文の指示を渡すだけで OK。設定が最小限で済みます。
+> - **API モード（サーバー/クラウド運用向け）**：AI が受け取るのは送信したテキストのみ。天気・ニュース・Web 検索などのリアルタイムデータが必要な場合は、`.env` で `WEATHER_API_KEY`・`NEWS_API_KEY`・`WEB_SEARCH` 等を別途設定する必要があります。
+
+#### CLI 方式
+
+| パラメータ | 説明 | 必要環境 |
+|-----------|------|---------|
+| `claude` | Claude Code | Claude Code インストール済み |
+| `codex` | Codex CLI | Codex CLI インストール済み |
+| `gemini` | Gemini CLI | Gemini CLI インストール済み |
+| `qwen` | Qwen CLI | Qwen CLI インストール済み |
+| `copilot` | GitHub Copilot CLI | Copilot CLI インストール済み |
+
+#### API 方式 - 国際モデル
+
+| パラメータ | 説明 | 必要環境変数 |
+|-----------|------|-------------|
+| `anthropic` | Anthropic API | `ANTHROPIC_API_KEY` |
+| `openai` | OpenAI API | `OPENAI_API_KEY` |
+| `gemini-api` | Gemini API | `GEMINI_API_KEY` |
+| `deepseek` | DeepSeek API | `DEEPSEEK_API_KEY` |
+| `groq` | Groq 高速推論 | `GROQ_API_KEY` |
+| `perplexity` | Perplexity 検索強化 | `PERPLEXITY_API_KEY` |
+| `cohere` | Cohere エンタープライズ | `COHERE_API_KEY` |
+
+#### API 方式 - 中国モデル
+
+| パラメータ | 説明 | 必要環境変数 |
+|-----------|------|-------------|
+| `qwen-api` | 通義千問（アリババ） | `QWEN_API_KEY` |
+| `moonshot` | 月之暗面 Kimi | `MOONSHOT_API_KEY` |
+| `glm` | 智譜 AI（清華大学） | `GLM_API_KEY` |
+| `spark` | iFLYTEK 星火 | `SPARK_API_KEY` |
+| `ernie` | Baidu 文心一言 | `ERNIE_API_KEY` |
+| `yi` | 零一万物 | `YI_API_KEY` |
 
 ---
 
@@ -568,16 +625,43 @@ Once running, send an email to your configured mailbox with your instruction as 
 
 ### 🤖 Supported AI Backends
 
-| Name | Type | Required |
-|------|------|---------|
-| `claude` | CLI | Claude Code installed |
-| `codex` | CLI | Codex CLI installed |
-| `gemini` | CLI | Gemini CLI installed |
-| `qwen` | CLI | Qwen CLI installed |
-| `anthropic` | API | `ANTHROPIC_API_KEY` |
-| `openai` | API | `OPENAI_API_KEY` |
-| `gemini-api` | API | `GEMINI_API_KEY` |
-| `qwen-api` | API | `QWEN_API_KEY` |
+> **💡 CLI vs API — which should I choose?**
+>
+> - **CLI mode (recommended for simple use)**: The AI tool itself can read local files, browse the web, execute code, and gather context autonomously. MailMind just forwards your email instruction — minimal configuration needed.
+> - **API mode (for server/cloud deployment)**: The AI only sees what you explicitly send it. To provide real-time data like weather, news, or web search results, you must configure the corresponding data sources in `.env` (`WEATHER_API_KEY`, `NEWS_API_KEY`, `WEB_SEARCH`, etc.).
+
+#### CLI Backends
+
+| Name | Required |
+|------|---------|
+| `claude` | Claude Code installed |
+| `codex` | Codex CLI installed |
+| `gemini` | Gemini CLI installed |
+| `qwen` | Qwen CLI installed |
+| `copilot` | GitHub Copilot CLI installed |
+
+#### API Backends - International Models
+
+| Name | Required |
+|------|---------|
+| `anthropic` | `ANTHROPIC_API_KEY` |
+| `openai` | `OPENAI_API_KEY` |
+| `gemini-api` | `GEMINI_API_KEY` |
+| `deepseek` | `DEEPSEEK_API_KEY` |
+| `groq` | `GROQ_API_KEY` |
+| `perplexity` | `PERPLEXITY_API_KEY` |
+| `cohere` | `COHERE_API_KEY` |
+
+#### API Backends - China Models
+
+| Name | Provider | Required |
+|------|----------|---------|
+| `qwen-api` | Alibaba Cloud | `QWEN_API_KEY` |
+| `moonshot` | Moonshot AI (Kimi) | `MOONSHOT_API_KEY` |
+| `glm` | Zhipu AI | `GLM_API_KEY` |
+| `spark` | iFLYTEK | `SPARK_API_KEY` |
+| `ernie` | Baidu | `ERNIE_API_KEY` |
+| `yi` | 01.AI | `YI_API_KEY` |
 
 ### 🔒 Security Tips
 
@@ -732,16 +816,38 @@ bash manage.sh uninstall  # systemd 서비스 제거
 
 ### 🤖 지원 AI
 
-| 파라미터 | 유형 | 필요 조건 |
-|---------|------|---------|
-| `claude` | CLI | Claude Code 설치 |
-| `codex` | CLI | Codex CLI 설치 |
-| `gemini` | CLI | Gemini CLI 설치 |
-| `qwen` | CLI | Qwen CLI 설치 |
-| `anthropic` | API | `ANTHROPIC_API_KEY` |
-| `openai` | API | `OPENAI_API_KEY` |
-| `gemini-api` | API | `GEMINI_API_KEY` |
-| `qwen-api` | API | `QWEN_API_KEY` |
+#### CLI 방식
+
+| 파라미터 | 필요 조건 |
+|---------|---------|
+| `claude` | Claude Code 설치 |
+| `codex` | Codex CLI 설치 |
+| `gemini` | Gemini CLI 설치 |
+| `qwen` | Qwen CLI 설치 |
+| `copilot` | GitHub Copilot CLI 설치 |
+
+#### API 방식 - 국제 모델
+
+| 파라미터 | 필요 조건 |
+|---------|---------|
+| `anthropic` | `ANTHROPIC_API_KEY` |
+| `openai` | `OPENAI_API_KEY` |
+| `gemini-api` | `GEMINI_API_KEY` |
+| `deepseek` | `DEEPSEEK_API_KEY` |
+| `groq` | `GROQ_API_KEY` |
+| `perplexity` | `PERPLEXITY_API_KEY` |
+| `cohere` | `COHERE_API_KEY` |
+
+#### API 방식 - 중국 모델
+
+| 파라미터 | 제공업체 | 필요 조건 |
+|---------|---------|---------|
+| `qwen-api` | 알리바바 | `QWEN_API_KEY` |
+| `moonshot` | 월지암면 Kimi | `MOONSHOT_API_KEY` |
+| `glm` | 지푸 AI | `GLM_API_KEY` |
+| `spark` | iFLYTEK | `SPARK_API_KEY` |
+| `ernie` | 바이두 | `ERNIE_API_KEY` |
+| `yi` | 01.AI | `YI_API_KEY` |
 
 ### 🔒 보안 권장 사항
 
