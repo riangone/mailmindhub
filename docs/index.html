@@ -344,6 +344,27 @@
     .section-label { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--cyan); margin-bottom: 14px; display: block; }
     .section-title { font-size: clamp(1.9rem, 3.8vw, 2.9rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 56px; }
 
+    /* ── USP HIGHLIGHTS ── */
+    .usp-strip {
+      max-width: 1200px; margin: 0 auto;
+      padding: 64px 48px 0;
+      display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    }
+    .usp-pill {
+      display: flex; align-items: center; gap: 7px;
+      padding: 9px 18px;
+      border: 1px solid rgba(0,229,195,0.22);
+      border-radius: 999px;
+      background: var(--cyan-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.77rem; font-weight: 400;
+      color: var(--text);
+      white-space: nowrap;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .usp-pill:hover { border-color: rgba(0,229,195,0.5); background: rgba(0,229,195,0.18); }
+    .usp-mark { color: var(--cyan); font-weight: 700; }
+
     /* ── FEATURES ── */
     #features { padding: 90px 48px; }
     .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
@@ -517,6 +538,8 @@
       .lang-btn { padding: 4px 6px; font-size: 0.6rem; }
       #features, #ai, #start, #cta, #tasks, #webui { padding: 60px 20px; }
       #how, #mailboxes { padding: 60px 20px; }
+      .usp-strip { padding: 40px 20px 0; gap: 8px; }
+      .usp-pill { font-size: 0.72rem; padding: 7px 14px; }
       .webui-inner { grid-template-columns: 1fr; gap: 36px; }
       .steps { grid-template-columns: 1fr; gap: 30px; }
       .steps::before { display: none; }
@@ -595,6 +618,16 @@
   <div class="stat"><div class="stat-num">8</div><div class="stat-label" data-i18n="stat_mail"></div></div>
   <div class="stat"><div class="stat-num">7</div><div class="stat-label" data-i18n="stat_task"></div></div>
   <div class="stat"><div class="stat-num">&lt;60s</div><div class="stat-label" data-i18n="stat_time"></div></div>
+</div>
+
+<!-- ══ USP HIGHLIGHTS ══ -->
+<div class="usp-strip">
+  <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp1"></span></div>
+  <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp2"></span></div>
+  <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp3"></span></div>
+  <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp4"></span></div>
+  <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp5"></span></div>
+  <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp6"></span></div>
 </div>
 
 <!-- ══ FEATURES ══ -->
@@ -885,6 +918,7 @@ const T = {
     flow_1: 'You send', flow_3: 'AI processes', flow_4: 'You receive',
     cta_github: 'View on GitHub', cta_start: 'Quick Start →',
     stat_ai: 'AI Backends', stat_mail: 'Email Providers', stat_task: 'Task Types', stat_time: 'Response Time',
+    usp1: 'No new UI — email is the interface', usp2: 'Async & non-blocking', usp3: 'Fully self-hosted & private', usp4: 'Works on any device with email', usp5: 'MIT open source', usp6: '18 AI backends',
     feat_label: 'Why MailMind',
     feat_title: 'Everything your inbox<br/>was missing',
     f1_h: '8 Mailbox Providers', f1_p: 'Works natively with 126, 163, QQ Mail, Gmail (OAuth & App Password), Outlook (OAuth), iCloud (app-specific password), ProtonMail (Bridge), and any custom IMAP provider. IMAP IDLE for instant push delivery.',
@@ -949,6 +983,7 @@ const T = {
     flow_1: '你发送', flow_3: 'AI 处理', flow_4: '你收到',
     cta_github: '在 GitHub 查看', cta_start: '快速开始 →',
     stat_ai: 'AI 后端', stat_mail: '邮箱支持', stat_task: '任务类型', stat_time: '响应时间',
+    usp1: '无需新界面 — 邮件即接口', usp2: '异步非阻塞，即发即走', usp3: '完全自托管，数据自控', usp4: '任何支持邮件的设备', usp5: 'MIT 开源免费', usp6: '18 个 AI 后端',
     feat_label: '为什么选择 MailMind',
     feat_title: '你的收件箱缺少的<br/>一切，都在这里',
     f1_h: '8 邮箱支持', f1_p: '原生支持 126、163、QQ、Gmail（OAuth/应用密码）、Outlook（OAuth）、iCloud（应用专用密码）、ProtonMail（Bridge）及任意自定义 IMAP。支持 IMAP IDLE 实时推送。',
@@ -1013,6 +1048,7 @@ const T = {
     flow_1: '送信', flow_3: 'AI が処理', flow_4: '受信',
     cta_github: 'GitHub で見る', cta_start: 'クイックスタート →',
     stat_ai: 'AI バックエンド', stat_mail: 'メールプロバイダー', stat_task: 'タスクタイプ', stat_time: '応答時間',
+    usp1: '新UIは不要 — メールがインターフェース', usp2: '非同期・ノンブロッキング', usp3: '完全セルフホスト・プライバシー', usp4: 'メール対応のどの端末でも使える', usp5: 'MIT オープンソース', usp6: '18 AI バックエンド',
     feat_label: 'MailMind の特徴',
     feat_title: '受信箱に足りなかった<br/>すべてが揃う',
     f1_h: '8 メールプロバイダー', f1_p: '126、163、QQ、Gmail（OAuth/アプリパスワード）、Outlook（OAuth）、iCloud（アプリ専用パスワード）、ProtonMail（Bridge）、カスタムIMAPに対応。IMAP IDLEによるリアルタイム通知。',
@@ -1077,6 +1113,7 @@ const T = {
     flow_1: '발송', flow_3: 'AI 처리', flow_4: '수신',
     cta_github: 'GitHub에서 보기', cta_start: '빠른 시작 →',
     stat_ai: 'AI 백엔드', stat_mail: '이메일 제공자', stat_task: '작업 유형', stat_time: '응답 시간',
+    usp1: '새 UI 불필요 — 이메일이 인터페이스', usp2: '비동기·논블로킹', usp3: '완전 셀프호스트·프라이버시', usp4: '이메일 지원 기기라면 어디서든', usp5: 'MIT 오픈소스', usp6: '18개 AI 백엔드',
     feat_label: 'MailMind를 선택하는 이유',
     feat_title: '받은 편지함에 부족했던<br/>모든 것',
     f1_h: '8개 메일박스 지원', f1_p: '126, 163, QQ, Gmail(OAuth/앱 비밀번호), Outlook(OAuth), iCloud(앱 전용 비밀번호), ProtonMail(Bridge), 커스텀 IMAP 지원. IMAP IDLE 실시간 푸시 제공.',
