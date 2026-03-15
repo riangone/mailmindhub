@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MailMind — Your Inbox, Powered by AI</title>
+  <meta name="description" content="Send an email. Get an AI response. MailMind bridges your inbox with Claude, GPT, Gemini, and more — no app required." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #060709;
+      --bg2:      #0c0e12;
+      --bg3:      #111418;
+      --border:   rgba(255,255,255,0.07);
+      --cyan:     #00e5c3;
+      --cyan-dim: rgba(0,229,195,0.12);
+      --amber:    #f0a500;
+      --amber-dim:rgba(240,165,0,0.12);
+      --text:     #dde2e8;
+      --muted:    #6b7585;
+      --glow:     0 0 40px rgba(0,229,195,0.18);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grid & noise overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,195,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,195,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      background: rgba(6,7,9,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--cyan);
+      letter-spacing: 0.04em;
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--muted); }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 36px;
+    }
+    nav ul a {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    nav ul a:hover { color: var(--text); }
+
+    .nav-cta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--cyan) !important;
+      border: 1px solid rgba(0,229,195,0.35);
+      padding: 7px 18px;
+      border-radius: 4px;
+      transition: background 0.2s, box-shadow 0.2s !important;
+    }
+    .nav-cta:hover {
+      background: var(--cyan-dim) !important;
+      box-shadow: var(--glow) !important;
+    }
+
+    /* ── Sections ── */
+    section { position: relative; z-index: 1; }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 24px 80px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      border: 1px solid rgba(0,229,195,0.3);
+      background: var(--cyan-dim);
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 36px;
+      display: inline-block;
+      animation: fade-in 0.6s ease both;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 7vw, 6.5rem);
+      font-weight: 800;
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      max-width: 900px;
+      margin-bottom: 28px;
+      animation: rise 0.8s cubic-bezier(.16,1,.3,1) both;
+      animation-delay: 0.1s;
+    }
+    h1 em {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-weight: 400;
+      color: var(--cyan);
+    }
+
+    .hero-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(0.85rem, 1.5vw, 1.05rem);
+      font-weight: 300;
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.7;
+      margin-bottom: 52px;
+      animation: rise 0.8s cubic-bezier(.16,1,.3,1) both;
+      animation-delay: 0.2s;
+    }
+
+    /* ── Flow diagram ── */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 56px;
+      animation: rise 0.8s cubic-bezier(.16,1,.3,1) both;
+      animation-delay: 0.3s;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .flow-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-icon {
+      width: 68px;
+      height: 68px;
+      border-radius: 16px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      position: relative;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .flow-node:nth-child(1) .flow-icon { animation: pulse-border 3s ease-in-out infinite; }
+    .flow-node:nth-child(3) .flow-icon { animation: pulse-border 3s ease-in-out 1s infinite; }
+    .flow-node:nth-child(5) .flow-icon { animation: pulse-border 3s ease-in-out 2s infinite; }
+    .flow-node:nth-child(7) .flow-icon { animation: pulse-border 3s ease-in-out 0.5s infinite; }
+
+    @keyframes pulse-border {
+      0%,100% { border-color: var(--border); box-shadow: none; }
+      50% { border-color: rgba(0,229,195,0.5); box-shadow: 0 0 20px rgba(0,229,195,0.15); }
+    }
+
+    .flow-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .flow-arrow {
+      width: 60px;
+      display: flex;
+      align-items: center;
+      padding-bottom: 22px;
+    }
+
+    .flow-arrow svg {
+      width: 100%;
+      height: 16px;
+    }
+
+    .arrow-line {
+      stroke: var(--cyan);
+      stroke-opacity: 0.3;
+      stroke-dasharray: 6 4;
+      animation: dash-move 1.5s linear infinite;
+    }
+    @keyframes dash-move {
+      to { stroke-dashoffset: -20; }
+    }
+
+    /* Hero CTAs */
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: rise 0.8s cubic-bezier(.16,1,.3,1) both;
+      animation-delay: 0.4s;
+    }
+
+    .btn-primary {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--bg);
+      background: var(--cyan);
+      border: none;
+      padding: 14px 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+      display: inline-block;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,229,195,0.3);
+      opacity: 0.92;
+    }
+
+    .btn-secondary {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 14px 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: background 0.2s, border-color 0.2s;
+      display: inline-block;
+    }
+    .btn-secondary:hover {
+      background: var(--bg3);
+      border-color: rgba(255,255,255,0.14);
+    }
+
+    /* ── FEATURE SECTION ── */
+    #features {
+      padding: 100px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 64px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .feature-card {
+      background: var(--bg2);
+      padding: 36px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover { background: var(--bg3); }
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--cyan-dim);
+      border: 1px solid rgba(0,229,195,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+    }
+
+    .feature-card p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ── HOW IT WORKS ── */
+    #how {
+      padding: 100px 48px;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .how-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 48px;
+      margin-top: 64px;
+      position: relative;
+    }
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 28px; left: calc(33.3% - 24px); right: calc(33.3% - 24px);
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0.3;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 1px solid rgba(0,229,195,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--cyan);
+      flex-shrink: 0;
+    }
+
+    .step h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .step p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    /* ── AI BACKENDS ── */
+    #ai {
+      padding: 100px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .ai-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 48px;
+    }
+
+    .ai-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      cursor: default;
+    }
+    .ai-card:hover {
+      border-color: rgba(0,229,195,0.3);
+      background: var(--bg3);
+      transform: translateY(-2px);
+    }
+
+    .ai-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .ai-type {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 100px;
+      display: inline-block;
+      width: fit-content;
+    }
+    .ai-type.cli { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(240,165,0,0.25); }
+    .ai-type.api { background: var(--cyan-dim); color: var(--cyan); border: 1px solid rgba(0,229,195,0.25); }
+
+    .ai-desc {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 300;
+      color: var(--muted);
+    }
+
+    /* ── TASKS ── */
+    #tasks {
+      padding: 100px 48px;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tasks-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+
+    .tasks-desc {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .tasks-desc p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.9;
+    }
+
+    .task-types {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .task-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .task-tag:hover {
+      border-color: rgba(0,229,195,0.4);
+      color: var(--cyan);
+    }
+
+    /* Terminal-style examples */
+    .terminal {
+      background: #0a0c10;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.r { background: #ff5f57; }
+    .dot.y { background: #febc2e; }
+    .dot.g { background: #28c840; }
+
+    .terminal-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .terminal-body {
+      padding: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 300;
+      line-height: 2;
+    }
+
+    .t-prompt { color: var(--cyan); }
+    .t-cmd { color: var(--text); }
+    .t-comment { color: var(--muted); }
+    .t-email { color: var(--amber); }
+    .t-out { color: #6ee7b7; }
+    .t-blank { height: 12px; display: block; }
+
+    /* ── QUICK START ── */
+    #start {
+      padding: 100px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .start-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+
+    .start-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .start-step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .start-step-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--cyan);
+      background: var(--cyan-dim);
+      border: 1px solid rgba(0,229,195,0.25);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .start-step-content h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .start-step-content p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ── MAILBOX SECTION ── */
+    #mailboxes {
+      padding: 80px 48px;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mailboxes-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .mailbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 48px;
+    }
+
+    .mailbox-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .mailbox-card:hover {
+      border-color: rgba(0,229,195,0.25);
+      transform: translateY(-2px);
+    }
+
+    .mailbox-icon { font-size: 1.5rem; }
+    .mailbox-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .mailbox-auth {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 64px auto;
+      max-width: 1000px;
+      background: var(--border);
+      gap: 1px;
+    }
+
+    .stat {
+      background: var(--bg2);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stat-num {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--cyan);
+    }
+
+    .stat-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ── CTA ── */
+    #cta {
+      padding: 120px 48px;
+      text-align: center;
+      position: relative;
+    }
+
+    #cta::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 300px;
+      background: radial-gradient(ellipse at center, rgba(0,229,195,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    #cta h2 {
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 20px;
+    }
+
+    #cta h2 em {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-weight: 400;
+      color: var(--cyan);
+    }
+
+    #cta p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 300;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .footer-logo strong { color: var(--cyan); }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+    }
+    .footer-links a {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text); }
+
+    .footer-copy {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      opacity: 0.5;
+    }
+
+    /* ── Animations ── */
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s cubic-bezier(.16,1,.3,1), transform 0.6s cubic-bezier(.16,1,.3,1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      nav { padding: 16px 24px; }
+      nav ul { display: none; }
+      #features, #ai, #start, #cta, #tasks { padding: 64px 24px; }
+      #how, #mailboxes { padding: 64px 24px; }
+      .steps { grid-template-columns: 1fr; gap: 36px; }
+      .steps::before { display: none; }
+      .tasks-inner, .start-inner { grid-template-columns: 1fr; gap: 40px; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      footer { flex-direction: column; gap: 20px; text-align: center; }
+    }
+
+    /* ── Code inline ── */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82em;
+      color: var(--cyan);
+      background: var(--cyan-dim);
+      border: 1px solid rgba(0,229,195,0.15);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    /* Typewriter cursor blink on terminal */
+    .cursor {
+      display: inline-block;
+      width: 7px;
+      height: 1em;
+      background: var(--cyan);
+      opacity: 0.9;
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 0.9; }
+      50% { opacity: 0; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(0,229,195,0.2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0,229,195,0.4); }
+  </style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav>
+  <a href="#" class="nav-logo">Mail<span>Mind</span></a>
+  <ul>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#ai">AI Backends</a></li>
+    <li><a href="#start">Quick Start</a></li>
+    <li><a href="https://github.com/riangone/MailMindAgent" class="nav-cta">GitHub →</a></li>
+  </ul>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+  <span class="hero-badge">open source · email-to-ai bridge</span>
+
+  <h1>Your inbox is now<br /><em>an AI interface</em></h1>
+
+  <p class="hero-sub">
+    Send an email with any instruction.<br />
+    MailMind bridges it to Claude, GPT, Gemini, or Qwen —<br />
+    and replies with the result. No app. No API. Just email.
+  </p>
+
+  <!-- Flow diagram -->
+  <div class="flow">
+    <div class="flow-node">
+      <div class="flow-icon">✉️</div>
+      <span class="flow-label">You send</span>
+    </div>
+    <div class="flow-arrow">
+      <svg viewBox="0 0 60 16"><line class="arrow-line" x1="0" y1="8" x2="52" y2="8" stroke-width="1.5"/><polyline points="44,3 54,8 44,13" fill="none" stroke="#00e5c3" stroke-opacity="0.6" stroke-width="1.5"/></svg>
+    </div>
+    <div class="flow-node">
+      <div class="flow-icon">⚡</div>
+      <span class="flow-label">MailMind</span>
+    </div>
+    <div class="flow-arrow">
+      <svg viewBox="0 0 60 16"><line class="arrow-line" x1="0" y1="8" x2="52" y2="8" stroke-width="1.5"/><polyline points="44,3 54,8 44,13" fill="none" stroke="#00e5c3" stroke-opacity="0.6" stroke-width="1.5"/></svg>
+    </div>
+    <div class="flow-node">
+      <div class="flow-icon">🤖</div>
+      <span class="flow-label">AI processes</span>
+    </div>
+    <div class="flow-arrow">
+      <svg viewBox="0 0 60 16"><line class="arrow-line" x1="0" y1="8" x2="52" y2="8" stroke-width="1.5"/><polyline points="44,3 54,8 44,13" fill="none" stroke="#00e5c3" stroke-opacity="0.6" stroke-width="1.5"/></svg>
+    </div>
+    <div class="flow-node">
+      <div class="flow-icon">📨</div>
+      <span class="flow-label">You receive</span>
+    </div>
+  </div>
+
+  <div class="hero-cta">
+    <a href="https://github.com/riangone/MailMindAgent" class="btn-primary">View on GitHub</a>
+    <a href="#start" class="btn-secondary">Quick Start →</a>
+  </div>
+</section>
+
+<!-- ══ STATS ══ -->
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-num">10+</span>
+    <span class="stat-label">AI Backends</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">5</span>
+    <span class="stat-label">Email Providers</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">7</span>
+    <span class="stat-label">Task Types</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">&lt;60s</span>
+    <span class="stat-label">Response Time</span>
+  </div>
+</div>
+
+<!-- ══ FEATURES ══ -->
+<section id="features">
+  <span class="section-label">Why MailMind</span>
+  <h2 class="section-title">Everything your inbox<br />was missing</h2>
+
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon">📬</div>
+      <h3>Multi-Mailbox Support</h3>
+      <p>Works natively with 126, 163, QQ Mail, Gmail (OAuth & App Password), and Outlook (OAuth). IMAP IDLE for instant push delivery.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🤖</div>
+      <h3>10+ AI Backends</h3>
+      <p>Plug in any AI — Claude Code, Codex, Gemini CLI (local CLI mode), or call Anthropic, OpenAI, Gemini, Qwen, DeepSeek, Copilot APIs directly.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">⏰</div>
+      <h3>Scheduled Tasks</h3>
+      <p>Natural language scheduling. "Every day 8am weather Tokyo" or "Every Monday news AI summary". Persisted across restarts.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🔒</div>
+      <h3>Whitelist Security</h3>
+      <p>Per-mailbox sender whitelists. Only trusted addresses or entire domains can trigger AI processing. Strangers are silently ignored.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📎</div>
+      <h3>Attachment Support</h3>
+      <p>Attach <code>.txt</code>, <code>.md</code>, <code>.csv</code> files to enrich AI context. AI can return file attachments in replies too.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🛠️</div>
+      <h3>One-Script Management</h3>
+      <p><code>manage.sh start|stop|restart|log|status</code> — plus systemd install for auto-start on boot. Setup wizard included.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🌐</div>
+      <h3>Web Search Injection</h3>
+      <p>Optionally inject live web results into AI context. DuckDuckGo, Bing, Google, or Wikipedia — your choice per query.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📊</div>
+      <h3>Report Archiving</h3>
+      <p>Scheduled tasks can archive results to <code>reports/</code> as timestamped files — ideal for daily digests and monitoring.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section id="how">
+  <div class="how-inner">
+    <span class="section-label">The Process</span>
+    <h2 class="section-title">Three steps.<br />Zero friction.</h2>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <h3>Configure once</h3>
+        <p>Run <code>bash manage.sh setup</code> to launch the interactive wizard. Pick your mailbox, choose an AI backend, set credentials. Done in minutes.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <h3>Start the daemon</h3>
+        <p>Run <code>bash manage.sh start</code>. MailMind connects via IMAP IDLE (or poll mode) and waits for your emails in the background.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <h3>Email your instructions</h3>
+        <p>Send any instruction as an email body. The AI processes it and replies directly to your inbox — with an AI-crafted subject line.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ AI BACKENDS ══ -->
+<section id="ai">
+  <span class="section-label">AI Backends</span>
+  <h2 class="section-title">Your AI, your choice</h2>
+
+  <div class="ai-grid">
+    <div class="ai-card reveal">
+      <span class="ai-type cli">CLI</span>
+      <div class="ai-name">Claude Code</div>
+      <div class="ai-desc">Anthropic's<br/>coding agent</div>
+    </div>
+    <div class="ai-card reveal">
+      <span class="ai-type cli">CLI</span>
+      <div class="ai-name">Gemini CLI</div>
+      <div class="ai-desc">Google Gemini<br/>local runner</div>
+    </div>
+    <div class="ai-card reveal">
+      <span class="ai-type cli">CLI</span>
+      <div class="ai-name">Codex CLI</div>
+      <div class="ai-desc">OpenAI Codex<br/>local runner</div>
+    </div>
+    <div class="ai-card reveal">
+      <span class="ai-type cli">CLI</span>
+      <div class="ai-name">Qwen CLI</div>
+      <div class="ai-desc">Alibaba Qwen<br/>local runner</div>
+    </div>
+    <div class="ai-card reveal">
+      <span class="ai-type api">API</span>
+      <div class="ai-name">Anthropic</div>
+      <div class="ai-desc">Claude via<br/>API key</div>
+    </div>
+    <div class="ai-card reveal">
+      <span class="ai-type api">API</span>
+      <div class="ai-name">OpenAI</div>
+      <div class="ai-desc">GPT-4o via<br/>API key</div>
+    </div>
+    <div class="ai-card reveal">
+      <span class="ai-type api">API</span>
+      <div class="ai-name">Gemini API</div>
+      <div class="ai-desc">Google Gemini<br/>via API key</div>
+    </div>
+    <div class="ai-card reveal">
+      <span class="ai-type api">API</span>
+      <div class="ai-name">Qwen API</div>
+      <div class="ai-desc">Alibaba Qwen<br/>via API key</div>
+    </div>
+    <div class="ai-card reveal">
+      <span class="ai-type api">API</span>
+      <div class="ai-name">DeepSeek</div>
+      <div class="ai-desc">DeepSeek<br/>via API key</div>
+    </div>
+    <div class="ai-card reveal">
+      <span class="ai-type api">API</span>
+      <div class="ai-name">Copilot</div>
+      <div class="ai-desc">GitHub Copilot<br/>token auth</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SCHEDULED TASKS ══ -->
+<section id="tasks">
+  <div class="tasks-inner">
+    <div class="tasks-desc reveal">
+      <span class="section-label">Scheduled Tasks</span>
+      <h2 class="section-title" style="font-size:clamp(1.8rem,3.5vw,2.5rem);">Automate your<br/>information diet</h2>
+      <p>Write natural-language schedules in your email. MailMind parses time expressions in Chinese, Japanese, Korean, and English — and runs tasks automatically.</p>
+      <p>Results are emailed to you and/or archived to <code>reports/</code> as timestamped files.</p>
+      <div class="task-types">
+        <span class="task-tag">weather</span>
+        <span class="task-tag">news</span>
+        <span class="task-tag">web_search</span>
+        <span class="task-tag">ai_job</span>
+        <span class="task-tag">report</span>
+        <span class="task-tag">system_status</span>
+        <span class="task-tag">email</span>
+      </div>
+    </div>
+    <div class="reveal">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="terminal-title">example instructions</span>
+        </div>
+        <div class="terminal-body">
+          <span class="t-comment"># Daily morning weather</span><br />
+          <span class="t-email">Every day 08:00 weather Tokyo</span>
+          <span class="t-blank"></span>
+          <span class="t-comment"># News digest every 2 hours</span><br />
+          <span class="t-email">Every 2 hours AI news summary, archive</span>
+          <span class="t-blank"></span>
+          <span class="t-comment"># Monday briefing with AI</span><br />
+          <span class="t-email">Every Monday 10:00 AI job: summarize<br />&nbsp;&nbsp;last week and plan this week, archive</span>
+          <span class="t-blank"></span>
+          <span class="t-comment"># Server health every 10 min</span><br />
+          <span class="t-email">Every 10 minutes system status</span>
+          <span class="t-blank"></span>
+          <span class="t-out">✓ Tasks scheduled and persisted</span><span class="cursor"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MAILBOXES ══ -->
+<section id="mailboxes">
+  <div class="mailboxes-inner">
+    <span class="section-label">Email Providers</span>
+    <h2 class="section-title">Works with your inbox</h2>
+    <div class="mailbox-grid">
+      <div class="mailbox-card reveal">
+        <span class="mailbox-icon">📧</span>
+        <div class="mailbox-name">126 Mail</div>
+        <div class="mailbox-auth">IMAP · App Password</div>
+      </div>
+      <div class="mailbox-card reveal">
+        <span class="mailbox-icon">📧</span>
+        <div class="mailbox-name">163 Mail</div>
+        <div class="mailbox-auth">IMAP · App Password</div>
+      </div>
+      <div class="mailbox-card reveal">
+        <span class="mailbox-icon">💬</span>
+        <div class="mailbox-name">QQ Mail</div>
+        <div class="mailbox-auth">IMAP · App Password</div>
+      </div>
+      <div class="mailbox-card reveal">
+        <span class="mailbox-icon">✉️</span>
+        <div class="mailbox-name">Gmail</div>
+        <div class="mailbox-auth">OAuth 2.0 / App Password</div>
+      </div>
+      <div class="mailbox-card reveal">
+        <span class="mailbox-icon">🪟</span>
+        <div class="mailbox-name">Outlook</div>
+        <div class="mailbox-auth">OAuth 2.0 (device code)</div>
+      </div>
+      <div class="mailbox-card reveal">
+        <span class="mailbox-icon">⚙️</span>
+        <div class="mailbox-name">Custom IMAP</div>
+        <div class="mailbox-auth">Any provider via env vars</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ QUICK START ══ -->
+<section id="start">
+  <span class="section-label">Quick Start</span>
+  <h2 class="section-title" style="margin-bottom:56px;">Up in three<br />commands</h2>
+
+  <div class="start-inner">
+    <div class="start-steps">
+      <div class="start-step reveal">
+        <div class="start-step-num">1</div>
+        <div class="start-step-content">
+          <h4>Clone the repo</h4>
+          <p>Download MailMind from GitHub and enter the project directory.</p>
+        </div>
+      </div>
+      <div class="start-step reveal">
+        <div class="start-step-num">2</div>
+        <div class="start-step-content">
+          <h4>Run setup wizard</h4>
+          <p><code>bash manage.sh setup</code> — creates a virtualenv, installs dependencies, and walks you through configuration interactively.</p>
+        </div>
+      </div>
+      <div class="start-step reveal">
+        <div class="start-step-num">3</div>
+        <div class="start-step-content">
+          <h4>Start the daemon</h4>
+          <p><code>bash manage.sh start</code> — runs MailMind in the background. Send yourself an email and get an AI reply within 60 seconds.</p>
+        </div>
+      </div>
+      <div class="start-step reveal">
+        <div class="start-step-num">4</div>
+        <div class="start-step-content">
+          <h4>Optional: systemd</h4>
+          <p><code>bash manage.sh install</code> — register as a systemd service for auto-start on boot. Includes <code>status</code>, <code>log</code>, and <code>restart</code> commands.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="terminal-title">bash · terminal</span>
+        </div>
+        <div class="terminal-body">
+          <span class="t-prompt">$</span> <span class="t-cmd">git clone https://github.com/<br />&nbsp;&nbsp;riangone/MailMindAgent.git</span>
+          <span class="t-blank"></span>
+          <span class="t-prompt">$</span> <span class="t-cmd">cd MailMindAgent</span>
+          <span class="t-blank"></span>
+          <span class="t-prompt">$</span> <span class="t-cmd">bash manage.sh setup</span><br />
+          <span class="t-out">&nbsp;&nbsp;→ Creating virtualenv...</span><br />
+          <span class="t-out">&nbsp;&nbsp;→ Installing dependencies...</span><br />
+          <span class="t-out">&nbsp;&nbsp;→ Configuring .env...</span><br />
+          <span class="t-out">&nbsp;&nbsp;✓ Setup complete!</span>
+          <span class="t-blank"></span>
+          <span class="t-prompt">$</span> <span class="t-cmd">bash manage.sh start</span><br />
+          <span class="t-out">&nbsp;&nbsp;✓ Daemon started (PID 12345)</span><br />
+          <span class="t-out">&nbsp;&nbsp;✓ Listening on gmail via IMAP IDLE</span><span class="cursor"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section id="cta">
+  <h2>Your inbox.<br /><em>Reimagined.</em></h2>
+  <p>Open source. MIT licensed. One script to rule them all.</p>
+  <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+    <a href="https://github.com/riangone/MailMindAgent" class="btn-primary">
+      ⭐ Star on GitHub
+    </a>
+    <a href="https://github.com/riangone/MailMindAgent/archive/refs/heads/main.zip" class="btn-secondary">
+      Download ZIP
+    </a>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="footer-logo">
+    <strong>MailMind</strong> — email × AI bridge
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/riangone/MailMindAgent">GitHub</a>
+    <a href="https://github.com/riangone/MailMindAgent/blob/main/README.md">Docs</a>
+    <a href="https://github.com/riangone/MailMindAgent/issues">Issues</a>
+    <a href="https://github.com/riangone/MailMindAgent/blob/main/LICENSE">MIT License</a>
+  </div>
+  <div class="footer-copy">MIT © 2026 MailMind</div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        // Stagger siblings
+        const siblings = [...e.target.parentElement.querySelectorAll('.reveal')];
+        const idx = siblings.indexOf(e.target);
+        setTimeout(() => {
+          e.target.classList.add('visible');
+        }, idx * 80);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Active nav highlight on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav ul a[href^="#"]');
+  const onScroll = () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 100) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.style.color = a.getAttribute('href') === '#' + current
+        ? 'var(--text)' : '';
+    });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+</script>
+</body>
+</html>
