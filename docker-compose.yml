@@ -1,13 +1,39 @@
+# MailMind — Docker Compose
+#
+# Usage:
+#   docker compose up -d            # start both daemon + WebUI
+#   docker compose up -d daemon     # daemon only
+#   docker compose up -d webui      # WebUI only
+#   docker compose logs -f daemon   # tail logs
+#   docker compose down             # stop all
+#
+# Prerequisites: copy .env.example → .env and fill in credentials.
+
 services:
-  mailmind:
+
+  # ── Email AI daemon ───────────────────────────────────────────────────────
+  daemon:
     build: .
-    container_name: mailmind
+    image: mailmind:latest
+    container_name: mailmind-daemon
+    env_file: .env
+    # Bind-mount the project root so all runtime files persist on the host:
+    #   tasks.db, processed_ids_*.json, token_*.json, reports/, daemon.log
+    # System Python in the container is unaffected by the host venv/ directory.
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # ── Web admin panel ───────────────────────────────────────────────────────
+  webui:
+    image: mailmind:latest
+    container_name: mailmind-webui
     env_file: .env
     volumes:
-      - ./reports:/app/reports
-      - ./tasks.db:/app/tasks.db
-      - ./processed_ids_126.json:/app/processed_ids_126.json
-      - ./processed_ids_gmail.json:/app/processed_ids_gmail.json
+      - .:/app
+    ports:
+      - "${WEBUI_PORT:-7000}:7000"
     restart: unless-stopped
-    # 也可以运行 Web UI
-    # command: python webui/server.py
+    command: python webui/server.py --host 0.0.0.0 --port 7000
+    depends_on:
+      - daemon

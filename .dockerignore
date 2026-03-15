@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.git/
+docs/
+*.db
+*.log
+*.pid
+*.pid.meta
+processed_ids_*.json
+token_*.json
+credentials_*.json
+reports/

@@ -1,23 +1,21 @@
-# 使用 Python 3.12 轻量版
 FROM python:3.12-slim
 
-# 设置工作目录
 WORKDIR /app
 
-# 安装系统依赖 (如有 CLI AI 工具需要另外安装)
+# System deps (procps for ps/kill; add more if needed for CLI AI tools)
 RUN apt-get update && apt-get install -y \
     procps \
     && rm -rf /var/lib/apt/lists/*
 
-# 复制依赖文件并安装
+# Install Python dependencies into system Python (no venv needed in container)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制项目代码
+# Copy project code (runtime files are bind-mounted at run time)
 COPY . .
 
-# 暴露 Web UI 端口
-EXPOSE 8000
+# WebUI port
+EXPOSE 7000
 
-# 默认启动守护进程 (可以通过环境变量覆盖模式)
-CMD ["python", "email_daemon.py", "--mailbox", "126", "--ai", "claude"]
+# Default: start daemon using MAILBOX and AI from env (set in .env / env_file)
+CMD ["sh", "-c", "python email_daemon.py --mailbox ${MAILBOX:-126} --ai ${AI:-deepseek}"]
