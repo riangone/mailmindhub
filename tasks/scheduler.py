@@ -57,7 +57,8 @@ class TaskScheduler:
         try:
             from croniter import croniter
             base = datetime.fromtimestamp(after or time.time())
-            return croniter(cron_expr, base).get_next(float)
+            next_dt = croniter(cron_expr, base).get_next(datetime)
+            return time.mktime(next_dt.timetuple())
         except Exception as e:
             log.error(f"cron 表达式解析失败 '{cron_expr}': {e}")
             return None

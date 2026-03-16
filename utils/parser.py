@@ -190,6 +190,35 @@ def auto_detect_tasks(instruction: str):
             })
     return tasks
 
+def trim_email_body(body: str, max_chars: int = 4000) -> str:
+    """截断邮件正文，移除引用历史和过长的签名，减少 Token 消耗"""
+    if not body:
+        return ""
+
+    # 精确匹配邮件引用分隔符（避免误截断正文内容）
+    exact_markers = [
+        "-----Original Message-----",
+        "--- Original Message ---",
+        "________________________________",
+        "--- 会话历史 ---",
+    ]
+    trimmed_body = body
+    for marker in exact_markers:
+        if marker in trimmed_body:
+            trimmed_body = trimmed_body.split(marker)[0]
+
+    # 英文引用头：必须以换行开头，"On <日期/时间> ... wrote:" 格式
+    trimmed_body = re.split(r'\nOn\s+\w{3},?\s+\d', trimmed_body)[0]
+
+    # 中文引用头："在 <日期> 写道：" 完整格式（行首）
+    trimmed_body = re.split(r'\n在\s+\S.*写道[：:]', trimmed_body)[0]
+
+    # 截断过长的单封邮件正文（防止超长垃圾邮件或日志文件）
+    if len(trimmed_body) > max_chars:
+        trimmed_body = trimmed_body[:max_chars] + "...(正文过长已截断)"
+
+    return trimmed_body.strip()
+
 def parse_ai_response(raw: str):
     match = re.search(r'\{.*\}', raw, re.DOTALL)
     if match:

@@ -13,6 +13,24 @@ class CLIProvider(AIBase):
     def call(self, prompt: str) -> str:
         try:
             env = os.environ.copy()
+            # 补充常见 CLI 工具安装路径，防止守护进程在精简 PATH 环境中找不到命令
+            extra_paths = [
+                os.path.expanduser("~/.local/bin"),
+                os.path.expanduser("~/bin"),
+                "/usr/local/bin",
+            ]
+            # 补充 nvm 管理的 node bin 目录
+            nvm_dir = os.path.expanduser("~/.nvm/versions/node")
+            if os.path.isdir(nvm_dir):
+                for ver in sorted(os.listdir(nvm_dir), reverse=True):
+                    extra_paths.append(os.path.join(nvm_dir, ver, "bin"))
+                    break  # 只取最新版本
+            current_path = env.get("PATH", "")
+            for p in extra_paths:
+                if p not in current_path:
+                    current_path = p + os.pathsep + current_path
+            env["PATH"] = current_path
+
             if self.name == "qwen":
                 for key in ["TAVILY_API_KEY", "GOOGLE_API_KEY", "GOOGLE_SEARCH_ENGINE_ID"]:
                     val = os.environ.get(key, "")

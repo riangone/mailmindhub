@@ -119,6 +119,26 @@ MAILBOXES = {
 #  AI 配置
 # ═══════════════════════════════════════════════════════════════
 
+def _find_cli(name: str, env_key: str) -> str:
+    """在环境变量或常见路径中查找 CLI 可执行文件"""
+    env_cmd = os.environ.get(env_key, "")
+    if env_cmd:
+        return env_cmd
+    
+    # 常见路径
+    paths = [
+        os.path.expanduser(f"~/.local/bin/{name}"),
+        os.path.expanduser(f"~/bin/{name}"),
+        f"/usr/local/bin/{name}",
+        f"/usr/bin/{name}",
+    ]
+    for p in paths:
+        if os.path.isfile(p) and os.access(p, os.X_OK):
+            return p
+            
+    # 最后尝试直接返回名称（依赖 PATH）
+    return shutil.which(name) or name
+
 def _copilot_cmd() -> str:
     """查找 GitHub Copilot CLI 可执行文件路径"""
     env_cmd = os.environ.get("COPILOT_CMD", "")
@@ -129,16 +149,16 @@ def _copilot_cmd() -> str:
     )
     if os.path.isfile(bundled):
         return bundled
-    return "copilot"
+    return _find_cli("copilot", "COPILOT_CMD")
 
 
 AI_BACKENDS = {
     # CLI 方式
-    "claude":      {"type": "cli",           "cmd": os.environ.get("CLAUDE_CMD", "claude"), "args": ["--print"],                                                              "label": "Claude CLI",       "env_key": None},
-    "codex":       {"type": "cli",           "cmd": os.environ.get("CODEX_CMD",  "codex"),  "args": ["exec", "--skip-git-repo-check"],                                        "label": "Codex CLI",        "env_key": None},
-    "gemini":      {"type": "cli",           "cmd": os.environ.get("GEMINI_CMD", "gemini"), "args": ["-p"],                                                                   "label": "Gemini CLI",       "env_key": None},
-    "qwen":        {"type": "cli",           "cmd": os.environ.get("QWEN_CMD",   "qwen"),   "args": ["--prompt", "--web-search-default", "--yolo"], "native_web_search": True, "label": "Qwen CLI",         "env_key": None},
-    "copilot":     {"type": "cli_copilot",   "cmd": _copilot_cmd(),                                                                                                           "label": "GitHub Copilot",   "env_key": "GITHUB_COPILOT_TOKEN"},
+    "claude":      {"type": "cli",           "cmd": _find_cli("claude", "CLAUDE_CMD"), "args": ["--print"],                                 "native_web_search": True, "label": "Claude CLI",       "env_key": None},
+    "codex":       {"type": "cli",           "cmd": _find_cli("codex", "CODEX_CMD"),  "args": ["exec", "--skip-git-repo-check"],           "native_web_search": True, "label": "Codex CLI",        "env_key": None},
+    "gemini":      {"type": "cli",           "cmd": _find_cli("gemini", "GEMINI_CMD"), "args": ["-p"],                                      "native_web_search": True, "label": "Gemini CLI",       "env_key": None},
+    "qwen":        {"type": "cli",           "cmd": _find_cli("qwen", "QWEN_CMD"),   "args": ["--prompt", "--web-search-default", "--yolo"], "native_web_search": True, "label": "Qwen CLI",         "env_key": None},
+    "copilot":     {"type": "cli_copilot",   "cmd": _copilot_cmd(),                                                                         "native_web_search": True, "label": "GitHub Copilot",   "env_key": "GITHUB_COPILOT_TOKEN"},
 
     # API 方式 - 国际模型
     "anthropic":   {"type": "api_anthropic", "api_key": os.environ.get("ANTHROPIC_API_KEY", ""),  "model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6"),                                                      "label": "Anthropic Claude",  "env_key": "ANTHROPIC_API_KEY"},
@@ -176,6 +196,7 @@ DEFAULT_TASK_AI = os.environ.get("TASK_DEFAULT_AI", "")
 ATTACHMENT_MAX_SIZE_MB = int(os.environ.get("ATTACHMENT_MAX_SIZE_MB", "10"))
 AI_CONCURRENCY = int(os.environ.get("AI_CONCURRENCY", "3"))
 CONTEXT_MAX_DEPTH = int(os.environ.get("CONTEXT_MAX_DEPTH", "5"))
+AI_MODIFY_SUBJECT = os.environ.get("AI_MODIFY_SUBJECT", "false").lower() == "true"
 
 # ────────────────────────────────────────────────────────────────
 #  Prompts
@@ -183,99 +204,88 @@ CONTEXT_MAX_DEPTH = int(os.environ.get("CONTEXT_MAX_DEPTH", "5"))
 
 _PROMPT_TEMPLATES = {
     "zh": """\
-你正在通过邮件接收用户指令。以下是用户发来的邮件，请执行其中的任务。
-
-{{instruction}}
-
-请严格按以下 JSON 格式回复，不要输出任何其他内容：
-{{"subject": "根据回复内容拟定的简短邮件标题",
-  "body": "回复正文内容",
-  "schedule_at": "可选：触发时间(ISO格式或相对秒数)",
-  "schedule_every": "可选：重复间隔(秒或5m/2h)",
-  "schedule_cron": "可选：cron表达式(例: 0 9 * * 1-5)",
-  "schedule_until": "可选：截止时间(ISO格式)",
-  "attachments": [{{"filename": "文件名.txt", "content": "文件内容"}}],
-  "task_type": "可选：email|ai_job|weather|news|web_search|report|system_status",
-  "task_payload": {{"可选": "任务参数，如 location/query/prompt 等"}},
-  "output": {{"email": true, "archive": true, "archive_dir": "reports"}}
+当前时间：{{now}}
+你是邮件 AI 助手。请阅读以下邮件并执行任务，回复必须为纯 JSON，不含其他文字：
+{{"subject": "可选：简短标题(不加 Re:/回复: 前缀)",
+  "body": "回复正文",
+  "schedule_at": "一次性定时：ISO格式或相对秒数，如 2026-03-17T09:00:00 或 3600",
+  "schedule_every": "固定间隔重复：如 5m / 2h / 1d（与 schedule_cron 二选一）",
+  "schedule_cron": "按规律重复：cron 表达式，如每天9点→'0 9 * * *'，工作日9点→'0 9 * * 1-5'（与 schedule_every 二选一）",
+  "schedule_until": "重复任务截止时间（ISO格式），与 schedule_every/schedule_cron 配合",
+  "attachments": [{{"filename": "a.txt", "content": "文本内容"}}],
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status",
+  "task_payload": {{"query": "...", "location": "...", "prompt": "..."}},
+  "output": {{"email": true, "archive": true}}
 }}
-
-说明：
-- 当用户要求获取"OS状态"、"CPU使用率"、"内存使用情况"或"磁盘空间"等系统信息时，请务必设置 task_type="system_status"。
-- 只有当用户明确要求"日报"、"总结报告"或"综合信息"时，才使用 task_type="report"。
-- schedule_at: 仅当用户要求定时提醒/发送时使用（例如 "2026-03-13T10:00:00" 或 "3600" 表示1小时后）。若即时回复则省略。
-- schedule_every: 当用户要求"每 X 分钟/小时"等重复提醒时填写（例如 "5m"、"300"）。
-- schedule_cron: 使用 cron 表达式进行高级定时调度（例如平日早9点 → "0 9 * * 1-5"，每小时 → "0 * * * *"）。
-- schedule_until: 重复提醒的截止时间（例如 "2026-03-13T18:00:00"），与 schedule_every/schedule_cron 配合使用。
-- attachments 为可选字段，附件内容为纯文本。""",
+规则：
+- schedule_at / schedule_every / schedule_cron 三选一，不可同时设置。
+- 有定时要求时必须设置 task_type：新闻/股市/简报 → news，天气 → weather，AI 问答/分析 → ai_job，系统状态 → system_status，综合报告 → report。
+- task_payload 填写任务参数，例如 {{"query": "日本股市行情"}} 或 {{"location": "东京"}}。
+- 即时回复（无定时）时省略所有 schedule_* 字段。
+- 附件仅限文本内容。
+邮件内容：
+{{instruction}}""",
 
     "ja": """\
-あなたはメールでユーザーの指示を受け取っています。以下のメールを読み、タスクを実行してください。
-
-{{instruction}}
-
-以下のJSON形式で厳密に回答してください。他のテキストは出力しないでください：
-{{"subject": "返信メールの件名",
+現在時刻：{{now}}
+あなたはメールAIアシスタントです。以下のメールを読みタスクを実行し、純粋なJSONのみで回答してください：
+{{"subject": "任意：短い件名(Re:/返信:不要)",
   "body": "返信本文",
-  "schedule_at": "任意：実行時刻（ISO形式または相対秒数）",
-  "schedule_every": "任意：繰り返し間隔（秒または5m/2h）",
-  "schedule_cron": "任意：cron式（例: 0 9 * * 1-5）",
-  "schedule_until": "任意：終了時刻（ISO形式）",
-  "attachments": [{{"filename": "ファイル名.txt", "content": "ファイル内容"}}],
-  "task_type": "任意：email|ai_job|weather|news|web_search|report|system_status",
-  "task_payload": {{"location": "...", "query": "...", "prompt": "..."}},
-  "output": {{"email": true, "archive": true, "archive_dir": "reports"}}
+  "schedule_at": "一回限り：ISO形式または相対秒 例: 2026-03-17T09:00:00 または 3600",
+  "schedule_every": "固定間隔繰り返し：例 5m/2h/1d（schedule_cronと二択）",
+  "schedule_cron": "規則的繰り返し：cron式 例 毎朝9時→'0 9 * * *' 平日9時→'0 9 * * 1-5'（schedule_everyと二択）",
+  "schedule_until": "繰り返し終了時刻（ISO形式）、schedule_every/schedule_cronと併用",
+  "attachments": [{{"filename": "a.txt", "content": "..."}}],
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status",
+  "task_payload": {{"query": "...", "location": "...", "prompt": "..."}},
+  "output": {{"email": true, "archive": true}}
 }}
-
-説明：
-- CPU・メモリ・ディスクなどシステム情報のリクエストには task_type="system_status" を設定してください。
-- 日報・週報・総合レポートの場合のみ task_type="report" を使用してください。
-- schedule_at: ユーザーが特定の時刻を指定した場合のみ使用（例: "2026-03-13T10:00:00" または "3600" で1時間後）。
-- schedule_every: 「毎X分/時間」など繰り返しの場合に使用（例: "5m"、"2h"）。
-- schedule_cron: cron式による高度なスケジューリング（例: 平日9時毎日 → "0 9 * * 1-5"）。
-- schedule_until: 繰り返しの終了時刻（schedule_every/schedule_cronと組み合わせて使用）。
-- attachments は任意フィールドで、テキストコンテンツのみ対応。""",
+ルール：
+- schedule_at/schedule_every/schedule_cronは三択、同時設定不可。
+- スケジュール時はtask_typeを必須設定：ニュース/株→news、天気→weather、AI分析→ai_job、システム→system_status、総合レポート→report。
+- task_payloadに必要なパラメータを設定（例：{{"query":"日本株式市場"}}）。
+- 即時返信の場合はschedule_*フィールドを省略。
+{{instruction}}""",
 
     "en": """\
-You are receiving user instructions via email. Please read the email below and execute the requested task.
-
-{{instruction}}
-
-Reply strictly in the following JSON format with no other text:
-{{"subject": "Short email subject for the reply",
-  "body": "Reply body content",
-  "schedule_at": "Optional: trigger time (ISO format or relative seconds)",
-  "schedule_every": "Optional: repeat interval (seconds or 5m/2h)",
-  "schedule_cron": "Optional: cron expression (e.g. 0 9 * * 1-5)",
-  "schedule_until": "Optional: end time (ISO format)",
-  "attachments": [{{"filename": "file.txt", "content": "file content"}}],
-  "task_type": "Optional: email|ai_job|weather|news|web_search|report|system_status",
-  "task_payload": {{"location": "...", "query": "...", "prompt": "..."}},
-  "output": {{"email": true, "archive": true, "archive_dir": "reports"}}
+Current time: {{now}}
+You are an email AI assistant. Read the email below and execute the task. Reply in pure JSON only:
+{{"subject": "Optional: Short title (no Re:/Reply: prefix)",
+  "body": "Reply body",
+  "schedule_at": "One-time: ISO format or relative seconds, e.g. 2026-03-17T09:00:00 or 3600",
+  "schedule_every": "Fixed interval repeat: e.g. 5m/2h/1d (mutually exclusive with schedule_cron)",
+  "schedule_cron": "Pattern repeat: cron expression, e.g. daily 9am→'0 9 * * *', weekdays 9am→'0 9 * * 1-5' (mutually exclusive with schedule_every)",
+  "schedule_until": "End time for repeating tasks (ISO format), used with schedule_every/schedule_cron",
+  "attachments": [{{"filename": "a.txt", "content": "text content"}}],
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status",
+  "task_payload": {{"query": "...", "location": "...", "prompt": "..."}},
+  "output": {{"email": true, "archive": true}}
 }}
-
-Notes:
-- Set task_type="system_status" for system info requests (CPU usage, memory, disk space).
-- Use task_type="report" only for daily/weekly reports or summaries.
-- schedule_at: only when user requests a specific time (e.g. "2026-03-13T10:00:00" or "3600" for 1 hour later).
-- schedule_every: for recurring tasks (e.g. "every 5 minutes" → "5m", "every 2 hours" → "2h").
-- schedule_cron: for advanced scheduling using cron syntax (e.g. weekdays at 9 AM → "0 9 * * 1-5").
-- schedule_until: end time for recurring tasks, used with schedule_every or schedule_cron.
-- attachments: optional, text content only.""",
+Rules:
+- Use exactly one of schedule_at / schedule_every / schedule_cron, never multiple.
+- Scheduled tasks MUST set task_type: news/stocks→news, weather→weather, AI analysis→ai_job, system info→system_status, summary→report.
+- Set task_payload with required params, e.g. {{"query": "Japan stock market"}}.
+- For immediate replies, omit all schedule_* fields.
+- Attachments: text content only.
+Email:
+{{instruction}}""",
 }
+
 
 def _load_prompt_template() -> str:
     custom_file = os.environ.get("PROMPT_TEMPLATE_FILE", "")
     if custom_file and os.path.isfile(custom_file):
         with open(custom_file, "r", encoding="utf-8") as f:
             tmpl = f.read()
-        # Ensure {instruction} placeholder exists
         if "{instruction}" not in tmpl and "{{instruction}}" in tmpl:
             tmpl = tmpl.replace("{{instruction}}", "{instruction}")
+        if "{now}" not in tmpl and "{{now}}" in tmpl:
+            tmpl = tmpl.replace("{{now}}", "{now}")
         return tmpl
     lang = os.environ.get("PROMPT_LANG", "zh").lower()
     tmpl = _PROMPT_TEMPLATES.get(lang, _PROMPT_TEMPLATES["zh"])
-    # Convert {{instruction}} → {instruction} for .format() compatibility
-    return tmpl.replace("{{instruction}}", "{instruction}")
+    # Convert {{instruction}}/{{now}} → {instruction}/{now} for .format() compatibility
+    return tmpl.replace("{{instruction}}", "{instruction}").replace("{{now}}", "{now}")
 
 PROMPT_TEMPLATE = _load_prompt_template()
+PROMPT_LANG = os.environ.get("PROMPT_LANG", "zh").lower()

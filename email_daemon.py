@@ -6,22 +6,202 @@ MailMind — 邮件 → AI 守护进程 (模块化重构版)
 import os
 import sys
 import time
+import re
 import json
 import argparse
 import threading
 from typing import Optional
 
 # 核心配置与模块
-from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE, AI_CONCURRENCY
+from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE, AI_CONCURRENCY, AI_MODIFY_SUBJECT, PROMPT_LANG
 from core.validator import validate_config
-from core.mail_client import fetch_unread_emails, imap_login, get_oauth_token, fetch_thread_context
+from core.mail_client import fetch_unread_emails, imap_login, get_oauth_token, fetch_thread_context, push_templates_to_mailbox
 from core.mail_sender import send_reply, archive_output
 from ai.providers import get_ai_provider
-from utils.parser import parse_ai_response, auto_detect_tasks
+from utils.parser import parse_ai_response, auto_detect_tasks, trim_email_body
 from utils.logger import log
 from tasks.scheduler import scheduler
 from tasks.registry import execute_task_logic
 from concurrent.futures import ThreadPoolExecutor
+
+# ────────────────────────────────────────────────────────────────
+# 帮助 / 模板回复
+# ────────────────────────────────────────────────────────────────
+
+_HELP_KEYWORDS = {"help", "帮助", "模板", "template", "templates", "テンプレート", "ヘルプ", "使い方"}
+
+_HELP_BODY = {
+    "zh": """\
+欢迎使用 MailMind！以下是常用指令模板，复制后直接发送即可。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【模板 1】立即提问（AI 直接回答）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+主题：随意
+正文：
+请帮我分析一下[你的问题或内容]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【模板 2】立即网页搜索
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+主题：随意
+正文：
+搜索并总结关于[主题]的最新信息
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【模板 3】立即天气查询
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+主题：随意
+正文：
+查询[城市名]现在的天气
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【模板 4】每日新闻订阅（每天定时发送）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+主题：随意
+正文：
+每天早上9点发送[主题，如：日本股市、AI行业]的最新新闻摘要，持续到[结束日期，如：2026-12-31]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【模板 5】定时提醒（一次性）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+主题：随意
+正文：
+在[时间，如：2026-03-20 10:00]提醒我[提醒内容]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【模板 6】每周定时 AI 分析
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+主题：随意
+正文：
+每周一早上8点帮我分析[主题，如：本周科技热点]并发送邮件
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【模板 7】系统状态报告
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+主题：随意
+正文：
+每天下午6点发送一次服务器运行状态报告
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+提示：发送「帮助」可随时重新获取本列表。
+""",
+    "ja": """\
+MailMind へようこそ！よく使うテンプレートを以下にまとめました。コピーしてそのままお送りください。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【テンプレート 1】即時AI回答
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+件名：なんでも可
+本文：
+[質問や内容]を分析・回答してください
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【テンプレート 2】即時ウェブ検索
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+件名：なんでも可
+本文：
+[トピック]に関する最新情報を検索してまとめてください
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【テンプレート 3】即時天気確認
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+件名：なんでも可
+本文：
+[都市名]の現在の天気を教えてください
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【テンプレート 4】毎日ニュース配信
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+件名：なんでも可
+本文：
+毎朝9時に[テーマ、例：日経225・東証]の最新ニュースを送ってください。[終了日、例：2026-12-31]まで
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【テンプレート 5】一回限りのリマインダー
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+件名：なんでも可
+本文：
+[日時、例：2026-03-20 10:00]に[内容]をリマインドしてください
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【テンプレート 6】毎週定期AI分析
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+件名：なんでも可
+本文：
+毎週月曜朝8時に[テーマ、例：今週のテクノロジー動向]を分析してメールで送ってください
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【テンプレート 7】サーバー状態レポート
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+件名：なんでも可
+本文：
+毎日18時にサーバーの稼働状況レポートを送ってください
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ヒント：「テンプレート」または「ヘルプ」と送るといつでもこの一覧を再取得できます。
+""",
+    "en": """\
+Welcome to MailMind! Here are ready-to-use templates — just copy and send.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Template 1] Instant AI Answer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Subject: anything
+Body:
+Please analyze / answer: [your question]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Template 2] Instant Web Search
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Subject: anything
+Body:
+Search and summarize the latest info about [topic]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Template 3] Instant Weather
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Subject: anything
+Body:
+What is the current weather in [city]?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Template 4] Daily News Digest
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Subject: anything
+Body:
+Send me a daily news digest about [topic, e.g. AI industry] every morning at 9am until [end date, e.g. 2026-12-31]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Template 5] One-time Reminder
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Subject: anything
+Body:
+Remind me about [content] at [datetime, e.g. 2026-03-20 10:00]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Template 6] Weekly AI Analysis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Subject: anything
+Body:
+Every Monday at 8am, analyze [topic, e.g. this week's tech highlights] and email me the results
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Template 7] Server Status Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Subject: anything
+Body:
+Send me a server status report every day at 6pm
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Tip: Send "help" or "templates" anytime to get this list again.
+""",
+}
+
+def _is_help_request(em: dict) -> bool:
+    subject = (em.get("subject") or "").strip().lower()
+    body = (em.get("body") or "").strip().lower()
+    return subject in _HELP_KEYWORDS or body in _HELP_KEYWORDS
 
 # 初始化线程池与 AI 并发限速器
 executor = ThreadPoolExecutor(max_workers=5)
@@ -56,7 +236,9 @@ def save_processed_ids(path: str, ids: set):
 # ────────────────────────────────────────────────────────────────
 
 def call_ai(ai_name: str, backend: dict, instruction: str):
-    prompt = PROMPT_TEMPLATE.format(instruction=instruction)
+    from datetime import datetime
+    now = datetime.now().strftime("%Y-%m-%d %H:%M (%Z)")
+    prompt = PROMPT_TEMPLATE.format(instruction=instruction, now=now)
     ai = get_ai_provider(ai_name, backend)
     with _ai_semaphore:
         raw = ai.call(prompt)
@@ -64,6 +246,16 @@ def call_ai(ai_name: str, backend: dict, instruction: str):
 
 def process_email(mailbox_name, ai_name, backend, em):
     log.info(f"📨 收到指令: [{em['subject']}] 来自 {em['from_email']}")
+
+    # 帮助/模板请求：直接回复模板列表，不调用 AI
+    if _is_help_request(em):
+        log.info("📋 检测到帮助请求，回复模板列表")
+        help_body = _HELP_BODY.get(PROMPT_LANG, _HELP_BODY["zh"])
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], "MailMind 使用模板", help_body, em.get("message_id"))
+        processed_ids.add(em["id"])
+        save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
+        return
+
 
     # 获取完整会话线索（多层上下文）
     context_msg = ""
@@ -79,9 +271,13 @@ def process_email(mailbox_name, ai_name, backend, em):
     if context_msg:
         instr += f"--- 会话历史（从早到晚）---\n{context_msg}\n\n--- 当前邮件内容 ---\n"
 
-    instr += em['body']
+    instr += trim_email_body(em['body'] or "")
     for att in em.get("attachments", []):
-        if att["is_text"]: instr += f"\n\n--- 附件：{att['filename']} ---\n{att['content']}"
+        if att["is_text"]:
+            content = att["content"]
+            if len(content) > 5000:
+                content = content[:5000] + "...(附件内容过长已截断)"
+            instr += f"\n\n--- 附件：{att['filename']} ---\n{content}"
 
     sub, body, sch_at, sch_every, sch_until, sch_cron, atts, task_type, task_payload, output = call_ai(ai_name, backend, instr)
 
@@ -96,7 +292,12 @@ def process_email(mailbox_name, ai_name, backend, em):
             if not sch_every and det.get("schedule_every"): sch_every = det.get("schedule_every")
             if not sch_until and det.get("schedule_until"): sch_until = det.get("schedule_until")
 
-    sub = sub or (em["subject"] if em["subject"].startswith("Re:") else f"Re: {em['subject']}")
+    if AI_MODIFY_SUBJECT and sub:
+        # 移除可能的前缀以确保标题干净
+        sub = re.sub(r"^(?:Re|RE|回复|回信|答复)[:：]\s*", "", sub, flags=re.I)
+    else:
+        # 默认不修改标题，也不添加任何前缀
+        sub = em["subject"]
 
     if sch_cron or sch_at or sch_every:
         if task_type and not output:
@@ -208,11 +409,21 @@ def main():
     parser.add_argument("--ai", default="claude")
     parser.add_argument("--poll", action="store_true", help="轮询模式")
     parser.add_argument("--list", action="store_true", help="显示配置状态")
+    parser.add_argument("--push-templates", action="store_true", help="将指令模板写入邮箱文件夹后退出")
     args = parser.parse_args()
 
     if args.list:
         for name, mb in MAILBOXES.items():
             print(f"  {name:10s} {mb.get('address', '(未配置)')}")
+        return
+
+    if args.push_templates:
+        mailbox = MAILBOXES.get(args.mailbox)
+        if not mailbox:
+            print(f"错误：未找到邮箱配置 '{args.mailbox}'")
+            sys.exit(1)
+        count = push_templates_to_mailbox(mailbox, PROMPT_LANG)
+        print(f"✅ 已写入 {count} 个模板到邮箱「{args.mailbox}」")
         return
 
     # 验证配置

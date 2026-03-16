@@ -122,8 +122,27 @@ def fetch_system_status(payload: Optional[dict] = None) -> str:
     return "\n".join(lines).strip()
 
 def pick_task_ai(task_payload: dict):
-    ai_name = (task_payload or {}).get("ai_name") or DEFAULT_TASK_AI or "claude"
-    backend = AI_BACKENDS.get(ai_name, AI_BACKENDS.get("claude"))
+    # 如果 payload 没指定，且没有全局默认配置，则尝试使用常见后端或列表第一个
+    ai_name = (task_payload or {}).get("ai_name") or DEFAULT_TASK_AI
+    if not ai_name or ai_name not in AI_BACKENDS:
+        # 尝试从已配置的后端中选一个可用的
+        priorities = ["claude", "openai", "gemini", "qwen"]
+        for p in priorities:
+            if p not in AI_BACKENDS:
+                continue
+            b = AI_BACKENDS[p]
+            if b.get("type") == "cli":
+                cmd = b.get("cmd", "")
+                if cmd and (shutil.which(cmd) or os.path.isfile(cmd)):
+                    ai_name = p
+                    break
+            elif b.get("api_key"):
+                ai_name = p
+                break
+        if not ai_name or ai_name not in AI_BACKENDS:
+            ai_name = list(AI_BACKENDS.keys())[0]
+
+    backend = AI_BACKENDS.get(ai_name)
     return ai_name, backend
 
 def execute_task_logic(task: dict):

@@ -10,7 +10,8 @@ from email import encoders
 # 注意：由于 email_daemon.py 包含大量全局初始化逻辑（如日志和环境变量），
 # 这里的导入可能需要小心处理，或者我们可以直接将这些纯逻辑函数提取出来测试。
 # 为了保持简单，我们直接从 email_daemon 导入。
-from email_daemon import decode_str, parse_ai_response, get_body_and_attachments, is_sender_allowed
+from core.mail_client import decode_str, get_body_and_attachments, is_sender_allowed
+from utils.parser import parse_ai_response
 
 class TestEmailLogic(unittest.TestCase):
 
@@ -25,7 +26,7 @@ class TestEmailLogic(unittest.TestCase):
 
     def test_parse_ai_response(self):
         # parse_ai_response returns (subject, body, schedule_at, schedule_every,
-        #   schedule_until, attachments, task_type, task_payload, output)
+        #   schedule_until, schedule_cron, attachments, task_type, task_payload, output)
 
         # 测试包含 JSON 的响应
         raw_with_json = 'Some chatty text before. {"subject": "Test Sub", "body": "Test Body"} and after.'
@@ -47,7 +48,7 @@ class TestEmailLogic(unittest.TestCase):
 
         # 测试调度字段
         raw_sched = '{"subject": "S", "body": "B", "schedule_every": "5m", "task_type": "weather"}'
-        sub, body, sch_at, sch_every, sch_until, atts, task_type, task_payload, output = parse_ai_response(raw_sched)
+        sub, body, sch_at, sch_every, sch_until, sch_cron, atts, task_type, task_payload, output = parse_ai_response(raw_sched)
         self.assertEqual(sch_every, "5m")
         self.assertEqual(task_type, "weather")
         self.assertIsNone(sch_at)

@@ -588,15 +588,21 @@ do_webui() {
 
 # ─── 入口 ──────────────────────────────────────────────────────
 case "$1" in
-    setup)     do_setup ;;
-    start)     do_start ;;
-    stop)      do_stop ;;
-    restart)   do_restart ;;
-    status)    do_status ;;
-    log)       do_log ;;
-    webui)     do_webui "$@" ;;
-    install)   do_install ;;
-    uninstall) do_uninstall ;;
+    setup)          do_setup ;;
+    start)          do_start ;;
+    stop)           do_stop ;;
+    restart)        do_restart ;;
+    status)         do_status ;;
+    log)            do_log ;;
+    webui)          do_webui "$@" ;;
+    install)        do_install ;;
+    uninstall)      do_uninstall ;;
+    push-templates)
+        load_env
+        heading "写入邮件模板"
+        if [ -z "$MAILBOX" ]; then error "未配置邮箱（MAILBOX 为空）"; fi
+        "$VENV_PYTHON" "$SCRIPT" --mailbox "$MAILBOX" --push-templates
+        ;;
     *)
         echo ""
         echo "用法: bash manage.sh <命令>"
@@ -616,6 +622,9 @@ case "$1" in
         echo "    webui restart         重启 Web UI"
         echo "    webui status          查看 Web UI 状态"
         echo "    webui log             实时查看 Web UI 日志"
+        echo ""
+        echo "  其他:"
+        echo "    push-templates        将指令模板写入邮箱文件夹（方便直接使用）"
         echo ""
         echo "  系统服务:"
         echo "    install               安装为 systemd 服务（开机自启）"
