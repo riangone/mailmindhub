@@ -759,19 +759,6 @@
       <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">Codex CLI</div><div class="ai-desc" data-i18n="ai_codex_desc"></div><div class="ai-req" data-i18n="ai_cli_req"></div></div>
       <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">Qwen CLI</div><div class="ai-desc" data-i18n="ai_qwen_cli_desc"></div><div class="ai-req" data-i18n="ai_cli_req"></div></div>
       <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">GitHub Copilot</div><div class="ai-desc" data-i18n="ai_copilot_desc"></div><div class="ai-req">GITHUB_COPILOT_TOKEN</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Anthropic</div><div class="ai-desc" data-i18n="ai_anthropic_desc"></div><div class="ai-req">ANTHROPIC_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">OpenAI</div><div class="ai-desc" data-i18n="ai_openai_desc"></div><div class="ai-req">OPENAI_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Gemini API</div><div class="ai-desc" data-i18n="ai_gemini_desc"></div><div class="ai-req">GEMINI_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">DeepSeek</div><div class="ai-desc" data-i18n="ai_deepseek_desc"></div><div class="ai-req">DEEPSEEK_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Groq</div><div class="ai-desc" data-i18n="ai_groq_desc"></div><div class="ai-req">GROQ_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Perplexity</div><div class="ai-desc" data-i18n="ai_perplexity_desc"></div><div class="ai-req">PERPLEXITY_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Cohere</div><div class="ai-desc" data-i18n="ai_cohere_desc"></div><div class="ai-req">COHERE_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Qwen API</div><div class="ai-desc" data-i18n="ai_qwen_desc"></div><div class="ai-req">QWEN_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Moonshot Kimi</div><div class="ai-desc" data-i18n="ai_moonshot_desc"></div><div class="ai-req">MOONSHOT_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">智谱 GLM</div><div class="ai-desc" data-i18n="ai_glm_desc"></div><div class="ai-req">GLM_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">讯飞 Spark</div><div class="ai-desc" data-i18n="ai_spark_desc"></div><div class="ai-req">SPARK_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">百度 Ernie</div><div class="ai-desc" data-i18n="ai_ernie_desc"></div><div class="ai-req">ERNIE_API_KEY</div></div>
-      <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">零一万物 Yi</div><div class="ai-desc" data-i18n="ai_yi_desc"></div><div class="ai-req">YI_API_KEY</div></div>
     </div>
   </div>
 </section>
@@ -918,7 +905,7 @@ const T = {
     f4_h: 'Whitelist Security', f4_p: 'Per-mailbox sender whitelists. Only trusted addresses or domains trigger AI processing. Strangers are silently ignored.',
     f5_h: 'Attachment Support', f5_p: 'Attach .txt, .md, .csv to enrich AI context. AI can return file attachments too. Multi-level email thread history auto-included.',
     f6_h: 'One-Script Management', f6_p: 'manage.sh start|stop|restart|log|status. Deploy with Docker (<code>docker compose up -d</code>) or systemd (<code>manage.sh install</code>) for auto-start.',
-    f7_h: 'Web Search Injection', f7_p: 'Inject live search results into AI context. Supports Google (default, no key), DuckDuckGo, Bing, Brave, and Wikipedia.',
+    f7_h: 'Web Search Injection', f7_p: 'Inject live Brave search results into AI context. Set <code>WEB_SEARCH=true</code> and <code>BRAVE_API_KEY</code> in .env to enable.',
     f8_h: 'Report Archiving', f8_p: 'Scheduled tasks can archive results to reports/ as timestamped files — perfect for daily digests and monitoring.',
     webui_label: 'Web UI', webui_title: 'Browser-based<br/>control panel',
     webui_desc: 'No need to memorize CLI commands. MailMind includes a built-in web admin panel — launch it with one command and manage everything from your browser.',
@@ -982,7 +969,7 @@ const T = {
     f4_h: '白名单安全', f4_p: '每个邮箱独立配置白名单。只有可信地址或域名才能触发 AI 处理，陌生人的邮件会被静默忽略。',
     f5_h: '上下文与附件', f5_p: '支持 .txt/.md/.csv 附件作为 AI 上下文，AI 回复时也可携带附件。自动追踪多层邮件对话历史。',
     f6_h: '一键管理', f6_p: 'manage.sh start|stop|restart|log|status。支持 Docker（<code>docker compose up -d</code>）或 systemd 开机自启（<code>manage.sh install</code>）。',
-    f7_h: '网页搜索注入', f7_p: '将实时搜索结果注入 AI 上下文。支持 Google（默认，无需 Key）、DuckDuckGo、Bing、Brave 和 Wikipedia。',
+    f7_h: '网页搜索注入', f7_p: '将 Brave 实时搜索结果注入 AI 上下文。在 .env 中设置 <code>WEB_SEARCH=true</code> 和 <code>BRAVE_API_KEY</code> 即可启用。',
     f8_h: '报告归档', f8_p: '定时任务结果可归档到 reports/ 目录，以时间戳命名，适合日报、监控场景。',
     webui_label: 'Web UI', webui_title: '浏览器管理面板',
     webui_desc: '无需记忆命令行。MailMind 内置 Web 管理界面，一条命令启动，在浏览器中完成所有配置和监控。',
@@ -1046,7 +1033,7 @@ const T = {
     f4_h: 'ホワイトリスト保護', f4_p: 'メールボックスごとに送信者ホワイトリストを設定。信頼できるアドレス・ドメインのみAI処理を許可。',
     f5_h: '添付ファイル対応', f5_p: '.txt/.md/.csv ファイルをAIコンテキストとして添付可能。AIの返信にもファイル添付可。多段スレッド履歴を自動取得。',
     f6_h: 'ワンスクリプト管理', f6_p: 'manage.sh start|stop|restart|log|status。Docker（<code>docker compose up -d</code>）またはsystemd（<code>manage.sh install</code>）で自動起動に対応。',
-    f7_h: 'Web検索インジェクション', f7_p: 'リアルタイム検索結果をAIコンテキストに注入。Google（デフォルト、キー不要）・DuckDuckGo・Bing・Brave・Wikipediaに対応。',
+    f7_h: 'Web検索インジェクション', f7_p: 'BraveのリアルタイムWeb検索結果をAIコンテキストに注入。.envに <code>WEB_SEARCH=true</code> と <code>BRAVE_API_KEY</code> を設定するだけで有効化。',
     f8_h: 'レポートアーカイブ', f8_p: '定期タスクの結果をreports/にタイムスタンプ付きで保存。日次ダイジェストやモニタリングに最適。',
     webui_label: 'Web UI', webui_title: 'ブラウザで操作する<br/>管理パネル',
     webui_desc: 'CLIコマンドを覚える必要はありません。MailMindには組み込みのWeb管理パネルが付属しています。コマンド1つで起動し、ブラウザからすべてを管理できます。',
@@ -1110,7 +1097,7 @@ const T = {
     f4_h: '화이트리스트 보안', f4_p: '메일박스별 발신자 화이트리스트. 신뢰할 수 있는 주소·도메인만 AI 처리를 트리거. 낯선 사람은 무시.',
     f5_h: '첨부 파일 지원', f5_p: '.txt/.md/.csv를 AI 컨텍스트로 첨부 가능. AI 회신 시 파일 첨부도 가능. 다단계 스레드 히스토리 자동 포함.',
     f6_h: '단일 스크립트 관리', f6_p: 'manage.sh start|stop|restart|log|status. Docker(<code>docker compose up -d</code>) 또는 systemd(<code>manage.sh install</code>)로 자동 시작 지원.',
-    f7_h: '웹 검색 주입', f7_p: '실시간 검색 결과를 AI 컨텍스트에 주입. Google(기본값, 키 불필요)·DuckDuckGo·Bing·Brave·Wikipedia 지원.',
+    f7_h: '웹 검색 주입', f7_p: 'Brave 실시간 검색 결과를 AI 컨텍스트에 주입. .env에 <code>WEB_SEARCH=true</code>와 <code>BRAVE_API_KEY</code>를 설정하면 활성화됩니다.',
     f8_h: '보고서 아카이브', f8_p: '예약 작업 결과를 reports/에 타임스탬프로 저장. 일간 다이제스트, 모니터링에 최적.',
     webui_label: 'Web UI', webui_title: '브라우저 기반<br/>관리 패널',
     webui_desc: 'CLI 명령어를 외울 필요가 없습니다. MailMind에는 내장 웹 관리 패널이 포함되어 있습니다. 명령어 하나로 실행하고 브라우저에서 모든 것을 관리하세요.',
