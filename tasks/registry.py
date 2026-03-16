@@ -5,7 +5,7 @@ import subprocess
 import logging
 import requests
 from typing import Optional
-from core.config import WEATHER_API_KEY, WEATHER_DEFAULT_LOCATION, SEARCH_RESULTS_COUNT, AI_BACKENDS, DEFAULT_TASK_AI
+from core.config import WEATHER_API_KEY, WEATHER_DEFAULT_LOCATION, SEARCH_RESULTS_COUNT, AI_BACKENDS, DEFAULT_TASK_AI, PROMPT_LANG
 from utils.search import web_search, format_search_results
 from ai.providers import get_ai_provider
 from utils.logger import log
@@ -145,6 +145,94 @@ def pick_task_ai(task_payload: dict):
     backend = AI_BACKENDS.get(ai_name)
     return ai_name, backend
 
+def _t(zh: str, ja: str, en: str) -> str:
+    return {"zh": zh, "ja": ja, "en": en}.get(PROMPT_LANG, zh)
+
+
+def _fmt_task_row(t: dict) -> str:
+    """Format a single task row for display."""
+    from datetime import datetime as _dt
+    status_icon = {"pending": "⏳", "paused": "⏸️", "cancelled": "❌", "completed": "✅", "failed": "⚠️", "processing": "🔄"}.get(t.get("status", ""), "❓")
+    next_run = ""
+    if t.get("trigger_time"):
+        try:
+            next_run = _dt.fromtimestamp(t["trigger_time"]).strftime("%Y-%m-%d %H:%M")
+        except Exception:
+            pass
+    repeat = ""
+    if t.get("cron_expr"):
+        repeat = f"cron:{t['cron_expr']}"
+    elif t.get("interval_seconds"):
+        secs = t["interval_seconds"]
+        if secs >= 86400:
+            repeat = f"每{secs//86400}天"
+        elif secs >= 3600:
+            repeat = f"每{secs//3600}时"
+        elif secs >= 60:
+            repeat = f"每{secs//60}分"
+        else:
+            repeat = f"每{secs}秒"
+    parts = [f"[ID:{t['id']}] {status_icon} {t.get('subject','')[:40]}"]
+    parts.append(f"  类型:{t.get('type','')}  下次:{next_run or '-'}  {repeat}")
+    return "\n".join(parts)
+
+
+def _handle_task_manage(payload: dict, subject: str) -> str:
+    from tasks.scheduler import scheduler
+    action      = (payload or {}).get("action", "list")
+    task_id     = (payload or {}).get("task_id")
+    filt        = (payload or {}).get("filter", {})
+    type_filt   = filt.get("type")
+    subj_filt   = filt.get("subject")
+    status_filt = filt.get("status")
+
+    if action == "list":
+        tasks = scheduler.list_tasks(
+            status_filter=status_filt,
+            type_filter=type_filt,
+            subject_filter=subj_filt,
+        )
+        if not tasks:
+            return _t("当前没有活跃的定时任务。", "アクティブな定期タスクはありません。", "No active scheduled tasks.")
+        header = _t(f"当前有 {len(tasks)} 个任务：", f"アクティブなタスク：{len(tasks)} 件", f"Active tasks: {len(tasks)}")
+        rows = "\n\n".join(_fmt_task_row(t) for t in tasks)
+        hint = _t(
+            "\n\n─────\n可回复「取消任务 ID:N」「暂停任务 ID:N」「恢复任务 ID:N」「删除任务 ID:N」进行管理。",
+            "\n\n─────\n「タスクキャンセル ID:N」「一時停止 ID:N」「再開 ID:N」「削除 ID:N」と返信して管理できます。",
+            "\n\n─────\nReply 'cancel task ID:N', 'pause task ID:N', 'resume task ID:N', or 'delete task ID:N' to manage.",
+        )
+        return header + "\n\n" + rows + hint
+
+    if action in ("cancel", "pause", "resume", "delete"):
+        if task_id:
+            task_id = int(task_id)
+            ok = {
+                "cancel": scheduler.cancel_task,
+                "pause":  scheduler.pause_task,
+                "resume": scheduler.resume_task,
+                "delete": scheduler.delete_task,
+            }[action](task_id)
+            verb_zh = {"cancel": "取消", "pause": "暂停", "resume": "恢复", "delete": "删除"}[action]
+            verb_ja = {"cancel": "キャンセル", "pause": "一時停止", "resume": "再開", "delete": "削除"}[action]
+            verb_en = {"cancel": "cancelled", "pause": "paused", "resume": "resumed", "delete": "deleted"}[action]
+            if ok:
+                return _t(f"✅ 已{verb_zh}任务 ID:{task_id}。", f"✅ タスク ID:{task_id} を{verb_ja}しました。", f"✅ Task ID:{task_id} {verb_en}.")
+            else:
+                return _t(f"⚠️ 未找到可{verb_zh}的任务 ID:{task_id}（已完成或不存在）。",
+                          f"⚠️ タスク ID:{task_id} は{verb_ja}できませんでした（完了済みか存在しません）。",
+                          f"⚠️ Task ID:{task_id} could not be {verb_en} (already done or not found).")
+        else:
+            # Batch cancel by filter
+            if action == "cancel":
+                count = scheduler.cancel_tasks_by_filter(type_filt, subj_filt)
+                return _t(f"✅ 已取消 {count} 个匹配的任务。", f"✅ {count} 件のタスクをキャンセルしました。", f"✅ Cancelled {count} matching tasks.")
+            return _t("⚠️ 批量操作仅支持取消，请提供 task_id 进行暂停/恢复/删除。",
+                      "⚠️ 一括操作はキャンセルのみ対応です。一時停止/再開/削除はtask_idを指定してください。",
+                      "⚠️ Batch operation only supports cancel. Provide task_id for pause/resume/delete.")
+
+    return _t(f"⚠️ 未知 task_manage 操作：{action}", f"⚠️ 不明な操作：{action}", f"⚠️ Unknown action: {action}")
+
+
 def execute_task_logic(task: dict):
     task_type = (task.get("type") or "email").lower()
     payload = task.get("payload") or {}
@@ -209,6 +297,9 @@ def execute_task_logic(task: dict):
     elif task_type == "email_manage":
         # email_manage is handled interactively in process_email(); scheduled runs are not supported.
         body = "⚠️ email_manage 仅支持即时执行，不支持定时任务。"
+    elif task_type == "task_manage":
+        body = _handle_task_manage(payload, subject)
+        subject = subject or _t("任务管理结果", "タスク管理結果", "Task management result")
     else:
         body = f"⚠️ 未知任务类型：{task_type}"
 

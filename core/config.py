@@ -213,11 +213,13 @@ _PROMPT_TEMPLATES = {
   "schedule_cron": "按规律重复：cron 表达式，如每天9点→'0 9 * * *'，工作日9点→'0 9 * * 1-5'（与 schedule_every 二选一）",
   "schedule_until": "重复任务截止时间（ISO格式），与 schedule_every/schedule_cron 配合",
   "attachments": [{{"filename": "a.txt", "content": "文本内容"}}],
-  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage",
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage",
   "task_payload": {{"query": "...", "location": "...", "prompt": "...",
-    "action": "move|delete|mark_read|mark_unread",
-    "filter": {{"from_contains": "...", "subject_contains": "...", "folder": "INBOX", "since_days": 30, "before_days": 90, "unread": true}},
-    "target_folder": "目标文件夹（action=move时必填）"}},
+    "action": "move|delete|mark_read|mark_unread（email_manage）或 list|cancel|pause|resume|delete（task_manage）",
+    "task_id": 3,
+    "filter": {{"type": "news", "subject": "关键词", "status": "pending|paused"}},
+    "filter（email_manage）": {{"from_contains": "...", "subject_contains": "...", "folder": "INBOX", "since_days": 30, "before_days": 90, "unread": true}},
+    "target_folder": "目标文件夹（email_manage action=move时必填）"}},
   "output": {{"email": true, "archive": true}}
 }}
 规则：
@@ -225,6 +227,7 @@ _PROMPT_TEMPLATES = {
 - 有定时要求时必须设置 task_type：新闻/股市/简报 → news，天气 → weather，AI 问答/分析 → ai_job，系统状态 → system_status，综合报告 → report。
 - task_payload 填写任务参数，例如 {{"query": "日本股市行情"}} 或 {{"location": "东京"}}。
 - 邮件整理/归类/移动/删除/标记已读 → email_manage，task_payload 必须包含 action 和 filter，action=move 时还需要 target_folder。
+- 查看/取消/暂停/恢复/删除定时任务 → task_manage，task_payload 包含 action（list/cancel/pause/resume/delete）和 task_id 或 filter。
 - 即时回复（无定时）时省略所有 schedule_* 字段。
 - 附件仅限文本内容。
 邮件内容：
@@ -240,11 +243,13 @@ _PROMPT_TEMPLATES = {
   "schedule_cron": "規則的繰り返し：cron式 例 毎朝9時→'0 9 * * *' 平日9時→'0 9 * * 1-5'（schedule_everyと二択）",
   "schedule_until": "繰り返し終了時刻（ISO形式）、schedule_every/schedule_cronと併用",
   "attachments": [{{"filename": "a.txt", "content": "..."}}],
-  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage",
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage",
   "task_payload": {{"query": "...", "location": "...", "prompt": "...",
-    "action": "move|delete|mark_read|mark_unread",
-    "filter": {{"from_contains": "...", "subject_contains": "...", "folder": "INBOX", "since_days": 30, "before_days": 90, "unread": true}},
-    "target_folder": "移動先フォルダ（action=moveの場合必須）"}},
+    "action": "move|delete|mark_read|mark_unread（email_manage）または list|cancel|pause|resume|delete（task_manage）",
+    "task_id": 3,
+    "filter": {{"type": "news", "subject": "キーワード", "status": "pending|paused"}},
+    "filter（email_manage用）": {{"from_contains": "...", "subject_contains": "...", "folder": "INBOX", "since_days": 30, "before_days": 90, "unread": true}},
+    "target_folder": "移動先フォルダ（email_manage action=moveの場合必須）"}},
   "output": {{"email": true, "archive": true}}
 }}
 ルール：
@@ -252,6 +257,7 @@ _PROMPT_TEMPLATES = {
 - スケジュール時はtask_typeを必須設定：ニュース/株→news、天気→weather、AI分析→ai_job、システム→system_status、総合レポート→report。
 - task_payloadに必要なパラメータを設定（例：{{"query":"日本株式市場"}}）。
 - メール整理/移動/削除/既読化 → email_manage、task_payloadにaction・filterを必須設定、action=moveはtarget_folderも必要。
+- 定期タスクの確認/取消/一時停止/再開/削除 → task_manage、action（list/cancel/pause/resume/delete）とtask_idまたはfilterを指定。
 - 即時返信の場合はschedule_*フィールドを省略。
 {{instruction}}""",
 
@@ -265,11 +271,13 @@ You are an email AI assistant. Read the email below and execute the task. Reply 
   "schedule_cron": "Pattern repeat: cron expression, e.g. daily 9am→'0 9 * * *', weekdays 9am→'0 9 * * 1-5' (mutually exclusive with schedule_every)",
   "schedule_until": "End time for repeating tasks (ISO format), used with schedule_every/schedule_cron",
   "attachments": [{{"filename": "a.txt", "content": "text content"}}],
-  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage",
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage",
   "task_payload": {{"query": "...", "location": "...", "prompt": "...",
-    "action": "move|delete|mark_read|mark_unread",
-    "filter": {{"from_contains": "...", "subject_contains": "...", "folder": "INBOX", "since_days": 30, "before_days": 90, "unread": true}},
-    "target_folder": "destination folder (required when action=move)"}},
+    "action": "move|delete|mark_read|mark_unread (email_manage) or list|cancel|pause|resume|delete (task_manage)",
+    "task_id": 3,
+    "filter": {{"type": "news", "subject": "keyword", "status": "pending|paused"}},
+    "filter (email_manage)": {{"from_contains": "...", "subject_contains": "...", "folder": "INBOX", "since_days": 30, "before_days": 90, "unread": true}},
+    "target_folder": "destination folder (required when email_manage action=move)"}},
   "output": {{"email": true, "archive": true}}
 }}
 Rules:
@@ -277,6 +285,7 @@ Rules:
 - Scheduled tasks MUST set task_type: news/stocks→news, weather→weather, AI analysis→ai_job, system info→system_status, summary→report.
 - Set task_payload with required params, e.g. {{"query": "Japan stock market"}}.
 - Email organization/sorting/moving/deleting/marking → email_manage; task_payload MUST include action and filter; action=move also requires target_folder.
+- View/cancel/pause/resume/delete scheduled tasks → task_manage; specify action (list/cancel/pause/resume/delete) plus task_id or filter.
 - For immediate replies, omit all schedule_* fields.
 - Attachments: text content only.
 Email:

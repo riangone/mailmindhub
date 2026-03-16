@@ -39,11 +39,15 @@ class TaskScheduler:
                     status TEXT DEFAULT 'pending'
                 )
             """)
-            # Migration: add cron_expr column to existing databases
-            try:
-                conn.execute("ALTER TABLE tasks ADD COLUMN cron_expr TEXT")
-            except Exception:
-                pass  # Column already exists
+            # Migrations for existing databases
+            for col, definition in [
+                ("cron_expr", "TEXT"),
+                ("paused_at", "REAL"),
+            ]:
+                try:
+                    conn.execute(f"ALTER TABLE tasks ADD COLUMN {col} {definition}")
+                except Exception:
+                    pass
 
     def _parse_datetime(self, value: str):
         if not value: return None
@@ -121,6 +125,80 @@ class TaskScheduler:
         except Exception as e:
             log.error(f"安排任务失败: {e}")
             return False
+
+    # ── Task management ──────────────────────────────────────────
+
+    def list_tasks(self, status_filter: str = None, type_filter: str = None,
+                   subject_filter: str = None, mailbox_filter: str = None) -> list:
+        """Return task rows matching optional filters."""
+        sql = 'SELECT * FROM tasks WHERE 1=1'
+        params = []
+        if status_filter:
+            sql += ' AND status = ?'
+            params.append(status_filter)
+        else:
+            sql += " AND status NOT IN ('completed', 'failed')"
+        if type_filter:
+            sql += ' AND type = ?'
+            params.append(type_filter)
+        if subject_filter:
+            sql += ' AND subject LIKE ?'
+            params.append(f'%{subject_filter}%')
+        if mailbox_filter:
+            sql += ' AND mailbox_name = ?'
+            params.append(mailbox_filter)
+        sql += ' ORDER BY trigger_time ASC'
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            return [dict(r) for r in conn.execute(sql, params).fetchall()]
+
+    def cancel_task(self, task_id: int) -> bool:
+        """Set status to 'cancelled'. Returns True if a row was updated."""
+        with sqlite3.connect(self.db_path) as conn:
+            cur = conn.execute(
+                "UPDATE tasks SET status='cancelled' WHERE id=? AND status NOT IN ('completed','failed','cancelled')",
+                (task_id,))
+            return cur.rowcount > 0
+
+    def pause_task(self, task_id: int) -> bool:
+        """Set status to 'paused'. Returns True if a row was updated."""
+        with sqlite3.connect(self.db_path) as conn:
+            cur = conn.execute(
+                "UPDATE tasks SET status='paused', paused_at=? WHERE id=? AND status='pending'",
+                (time.time(), task_id))
+            return cur.rowcount > 0
+
+    def resume_task(self, task_id: int) -> bool:
+        """Restore a paused task to 'pending'. Returns True if updated."""
+        with sqlite3.connect(self.db_path) as conn:
+            cur = conn.execute(
+                "UPDATE tasks SET status='pending', paused_at=NULL WHERE id=? AND status='paused'",
+                (task_id,))
+            return cur.rowcount > 0
+
+    def delete_task(self, task_id: int) -> bool:
+        """Permanently remove a task. Returns True if deleted."""
+        with sqlite3.connect(self.db_path) as conn:
+            cur = conn.execute("DELETE FROM tasks WHERE id=?", (task_id,))
+            return cur.rowcount > 0
+
+    def cancel_tasks_by_filter(self, type_filter: str = None, subject_filter: str = None,
+                                mailbox_filter: str = None) -> int:
+        """Cancel all matching active tasks. Returns count of cancelled rows."""
+        sql = "UPDATE tasks SET status='cancelled' WHERE status NOT IN ('completed','failed','cancelled')"
+        params = []
+        if type_filter:
+            sql += ' AND type=?'
+            params.append(type_filter)
+        if subject_filter:
+            sql += ' AND subject LIKE ?'
+            params.append(f'%{subject_filter}%')
+        if mailbox_filter:
+            sql += ' AND mailbox_name=?'
+            params.append(mailbox_filter)
+        with sqlite3.connect(self.db_path) as conn:
+            cur = conn.execute(sql, params)
+            return cur.rowcount
 
     def run_forever(self):
         log.info("⏰ 任务调度器已启动 (SQLite)")
