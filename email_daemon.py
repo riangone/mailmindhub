@@ -296,7 +296,12 @@ def process_email(mailbox_name, ai_name, backend, em):
     if context_msg:
         instr += f"--- 会话历史（从早到晚）---\n{context_msg}\n\n--- 当前邮件内容 ---\n"
 
-    instr += trim_email_body(em['body'] or "")
+    raw_body = em['body'] or ""
+    trimmed = trim_email_body(raw_body)
+    # 如果 trim 后为空但原文不为空（全是引用/签名），回退到原始正文截断版
+    if not trimmed and raw_body.strip():
+        trimmed = raw_body.strip()[:2000]
+    instr += trimmed
     for att in em.get("attachments", []):
         if att["is_text"]:
             content = att["content"]
