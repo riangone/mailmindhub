@@ -274,7 +274,11 @@ def execute_email_manage_op(mailbox: dict, op_data: dict, lang: str = "zh") -> s
         if action == "move":
             count = imap_move_messages(mail, uid_list, dest)
         elif action == "delete":
-            count = imap_delete_messages(mail, uid_list)
+            trash_folder = mailbox.get("trash_folder", "")
+            if trash_folder:
+                count = imap_move_messages(mail, uid_list, trash_folder)
+            else:
+                count = imap_delete_messages(mail, uid_list)
         elif action == "mark_read":
             count = imap_set_flag(mail, uid_list, "\\Seen", add=True)
         elif action == "mark_unread":

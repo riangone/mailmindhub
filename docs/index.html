@@ -612,13 +612,6 @@
   </div>
 </section>
 
-<!-- ══ STATS ══ -->
-<div class="stats-bar" style="position:relative;z-index:1;margin:0 auto;max-width:960px;">
-  <div class="stat"><div class="stat-num">18</div><div class="stat-label" data-i18n="stat_ai"></div></div>
-  <div class="stat"><div class="stat-num">8</div><div class="stat-label" data-i18n="stat_mail"></div></div>
-  <div class="stat"><div class="stat-num">7</div><div class="stat-label" data-i18n="stat_task"></div></div>
-  <div class="stat"><div class="stat-num">&lt;60s</div><div class="stat-label" data-i18n="stat_time"></div></div>
-</div>
 
 <!-- ══ USP HIGHLIGHTS ══ -->
 <div class="usp-strip">
@@ -627,7 +620,6 @@
   <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp3"></span></div>
   <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp4"></span></div>
   <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp5"></span></div>
-  <div class="usp-pill"><span class="usp-mark">✦</span><span data-i18n="usp6"></span></div>
 </div>
 
 <!-- ══ FEATURES ══ -->
@@ -917,16 +909,15 @@ const T = {
     hero_sub: 'Send an email with any instruction. MailMind routes it to Claude, GPT, Gemini, or Qwen — and replies with the result. No app. No new interface. Just email.',
     flow_1: 'You send', flow_3: 'AI processes', flow_4: 'You receive',
     cta_github: 'View on GitHub', cta_start: 'Quick Start →',
-    stat_ai: 'AI Backends', stat_mail: 'Email Providers', stat_task: 'Task Types', stat_time: 'Response Time',
-    usp1: 'No new UI — email is the interface', usp2: 'Async & non-blocking', usp3: 'Fully self-hosted & private', usp4: 'Works on any device with email', usp5: 'MIT open source', usp6: '18 AI backends',
+    usp1: 'No new UI — email is the interface', usp2: 'Async & non-blocking', usp3: 'Fully self-hosted & private', usp4: 'Works on any device with email', usp5: 'MIT open source',
     feat_label: 'Why MailMind',
     feat_title: 'Everything your inbox<br/>was missing',
-    f1_h: '8 Mailbox Providers', f1_p: 'Works natively with 126, 163, QQ Mail, Gmail (OAuth & App Password), Outlook (OAuth), iCloud (app-specific password), ProtonMail (Bridge), and any custom IMAP provider. IMAP IDLE for instant push delivery.',
-    f2_h: '18 AI Backends', f2_p: 'CLI mode uses local AI tools — requires installation & auth first. API mode calls cloud services directly with just an API key.',
-    f3_h: 'Scheduled Tasks', f3_p: 'Natural language scheduling. "Every day 8am weather Tokyo" or "Every Monday AI news". Cron expressions also supported (e.g. <code>0 9 * * 1-5</code>). Persisted in SQLite across restarts.',
+    f1_h: 'Mailbox Support', f1_p: 'Works with 126, 163, QQ, Gmail (OAuth & App Password), Outlook (OAuth), iCloud, ProtonMail (Bridge), and custom IMAP. IMAP IDLE for instant push delivery.',
+    f2_h: 'Multiple AI Backends', f2_p: 'CLI mode uses local AI tools — requires installation & auth first. API mode calls cloud services with just an API key.',
+    f3_h: 'Scheduled Tasks', f3_p: 'Natural language scheduling. "Every day 8am weather Tokyo". Cron expressions also supported (e.g. <code>0 9 * * 1-5</code>). Persisted in SQLite across restarts.',
     f4_h: 'Whitelist Security', f4_p: 'Per-mailbox sender whitelists. Only trusted addresses or domains trigger AI processing. Strangers are silently ignored.',
-    f5_h: 'Attachment Support', f5_p: 'Attach .txt, .md, .csv to enrich AI context. AI can also return file attachments. Multi-level email thread history is automatically included in replies. Configurable size limit (ATTACHMENT_MAX_SIZE_MB).',
-    f6_h: 'One-Script Management', f6_p: 'manage.sh start|stop|restart|log|status. Deploy with Docker (<code>docker compose up -d</code>) or register as a systemd service (<code>manage.sh install</code>) for auto-start on boot.',
+    f5_h: 'Attachment Support', f5_p: 'Attach .txt, .md, .csv to enrich AI context. AI can return file attachments too. Multi-level email thread history auto-included.',
+    f6_h: 'One-Script Management', f6_p: 'manage.sh start|stop|restart|log|status. Deploy with Docker (<code>docker compose up -d</code>) or systemd (<code>manage.sh install</code>) for auto-start.',
     f7_h: 'Web Search Injection', f7_p: 'Inject live search results into AI context. Supports Google (default, no key), DuckDuckGo, Bing, Brave, and Wikipedia.',
     f8_h: 'Report Archiving', f8_p: 'Scheduled tasks can archive results to reports/ as timestamped files — perfect for daily digests and monitoring.',
     webui_label: 'Web UI', webui_title: 'Browser-based<br/>control panel',
@@ -947,7 +938,7 @@ const T = {
     s2_h: 'Start the daemon', s2_p: 'Run bash manage.sh start. MailMind listens via IMAP IDLE or poll mode in the background, waiting for your emails.',
     s3_h: 'Email your instructions', s3_p: 'Write anything as the email body. AI replies directly to your inbox — with an automatically generated subject line.',
     ai_label: 'AI Backends', ai_title: 'Your AI, your choice',
-    cli_note: '<strong>⚠️ CLI mode requires pre-installation & authentication.</strong> Claude Code, Codex CLI, Gemini CLI, and Qwen CLI must be installed and authenticated on the host machine before use. API backends only need an API key set in .env — no extra setup.<br><br><strong>💡 Which should I choose?</strong> If you want <strong>simple use with minimal configuration</strong>, CLI mode is recommended — the AI tool itself can read local files, browse the web, and gather context autonomously. MailMind just forwards your instruction. With API mode, the AI only sees what you explicitly send it, so real-time data like web search, weather, and news require configuring separate data sources in <code>.env</code>.',
+    cli_note: '<strong>⚠️ CLI mode requires pre-installation & authentication.</strong> Claude Code, Codex CLI, Gemini CLI, and Qwen CLI must be installed and authenticated on the host machine before use. API backends only need an API key in .env.<br><br><strong>💡 CLI mode</strong> lets the AI tool browse the web and read files autonomously. <strong>API mode</strong> only sees what you explicitly send — real-time data like weather and news requires configuring separate sources in <code>.env</code>.',
     ai_claude_desc: "Anthropic's coding agent", ai_gemini_cli_desc: 'Google Gemini local', ai_codex_desc: 'OpenAI Codex local', ai_qwen_cli_desc: 'Alibaba Qwen local',
     ai_cli_req: 'Requires CLI install + auth',
     ai_anthropic_desc: 'Claude via API key', ai_openai_desc: 'GPT-4o via API key', ai_gemini_desc: 'Gemini via API key', ai_qwen_desc: 'Qwen via API key', ai_deepseek_desc: 'DeepSeek via API key', ai_copilot_desc: 'GitHub Copilot token',
@@ -982,16 +973,15 @@ const T = {
     hero_sub: '发一封邮件写下你的指令，MailMind 将其转发给 Claude、GPT、Gemini 或 Qwen，然后把结果回复到你的邮箱。无需安装 App，无需学习新界面，邮件就是一切。',
     flow_1: '你发送', flow_3: 'AI 处理', flow_4: '你收到',
     cta_github: '在 GitHub 查看', cta_start: '快速开始 →',
-    stat_ai: 'AI 后端', stat_mail: '邮箱支持', stat_task: '任务类型', stat_time: '响应时间',
-    usp1: '无需新界面 — 邮件即接口', usp2: '异步非阻塞，即发即走', usp3: '完全自托管，数据自控', usp4: '任何支持邮件的设备', usp5: 'MIT 开源免费', usp6: '18 个 AI 后端',
+    usp1: '无需新界面 — 邮件即接口', usp2: '异步非阻塞，即发即走', usp3: '完全自托管，数据自控', usp4: '任何支持邮件的设备', usp5: 'MIT 开源免费',
     feat_label: '为什么选择 MailMind',
     feat_title: '你的收件箱缺少的<br/>一切，都在这里',
-    f1_h: '8 邮箱支持', f1_p: '原生支持 126、163、QQ、Gmail（OAuth/应用密码）、Outlook（OAuth）、iCloud（应用专用密码）、ProtonMail（Bridge）及任意自定义 IMAP。支持 IMAP IDLE 实时推送。',
-    f2_h: '18 AI 后端', f2_p: 'CLI 模式使用本地 AI 工具，需提前安装并完成认证。API 模式只需填写 API Key，无需额外配置。',
-    f3_h: '定时任务', f3_p: '自然语言时间解析。"每天 8:00 天气 Tokyo"。支持 cron 表达式精准调度（如 <code>0 9 * * 1-5</code>）。任务持久化至 SQLite，守护进程重启后自动恢复。',
+    f1_h: '邮箱支持', f1_p: '支持 126、163、QQ、Gmail（OAuth/应用密码）、Outlook（OAuth）、iCloud、ProtonMail（Bridge）及自定义 IMAP。支持 IMAP IDLE 实时推送。',
+    f2_h: '多种 AI 后端', f2_p: 'CLI 模式使用本地 AI 工具（需提前安装并完成认证）。API 模式只需填写 API Key，无需额外配置。',
+    f3_h: '定时任务', f3_p: '自然语言时间解析。"每天 8:00 天气 Tokyo"。支持 cron 表达式（如 <code>0 9 * * 1-5</code>）。任务持久化至 SQLite，重启后自动恢复。',
     f4_h: '白名单安全', f4_p: '每个邮箱独立配置白名单。只有可信地址或域名才能触发 AI 处理，陌生人的邮件会被静默忽略。',
-    f5_h: '上下文与附件', f5_p: '支持 .txt/.md/.csv 附件作为 AI 上下文，AI 回复时也可携带附件。自动追踪多层邮件对话历史（References 上下文），可配置附件大小上限（ATTACHMENT_MAX_SIZE_MB）。',
-    f6_h: '一键管理', f6_p: 'manage.sh start|stop|restart|log|status。支持 Docker 部署（<code>docker compose up -d</code>，守护进程 + Web UI 同时启动）或 systemd 开机自启（<code>manage.sh install</code>），内置交互式配置向导。',
+    f5_h: '上下文与附件', f5_p: '支持 .txt/.md/.csv 附件作为 AI 上下文，AI 回复时也可携带附件。自动追踪多层邮件对话历史。',
+    f6_h: '一键管理', f6_p: 'manage.sh start|stop|restart|log|status。支持 Docker（<code>docker compose up -d</code>）或 systemd 开机自启（<code>manage.sh install</code>）。',
     f7_h: '网页搜索注入', f7_p: '将实时搜索结果注入 AI 上下文。支持 Google（默认，无需 Key）、DuckDuckGo、Bing、Brave 和 Wikipedia。',
     f8_h: '报告归档', f8_p: '定时任务结果可归档到 reports/ 目录，以时间戳命名，适合日报、监控场景。',
     webui_label: 'Web UI', webui_title: '浏览器管理面板',
@@ -1012,7 +1002,7 @@ const T = {
     s2_h: '启动守护进程', s2_p: '运行 bash manage.sh start，MailMind 通过 IMAP IDLE 或轮询模式在后台监听你的邮件。',
     s3_h: '发邮件下指令', s3_p: '在邮件正文中写下任何指令，AI 会直接回复到你的收件箱，并自动生成邮件标题。',
     ai_label: 'AI 后端', ai_title: '你的 AI，你做主',
-    cli_note: '<strong>⚠️ CLI 模式需要提前安装并完成认证。</strong> Claude Code、Codex CLI、Gemini CLI、Qwen CLI 必须在服务器上提前安装并完成账号认证才能使用。API 模式只需在 .env 中填写对应的 API Key，无需额外配置。<br><br><strong>💡 如何选择：</strong>如果你想<strong>简单使用、减少配置</strong>，推荐 CLI 模式——AI 工具本身具备读取本地文件、联网搜索等能力，MailMind 只需将指令传递过去即可。如果使用 API 模式，AI 只能处理你显式提供的文本，天气、新闻、网页搜索等实时数据需要在 <code>.env</code> 中单独配置数据源。',
+    cli_note: '<strong>⚠️ CLI 模式需要提前安装并完成认证。</strong> Claude Code、Codex CLI、Gemini CLI、Qwen CLI 必须在服务器上提前安装并完成账号认证。API 模式只需在 .env 中填写 API Key。<br><br><strong>💡 CLI 模式</strong>的 AI 工具本身具备联网搜索等能力，MailMind 只需传递指令。<strong>API 模式</strong>只处理显式提供的文本，天气、新闻等实时数据需在 <code>.env</code> 中单独配置。',
     ai_claude_desc: 'Anthropic 编程助手', ai_gemini_cli_desc: 'Google Gemini 本地', ai_codex_desc: 'OpenAI Codex 本地', ai_qwen_cli_desc: '阿里通义千问 本地',
     ai_cli_req: '需安装 CLI 并完成认证',
     ai_anthropic_desc: 'Claude API 调用', ai_openai_desc: 'GPT-4o API 调用', ai_gemini_desc: 'Gemini API 调用', ai_qwen_desc: '通义千问 API 调用', ai_deepseek_desc: 'DeepSeek API 调用', ai_copilot_desc: 'GitHub Copilot Token',
@@ -1047,16 +1037,15 @@ const T = {
     hero_sub: 'メールで指示を送るだけ。MailMind が Claude、GPT、Gemini、Qwen に橋渡しし、結果をメールで返信します。アプリ不要。新しいUIも不要。メールだけ。',
     flow_1: '送信', flow_3: 'AI が処理', flow_4: '受信',
     cta_github: 'GitHub で見る', cta_start: 'クイックスタート →',
-    stat_ai: 'AI バックエンド', stat_mail: 'メールプロバイダー', stat_task: 'タスクタイプ', stat_time: '応答時間',
-    usp1: '新UIは不要 — メールがインターフェース', usp2: '非同期・ノンブロッキング', usp3: '完全セルフホスト・プライバシー', usp4: 'メール対応のどの端末でも使える', usp5: 'MIT オープンソース', usp6: '18 AI バックエンド',
+    usp1: '新UIは不要 — メールがインターフェース', usp2: '非同期・ノンブロッキング', usp3: '完全セルフホスト・プライバシー', usp4: 'メール対応のどの端末でも使える', usp5: 'MIT オープンソース',
     feat_label: 'MailMind の特徴',
     feat_title: '受信箱に足りなかった<br/>すべてが揃う',
-    f1_h: '8 メールプロバイダー', f1_p: '126、163、QQ、Gmail（OAuth/アプリパスワード）、Outlook（OAuth）、iCloud（アプリ専用パスワード）、ProtonMail（Bridge）、カスタムIMAPに対応。IMAP IDLEによるリアルタイム通知。',
-    f2_h: '18 AIバックエンド', f2_p: 'CLIモードはローカルAIツールを使用（事前インストール・認証が必要）。APIモードはAPIキーのみで利用可能。',
-    f3_h: '定期タスク', f3_p: '自然言語でスケジュール設定。「毎日8時 天気 Tokyo」「毎週月曜AIニュース」。cron式にも対応（例: <code>0 9 * * 1-5</code>）。SQLiteに永続化。',
+    f1_h: 'メール対応', f1_p: '126、163、QQ、Gmail（OAuth/アプリパスワード）、Outlook（OAuth）、iCloud、ProtonMail（Bridge）、カスタムIMAPに対応。IMAP IDLEによるリアルタイム通知。',
+    f2_h: '多様なAIバックエンド', f2_p: 'CLIモードはローカルAIツールを使用（事前インストール・認証が必要）。APIモードはAPIキーのみで利用可能。',
+    f3_h: '定期タスク', f3_p: '自然言語でスケジュール設定。「毎日8時 天気 Tokyo」。cron式にも対応（例: <code>0 9 * * 1-5</code>）。SQLiteに永続化。',
     f4_h: 'ホワイトリスト保護', f4_p: 'メールボックスごとに送信者ホワイトリストを設定。信頼できるアドレス・ドメインのみAI処理を許可。',
-    f5_h: '添付ファイル対応', f5_p: '.txt/.md/.csv ファイルをAIコンテキストとして添付可能。AIの返信にもファイル添付可。多段メールスレッド履歴を自動取得し返信コンテキストに含めます。添付サイズ上限設定可（ATTACHMENT_MAX_SIZE_MB）。',
-    f6_h: 'ワンスクリプト管理', f6_p: 'manage.sh start|stop|restart|log|status。Docker（<code>docker compose up -d</code>、デーモン + Web UI を同時起動）またはsystemdサービス登録（<code>manage.sh install</code>）で自動起動に対応。',
+    f5_h: '添付ファイル対応', f5_p: '.txt/.md/.csv ファイルをAIコンテキストとして添付可能。AIの返信にもファイル添付可。多段スレッド履歴を自動取得。',
+    f6_h: 'ワンスクリプト管理', f6_p: 'manage.sh start|stop|restart|log|status。Docker（<code>docker compose up -d</code>）またはsystemd（<code>manage.sh install</code>）で自動起動に対応。',
     f7_h: 'Web検索インジェクション', f7_p: 'リアルタイム検索結果をAIコンテキストに注入。Google（デフォルト、キー不要）・DuckDuckGo・Bing・Brave・Wikipediaに対応。',
     f8_h: 'レポートアーカイブ', f8_p: '定期タスクの結果をreports/にタイムスタンプ付きで保存。日次ダイジェストやモニタリングに最適。',
     webui_label: 'Web UI', webui_title: 'ブラウザで操作する<br/>管理パネル',
@@ -1077,7 +1066,7 @@ const T = {
     s2_h: 'デーモン起動', s2_p: 'bash manage.sh start。IMAP IDLEまたはポーリングモードでバックグラウンド待機。',
     s3_h: 'メールで指示', s3_p: '本文に任意の指示を書いてメール送信。AIが受信箱に直接返信、件名も自動生成。',
     ai_label: 'AIバックエンド', ai_title: 'お好みのAIを選択',
-    cli_note: '<strong>⚠️ CLIモードは事前インストール・認証が必要です。</strong> Claude Code、Codex CLI、Gemini CLI、Qwen CLIはホストマシンへの事前インストールとアカウント認証が必要です。APIモードは.envにAPIキーを設定するだけで利用できます。<br><br><strong>💡 選び方：</strong><strong>シンプルに使いたい・設定を最小限にしたい</strong>なら CLI モードがおすすめです——AIツール自身がローカルファイルの読み取りやWeb検索などを自律的に行えるため、MailMindは指示を渡すだけで済みます。APIモードはAIが受け取るテキストのみを処理するため、天気・ニュース・Web検索などのリアルタイムデータは <code>.env</code> で個別に設定が必要です。',
+    cli_note: '<strong>⚠️ CLIモードは事前インストール・認証が必要です。</strong> Claude Code、Codex CLI、Gemini CLI、Qwen CLIはホストマシンへの事前インストールと認証が必要です。APIモードは.envにAPIキーを設定するだけです。<br><br><strong>💡 CLIモード</strong>はAIツール自身がWeb検索などを自律的に行えます。<strong>APIモード</strong>は明示的に提供したテキストのみ処理するため、天気・ニュース等は <code>.env</code> で個別設定が必要です。',
     ai_claude_desc: 'Anthropic コーディングAI', ai_gemini_cli_desc: 'Google Gemini ローカル', ai_codex_desc: 'OpenAI Codex ローカル', ai_qwen_cli_desc: 'Alibaba Qwen ローカル',
     ai_cli_req: 'CLIインストール・認証が必要',
     ai_anthropic_desc: 'Claude APIキー', ai_openai_desc: 'GPT-4o APIキー', ai_gemini_desc: 'Gemini APIキー', ai_qwen_desc: 'Qwen APIキー', ai_deepseek_desc: 'DeepSeek APIキー', ai_copilot_desc: 'GitHub Copilotトークン',
@@ -1112,16 +1101,15 @@ const T = {
     hero_sub: '이메일로 지시를 보내면 MailMind가 Claude, GPT, Gemini, Qwen에 전달하고 결과를 이메일로 회신합니다. 앱 불필요. 새 UI 불필요. 이메일만.',
     flow_1: '발송', flow_3: 'AI 처리', flow_4: '수신',
     cta_github: 'GitHub에서 보기', cta_start: '빠른 시작 →',
-    stat_ai: 'AI 백엔드', stat_mail: '이메일 제공자', stat_task: '작업 유형', stat_time: '응답 시간',
-    usp1: '새 UI 불필요 — 이메일이 인터페이스', usp2: '비동기·논블로킹', usp3: '완전 셀프호스트·프라이버시', usp4: '이메일 지원 기기라면 어디서든', usp5: 'MIT 오픈소스', usp6: '18개 AI 백엔드',
+    usp1: '새 UI 불필요 — 이메일이 인터페이스', usp2: '비동기·논블로킹', usp3: '완전 셀프호스트·프라이버시', usp4: '이메일 지원 기기라면 어디서든', usp5: 'MIT 오픈소스',
     feat_label: 'MailMind를 선택하는 이유',
     feat_title: '받은 편지함에 부족했던<br/>모든 것',
-    f1_h: '8개 메일박스 지원', f1_p: '126, 163, QQ, Gmail(OAuth/앱 비밀번호), Outlook(OAuth), iCloud(앱 전용 비밀번호), ProtonMail(Bridge), 커스텀 IMAP 지원. IMAP IDLE 실시간 푸시 제공.',
-    f2_h: '18개 AI 백엔드', f2_p: 'CLI 모드는 로컬 AI 도구 사용(사전 설치·인증 필요). API 모드는 API 키만으로 바로 사용 가능.',
-    f3_h: '예약 작업', f3_p: '자연어 스케줄링. "매일 8시 날씨 Tokyo", "매주 월요일 AI 뉴스 요약". cron 표현식도 지원 (예: <code>0 9 * * 1-5</code>). SQLite에 영구 저장.',
+    f1_h: '메일박스 지원', f1_p: '126, 163, QQ, Gmail(OAuth/앱 비밀번호), Outlook(OAuth), iCloud, ProtonMail(Bridge), 커스텀 IMAP 지원. IMAP IDLE 실시간 푸시 제공.',
+    f2_h: '다양한 AI 백엔드', f2_p: 'CLI 모드는 로컬 AI 도구 사용(사전 설치·인증 필요). API 모드는 API 키만으로 바로 사용 가능.',
+    f3_h: '예약 작업', f3_p: '자연어 스케줄링. "매일 8시 날씨 Tokyo". cron 표현식도 지원 (예: <code>0 9 * * 1-5</code>). SQLite에 영구 저장.',
     f4_h: '화이트리스트 보안', f4_p: '메일박스별 발신자 화이트리스트. 신뢰할 수 있는 주소·도메인만 AI 처리를 트리거. 낯선 사람은 무시.',
-    f5_h: '첨부 파일 지원', f5_p: '.txt/.md/.csv를 AI 컨텍스트로 첨부 가능. AI 회신 시 파일 첨부도 가능. 다단계 이메일 스레드 히스토리를 자동 수집해 답장 컨텍스트에 포함. 첨부 파일 크기 제한 설정 가능(ATTACHMENT_MAX_SIZE_MB).',
-    f6_h: '단일 스크립트 관리', f6_p: 'manage.sh start|stop|restart|log|status. Docker(<code>docker compose up -d</code>, 데몬 + Web UI 동시 시작) 또는 systemd 서비스 등록(<code>manage.sh install</code>)으로 자동 시작 지원.',
+    f5_h: '첨부 파일 지원', f5_p: '.txt/.md/.csv를 AI 컨텍스트로 첨부 가능. AI 회신 시 파일 첨부도 가능. 다단계 스레드 히스토리 자동 포함.',
+    f6_h: '단일 스크립트 관리', f6_p: 'manage.sh start|stop|restart|log|status. Docker(<code>docker compose up -d</code>) 또는 systemd(<code>manage.sh install</code>)로 자동 시작 지원.',
     f7_h: '웹 검색 주입', f7_p: '실시간 검색 결과를 AI 컨텍스트에 주입. Google(기본값, 키 불필요)·DuckDuckGo·Bing·Brave·Wikipedia 지원.',
     f8_h: '보고서 아카이브', f8_p: '예약 작업 결과를 reports/에 타임스탬프로 저장. 일간 다이제스트, 모니터링에 최적.',
     webui_label: 'Web UI', webui_title: '브라우저 기반<br/>관리 패널',
@@ -1142,7 +1130,7 @@ const T = {
     s2_h: '데몬 시작', s2_p: 'bash manage.sh start. IMAP IDLE 또는 폴링 모드로 백그라운드 대기.',
     s3_h: '이메일로 지시', s3_p: '이메일 본문에 원하는 지시를 작성해 전송. AI가 받은 편지함에 직접 회신, 제목도 자동 생성.',
     ai_label: 'AI 백엔드', ai_title: '원하는 AI를 선택하세요',
-    cli_note: '<strong>⚠️ CLI 모드는 사전 설치 및 인증이 필요합니다.</strong> Claude Code, Codex CLI, Gemini CLI, Qwen CLI는 호스트 머신에 미리 설치하고 계정 인증을 완료해야 합니다. API 모드는 .env에 API 키만 설정하면 됩니다.<br><br><strong>💡 어떤 것을 선택할까요?</strong> <strong>간단하게 사용하고 설정을 최소화</strong>하려면 CLI 모드를 권장합니다——AI 도구 자체가 로컬 파일 읽기, 웹 검색 등을 자율적으로 수행할 수 있어 MailMind는 지시만 전달하면 됩니다. API 모드에서는 AI가 명시적으로 제공된 텍스트만 처리하므로, 날씨·뉴스·웹 검색 등 실시간 데이터는 <code>.env</code>에서 별도로 설정해야 합니다.',
+    cli_note: '<strong>⚠️ CLI 모드는 사전 설치 및 인증이 필요합니다.</strong> Claude Code, Codex CLI, Gemini CLI, Qwen CLI는 호스트 머신에 미리 설치하고 인증을 완료해야 합니다. API 모드는 .env에 API 키만 설정하면 됩니다.<br><br><strong>💡 CLI 모드</strong>는 AI 도구 자체가 웹 검색 등을 자율적으로 수행합니다. <strong>API 모드</strong>는 명시적으로 제공된 텍스트만 처리하므로 날씨·뉴스 등은 <code>.env</code>에서 별도 설정이 필요합니다.',
     ai_claude_desc: 'Anthropic 코딩 AI', ai_gemini_cli_desc: 'Google Gemini 로컬', ai_codex_desc: 'OpenAI Codex 로컬', ai_qwen_cli_desc: 'Alibaba Qwen 로컬',
     ai_cli_req: 'CLI 설치 및 인증 필요',
     ai_anthropic_desc: 'Claude API 키', ai_openai_desc: 'GPT-4o API 키', ai_gemini_desc: 'Gemini API 키', ai_qwen_desc: 'Qwen API 키', ai_deepseek_desc: 'DeepSeek API 키', ai_copilot_desc: 'GitHub Copilot 토큰',

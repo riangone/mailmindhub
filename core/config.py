@@ -18,6 +18,7 @@ MAILBOXES = {
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_126_ALLOWED", "").split(",") if s.strip()],
         "spam_folder":     os.environ.get("MAIL_126_SPAM_FOLDER", "Junk"),
+        "trash_folder":    os.environ.get("MAIL_126_TRASH_FOLDER", "已删除"),
     },
     "163": {
         "address":         os.environ.get("MAIL_163_ADDRESS", ""),
@@ -31,6 +32,7 @@ MAILBOXES = {
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_163_ALLOWED", "").split(",") if s.strip()],
         "spam_folder":     os.environ.get("MAIL_163_SPAM_FOLDER", "Junk"),
+        "trash_folder":    os.environ.get("MAIL_163_TRASH_FOLDER", "已删除"),
     },
     "qq": {
         "address":         os.environ.get("MAIL_QQ_ADDRESS", ""),
@@ -44,6 +46,7 @@ MAILBOXES = {
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_QQ_ALLOWED", "").split(",") if s.strip()],
         "spam_folder":     os.environ.get("MAIL_QQ_SPAM_FOLDER", "Junk"),
+        "trash_folder":    os.environ.get("MAIL_QQ_TRASH_FOLDER", "已删除邮件"),
     },
     "gmail": {
         "address":         os.environ.get("MAIL_GMAIL_ADDRESS", ""),
@@ -59,6 +62,7 @@ MAILBOXES = {
         "oauth_creds_file": os.path.join(os.path.dirname(__file__), "..", "credentials_gmail.json"),
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_GMAIL_ALLOWED", "").split(",") if s.strip()],
         "spam_folder":     os.environ.get("MAIL_GMAIL_SPAM_FOLDER", "[Gmail]/Spam"),
+        "trash_folder":    os.environ.get("MAIL_GMAIL_TRASH_FOLDER", "[Gmail]/Trash"),
     },
     "outlook": {
         "address":         os.environ.get("MAIL_OUTLOOK_ADDRESS", ""),
@@ -73,6 +77,7 @@ MAILBOXES = {
         "oauth_client_id":  os.environ.get("OUTLOOK_CLIENT_ID", ""),
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_OUTLOOK_ALLOWED", "").split(",") if s.strip()],
         "spam_folder":     os.environ.get("MAIL_OUTLOOK_SPAM_FOLDER", "Junk"),
+        "trash_folder":    os.environ.get("MAIL_OUTLOOK_TRASH_FOLDER", "Deleted Items"),
     },
     "icloud": {
         "address":         os.environ.get("MAIL_ICLOUD_ADDRESS", ""),
@@ -86,6 +91,7 @@ MAILBOXES = {
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_ICLOUD_ALLOWED", "").split(",") if s.strip()],
         "spam_folder":     os.environ.get("MAIL_ICLOUD_SPAM_FOLDER", "Junk"),
+        "trash_folder":    os.environ.get("MAIL_ICLOUD_TRASH_FOLDER", "Deleted Messages"),
     },
     "proton": {
         "address":         os.environ.get("MAIL_PROTON_ADDRESS", ""),
@@ -99,6 +105,7 @@ MAILBOXES = {
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_PROTON_ALLOWED", "").split(",") if s.strip()],
         "spam_folder":     os.environ.get("MAIL_PROTON_SPAM_FOLDER", "Spam"),
+        "trash_folder":    os.environ.get("MAIL_PROTON_TRASH_FOLDER", "Trash"),
     },
     "custom": {
         "address":         os.environ.get("MAIL_CUSTOM_ADDRESS", ""),
@@ -112,6 +119,7 @@ MAILBOXES = {
         "auth":            "password",
         "allowed_senders": [s.strip() for s in os.environ.get("MAIL_CUSTOM_ALLOWED", "").split(",") if s.strip()],
         "spam_folder":     os.environ.get("MAIL_CUSTOM_SPAM_FOLDER", ""),
+        "trash_folder":    os.environ.get("MAIL_CUSTOM_TRASH_FOLDER", "Trash"),
     },
 }
 
