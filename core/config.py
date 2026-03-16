@@ -154,11 +154,11 @@ def _copilot_cmd() -> str:
 
 AI_BACKENDS = {
     # CLI 方式
-    "claude":      {"type": "cli",           "cmd": _find_cli("claude", "CLAUDE_CMD"), "args": ["--print"],                                 "native_web_search": True, "label": "Claude CLI",       "env_key": None},
-    "codex":       {"type": "cli",           "cmd": _find_cli("codex", "CODEX_CMD"),  "args": ["exec", "--skip-git-repo-check"],           "native_web_search": True, "label": "Codex CLI",        "env_key": None},
-    "gemini":      {"type": "cli",           "cmd": _find_cli("gemini", "GEMINI_CMD"), "args": ["-p"],                                      "native_web_search": True, "label": "Gemini CLI",       "env_key": None},
-    "qwen":        {"type": "cli",           "cmd": _find_cli("qwen", "QWEN_CMD"),   "args": ["--prompt", "--web-search-default", "--yolo"], "native_web_search": True, "label": "Qwen CLI",         "env_key": None},
-    "copilot":     {"type": "cli_copilot",   "cmd": _copilot_cmd(),                                                                         "native_web_search": True, "label": "GitHub Copilot",   "env_key": "GITHUB_COPILOT_TOKEN"},
+    "claude":      {"type": "cli",           "cmd": _find_cli("claude", "CLAUDE_CMD"), "args": ["--print", "--dangerously-skip-permissions"],                                 "native_web_search": True, "label": "Claude CLI",       "env_key": None},
+    "codex":       {"type": "cli",           "cmd": _find_cli("codex", "CODEX_CMD"),  "args": ["exec", "--skip-git-repo-check", "--full-auto"],                            "native_web_search": True, "label": "Codex CLI",        "env_key": None},
+    "gemini":      {"type": "cli",           "cmd": _find_cli("gemini", "GEMINI_CMD"), "args": ["-p", "-y"],                                                               "native_web_search": True, "label": "Gemini CLI",       "env_key": None},
+    "qwen":        {"type": "cli",           "cmd": _find_cli("qwen", "QWEN_CMD"),   "args": ["--prompt", "--web-search-default", "--yolo"],                               "native_web_search": True, "label": "Qwen CLI",         "env_key": None},
+    "copilot":     {"type": "cli_copilot",   "cmd": _copilot_cmd(),                                                                                                        "native_web_search": True, "label": "GitHub Copilot",   "env_key": "GITHUB_COPILOT_TOKEN"},
 
     # API 方式 - 国际模型
     "anthropic":   {"type": "api_anthropic", "api_key": os.environ.get("ANTHROPIC_API_KEY", ""),  "model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6"),                                                      "label": "Anthropic Claude",  "env_key": "ANTHROPIC_API_KEY"},
