@@ -282,26 +282,8 @@ def process_email(mailbox_name, ai_name, backend, em):
                 return
 
 
-    # 获取完整会话线索（多层上下文）
-    context_msg = ""
-    if em.get("in_reply_to") or em.get("references"):
-        log.info(f"🔍 检测到回复，正在获取会话上下文（最多 {em.get('references', '').count(' ') + 1} 条）")
-        context_msg = fetch_thread_context(
-            MAILBOXES[mailbox_name],
-            em.get("references", ""),
-            em.get("in_reply_to", ""),
-        )
-
     instr = f"发件人：{em['from']}\n主题：{em['subject']}\n\n"
-    if context_msg:
-        instr += f"--- 会话历史（从早到晚）---\n{context_msg}\n\n--- 当前邮件内容 ---\n"
-
-    raw_body = em['body'] or ""
-    trimmed = trim_email_body(raw_body)
-    # 如果 trim 后为空但原文不为空（全是引用/签名），回退到原始正文截断版
-    if not trimmed and raw_body.strip():
-        trimmed = raw_body.strip()[:2000]
-    instr += trimmed
+    instr += trim_email_body(em['body'] or "")
     for att in em.get("attachments", []):
         if att["is_text"]:
             content = att["content"]
