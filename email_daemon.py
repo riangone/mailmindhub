@@ -283,7 +283,7 @@ def process_email(mailbox_name, ai_name, backend, em):
 
 
     instr = f"发件人：{em['from']}\n主题：{em['subject']}\n\n"
-    instr += trim_email_body(em['body'] or "")
+    instr += (em['body'] or "")[:4000]
     for att in em.get("attachments", []):
         if att["is_text"]:
             content = att["content"]
