@@ -41,6 +41,11 @@
           hx-swap="innerHTML"
           onclick="setTab(this)">{{ t.nav_tasks }}</button>
   <button class="tab"
+          hx-get="/tabs/skills"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">{{ t.nav_skills }}</button>
+  <button class="tab"
           hx-get="/tabs/logs"
           hx-target="#content"
           hx-swap="innerHTML"

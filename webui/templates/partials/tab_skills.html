@@ -1,0 +1,55 @@
+<div class="tab-body">
+
+  {% if feedback %}
+  <div class="feedback {{ 'ok' if feedback.ok else 'err' }}">
+    {{ feedback.message }}
+  </div>
+  {% endif %}
+
+  <!-- ── Actions ──────────────────────────────────────────────── -->
+  <div class="tasks-filter">
+    <button class="filter-btn"
+            hx-post="/api/skills/reload"
+            hx-target="#content"
+            hx-swap="innerHTML">{{ t.skills_reload }}</button>
+    <span style="margin-left: auto; color: var(--muted); font-size: 0.85em;">
+      {{ t.skills_count_prefix }}{{ skills | length }}{{ t.skills_count_suffix }}
+    </span>
+  </div>
+
+  <!-- ── Hint ─────────────────────────────────────────────────── -->
+  <div style="margin: 0.75rem 0; padding: 0.75rem 1rem; background: var(--card); border-radius: 6px; border-left: 3px solid var(--accent); font-size: 0.88em; color: var(--muted);">
+    {{ t.skills_hint }}
+  </div>
+
+  <!-- ── Skills list ──────────────────────────────────────────── -->
+  {% if skills %}
+  <div class="tasks-table-wrap">
+    <table class="tasks-table">
+      <thead>
+        <tr>
+          <th>{{ t.skills_col_name }}</th>
+          <th>{{ t.skills_col_description }}</th>
+          <th>{{ t.skills_col_keywords }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for skill in skills %}
+        <tr>
+          <td>
+            <span class="badge badge-ai_job">{{ skill.name }}</span>
+          </td>
+          <td>{{ skill.description }}</td>
+          <td style="color: var(--muted); font-size: 0.85em;">
+            {{ skill.keywords | join(", ") }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="tasks-empty">{{ t.skills_empty }}</div>
+  {% endif %}
+
+</div>

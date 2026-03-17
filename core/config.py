@@ -222,7 +222,7 @@ PROMPT_TEMPLATES = {
   "schedule_cron": "按规律重复：cron 表达式，如每天9点→'0 9 * * *'，工作日9点→'0 9 * * 1-5'（与 schedule_every 二选一）",
   "schedule_until": "重复任务截止时间（ISO格式），与 schedule_every/schedule_cron 配合",
   "attachments": [{{"filename": "a.txt", "content": "文本内容"}}],
-  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage",
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage|<skill名>",
   "task_payload": {{"query": "...", "location": "...", "prompt": "...",
     "action": "move|delete|mark_read|mark_unread（email_manage）或 list|cancel|pause|resume|delete（task_manage）",
     "task_id": 3,
@@ -239,6 +239,7 @@ PROMPT_TEMPLATES = {
 - 查看/取消/暂停/恢复/删除定时任务 → task_manage，task_payload 包含 action（list/cancel/pause/resume/delete）和 task_id 或 filter。
 - 即时回复（无定时）时省略所有 schedule_* 字段。
 - 附件仅限文本内容。
+- 可使用已加载的技能作为 task_type（见下方技能列表）。
 邮件内容：
 {{instruction}}""",
 
@@ -252,7 +253,7 @@ PROMPT_TEMPLATES = {
   "schedule_cron": "規則的繰り返し：cron式 例 毎朝9時→'0 9 * * *' 平日9時→'0 9 * * 1-5'（schedule_everyと二択）",
   "schedule_until": "繰り返し終了時刻（ISO形式）、schedule_every/schedule_cronと併用",
   "attachments": [{{"filename": "a.txt", "content": "..."}}],
-  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage",
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage|<スキル名>",
   "task_payload": {{"query": "...", "location": "...", "prompt": "...",
     "action": "move|delete|mark_read|mark_unread（email_manage）または list|cancel|pause|resume|delete（task_manage）",
     "task_id": 3,
@@ -268,6 +269,7 @@ PROMPT_TEMPLATES = {
 - メール整理/移動/削除/既読化 → email_manage、task_payloadにaction・filterを必須設定、action=moveはtarget_folderも必要。
 - 定期タスクの確認/取消/一時停止/再開/削除 → task_manage、action（list/cancel/pause/resume/delete）とtask_idまたはfilterを指定。
 - 即時返信の場合はschedule_*フィールドを省略。
+- ロードされたスキルをtask_typeとして使用可能（以下のスキル一覧参照）。
 {{instruction}}""",
 
     "en": """\
@@ -280,7 +282,7 @@ You are an email AI assistant. Read the email below and execute the task. Reply 
   "schedule_cron": "Pattern repeat: cron expression, e.g. daily 9am→'0 9 * * *', weekdays 9am→'0 9 * * 1-5' (mutually exclusive with schedule_every)",
   "schedule_until": "End time for repeating tasks (ISO format), used with schedule_every/schedule_cron",
   "attachments": [{{"filename": "a.txt", "content": "text content"}}],
-  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage",
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage|<skill_name>",
   "task_payload": {{"query": "...", "location": "...", "prompt": "...",
     "action": "move|delete|mark_read|mark_unread (email_manage) or list|cancel|pause|resume|delete (task_manage)",
     "task_id": 3,
@@ -297,6 +299,7 @@ Rules:
 - View/cancel/pause/resume/delete scheduled tasks → task_manage; specify action (list/cancel/pause/resume/delete) plus task_id or filter.
 - For immediate replies, omit all schedule_* fields.
 - Attachments: text content only.
+- Loaded skills can be used as task_type (see skill list below).
 Email:
 {{instruction}}""",
 }

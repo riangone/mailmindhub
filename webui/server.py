@@ -136,7 +136,7 @@ BUILTIN_SERVERS: dict[str, dict] = {
 
 I18N: dict[str, dict[str, str]] = {
     "zh": {
-        "nav_mail": "邮件设置", "nav_ai": "AI 设置", "nav_tasks": "任务", "nav_logs": "日志",
+        "nav_mail": "邮件设置", "nav_ai": "AI 设置", "nav_tasks": "任务", "nav_skills": "技能", "nav_logs": "日志",
         "status_running": "运行中", "status_stopped": "STOPPED",
         "btn_start": "启动", "btn_stop": "停止", "btn_restart": "重启",
         "mail_address": "邮箱地址", "mail_password": "授权码 / 密码",
@@ -208,9 +208,13 @@ I18N: dict[str, dict[str, str]] = {
         "fb_ai_saved_restart": "AI 设置已保存，守护进程已自动重启",
         "fb_save_failed": "保存失败: ",
         "tasks_repeat_every": "每",
+        "skills_reload": "重新加载技能", "skills_count_prefix": "已加载 ", "skills_count_suffix": " 个技能",
+        "skills_hint": "将技能名称（如 translate、summarize）作为 task_type 发送邮件，即可直接触发对应技能。",
+        "skills_col_name": "技能名", "skills_col_description": "描述", "skills_col_keywords": "关键词",
+        "skills_empty": "未发现技能（请检查 skills/ 目录）",
     },
     "ja": {
-        "nav_mail": "メール設定", "nav_ai": "AI 設定", "nav_tasks": "タスク", "nav_logs": "ログ",
+        "nav_mail": "メール設定", "nav_ai": "AI 設定", "nav_tasks": "タスク", "nav_skills": "スキル", "nav_logs": "ログ",
         "status_running": "実行中", "status_stopped": "停止中",
         "btn_start": "起動", "btn_stop": "停止", "btn_restart": "再起動",
         "mail_address": "メールアドレス", "mail_password": "認証コード / パスワード",
@@ -282,9 +286,13 @@ I18N: dict[str, dict[str, str]] = {
         "fb_ai_saved_restart": "AI 設定を保存し、デーモンを再起動しました",
         "fb_save_failed": "保存に失敗しました: ",
         "tasks_repeat_every": "毎",
+        "skills_reload": "スキルを再読み込み", "skills_count_prefix": "読み込み済み: ", "skills_count_suffix": " スキル",
+        "skills_hint": "スキル名（例: translate、summarize）を task_type としてメールを送信するとスキルを直接呼び出せます。",
+        "skills_col_name": "スキル名", "skills_col_description": "説明", "skills_col_keywords": "キーワード",
+        "skills_empty": "スキルが見つかりません（skills/ ディレクトリを確認してください）",
     },
     "en": {
-        "nav_mail": "Mail Settings", "nav_ai": "AI Settings", "nav_tasks": "Tasks", "nav_logs": "Logs",
+        "nav_mail": "Mail Settings", "nav_ai": "AI Settings", "nav_tasks": "Tasks", "nav_skills": "Skills", "nav_logs": "Logs",
         "status_running": "Running", "status_stopped": "STOPPED",
         "btn_start": "Start", "btn_stop": "Stop", "btn_restart": "Restart",
         "mail_address": "Email Address", "mail_password": "Auth Code / Password",
@@ -356,9 +364,13 @@ I18N: dict[str, dict[str, str]] = {
         "fb_ai_saved_restart": "AI settings saved, daemon restarted",
         "fb_save_failed": "Save failed: ",
         "tasks_repeat_every": "Every",
+        "skills_reload": "Reload Skills", "skills_count_prefix": "Loaded: ", "skills_count_suffix": " skills",
+        "skills_hint": "Send an email with a skill name (e.g. translate, summarize) as task_type to invoke it directly.",
+        "skills_col_name": "Skill", "skills_col_description": "Description", "skills_col_keywords": "Keywords",
+        "skills_empty": "No skills found (check the skills/ directory)",
     },
     "ko": {
-        "nav_mail": "메일 설정", "nav_ai": "AI 설정", "nav_tasks": "작업", "nav_logs": "로그",
+        "nav_mail": "메일 설정", "nav_ai": "AI 설정", "nav_tasks": "작업", "nav_skills": "스킬", "nav_logs": "로그",
         "status_running": "실행 중", "status_stopped": "정지됨",
         "btn_start": "시작", "btn_stop": "정지", "btn_restart": "재시작",
         "mail_address": "이메일 주소", "mail_password": "인증 코드 / 비밀번호",
@@ -430,6 +442,10 @@ I18N: dict[str, dict[str, str]] = {
         "fb_ai_saved_restart": "AI 설정이 저장되고 데몬이 재시작되었습니다",
         "fb_save_failed": "저장 실패: ",
         "tasks_repeat_every": "매",
+        "skills_reload": "스킬 다시 로드", "skills_count_prefix": "로드됨: ", "skills_count_suffix": " 스킬",
+        "skills_hint": "스킬 이름(예: translate, summarize)을 task_type으로 이메일을 보내면 스킬이 직접 실행됩니다.",
+        "skills_col_name": "스킬명", "skills_col_description": "설명", "skills_col_keywords": "키워드",
+        "skills_empty": "스킬이 없습니다 (skills/ 디렉토리를 확인하세요)",
     },
 }
 
@@ -801,6 +817,27 @@ async def task_delete(request: Request, task_id: int, _auth=Depends(require_auth
         feedback = {"ok": False, "message": f"Error: {e}"}
     return templates.TemplateResponse("partials/tab_tasks.html", _ctx(
         request, tasks=get_tasks(), status_filter="all", feedback=feedback,
+    ))
+
+
+@app.get("/tabs/skills", response_class=HTMLResponse)
+async def tab_skills(request: Request, _auth=Depends(require_auth)):
+    from skills.loader import get_registry
+    skills = list(get_registry().values())
+    return templates.TemplateResponse("partials/tab_skills.html", _ctx(
+        request, skills=skills, feedback=None,
+    ))
+
+
+@app.post("/api/skills/reload", response_class=HTMLResponse)
+async def api_skills_reload(request: Request, _auth=Depends(require_auth)):
+    from skills.loader import reload_skills
+    skills = list(reload_skills().values())
+    lang = get_ui_lang(request)
+    t = I18N.get(lang, I18N["zh"])
+    feedback = {"ok": True, "message": f"{t['skills_count_prefix']}{len(skills)}{t['skills_count_suffix']}"}
+    return templates.TemplateResponse("partials/tab_skills.html", _ctx(
+        request, skills=skills, feedback=feedback,
     ))
 
 
