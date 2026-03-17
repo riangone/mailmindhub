@@ -14,4 +14,5 @@ credentials_gmail.json
 token_gmail.json
 token_outlook.json
 processed_ids_*.json
+pending_email_ops.json
 reports/

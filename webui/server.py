@@ -18,7 +18,8 @@ import sqlite3
 import subprocess
 import sys
 import time
-from datetime import datetime
+import json
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
@@ -982,7 +983,6 @@ async def logs_stream(request: Request, _auth=Depends(require_auth)):
     """SSE endpoint: tail daemon.log and push each new line to client."""
 
     async def event_generator() -> AsyncGenerator[str, None]:
-        TAIL_LINES = 200
 
         def _classify(line: str) -> str:
             lower = line.lower()
@@ -996,15 +996,22 @@ async def logs_stream(request: Request, _auth=Depends(require_auth)):
             div = f'<div class="{_classify(line)}">{html.escape(line)}</div>'
             return f"data: {div}\n\n"
 
-        # Send last TAIL_LINES lines immediately
+        def _within_last_hour(line: str) -> bool:
+            cutoff = (datetime.now() - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                ts = json.loads(line).get("timestamp", "")
+                return ts >= cutoff
+            except Exception:
+                return True
+
+        # Send lines from the last 1 hour (newest first)
         if LOG_FILE.exists():
             with LOG_FILE.open("r", encoding="utf-8", errors="replace") as f:
                 all_lines = f.readlines()
                 offset = f.tell()
-            for line in all_lines[-TAIL_LINES:]:
-                line = line.rstrip()
-                if line:
-                    yield _make_event(line)
+            recent_lines = [l.rstrip() for l in all_lines if l.rstrip() and _within_last_hour(l.rstrip())]
+            for line in reversed(recent_lines):
+                yield _make_event(line)
         else:
             offset = 0
 

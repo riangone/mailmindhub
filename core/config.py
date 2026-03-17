@@ -162,7 +162,7 @@ def _copilot_cmd() -> str:
 
 AI_BACKENDS = {
     # CLI 方式
-    "claude":      {"type": "cli",           "cmd": _find_cli("claude", "CLAUDE_CMD"), "args": ["--print", "--dangerously-skip-permissions"],                                 "native_web_search": True, "label": "Claude CLI",       "env_key": None},
+    "claude":      {"type": "cli",           "cmd": _find_cli("claude", "CLAUDE_CMD"), "args": ["--print", "--dangerously-skip-permissions", "--tools", ""],              "native_web_search": True, "label": "Claude CLI",       "env_key": None},
     "codex":       {"type": "cli",           "cmd": _find_cli("codex", "CODEX_CMD"),  "args": ["exec", "--skip-git-repo-check", "--full-auto"],                            "native_web_search": True, "label": "Codex CLI",        "env_key": None},
     "gemini":      {"type": "cli",           "cmd": _find_cli("gemini", "GEMINI_CMD"), "args": ["-p", "-y"],                                                               "native_web_search": True, "label": "Gemini CLI",       "env_key": None},
     "qwen":        {"type": "cli",           "cmd": _find_cli("qwen", "QWEN_CMD"),   "args": ["--prompt", "--web-search-default", "--yolo"],                               "native_web_search": True, "label": "Qwen CLI",         "env_key": None},
@@ -205,12 +205,13 @@ ATTACHMENT_MAX_SIZE_MB = int(os.environ.get("ATTACHMENT_MAX_SIZE_MB", "10"))
 AI_CONCURRENCY = int(os.environ.get("AI_CONCURRENCY", "3"))
 CONTEXT_MAX_DEPTH = int(os.environ.get("CONTEXT_MAX_DEPTH", "5"))
 AI_MODIFY_SUBJECT = os.environ.get("AI_MODIFY_SUBJECT", "false").lower() == "true"
+MAX_EMAIL_CHARS = int(os.environ.get("MAX_EMAIL_CHARS", "4000"))
 
 # ────────────────────────────────────────────────────────────────
 #  Prompts
 # ────────────────────────────────────────────────────────────────
 
-_PROMPT_TEMPLATES = {
+PROMPT_TEMPLATES = {
     "zh": """\
 当前时间：{{now}}
 你是邮件 AI 助手。请阅读以下邮件并执行任务，回复必须为纯 JSON，不含其他文字：
@@ -312,7 +313,7 @@ def _load_prompt_template() -> str:
             tmpl = tmpl.replace("{{now}}", "{now}")
         return tmpl
     lang = os.environ.get("PROMPT_LANG", "zh").lower()
-    tmpl = _PROMPT_TEMPLATES.get(lang, _PROMPT_TEMPLATES["zh"])
+    tmpl = PROMPT_TEMPLATES.get(lang, PROMPT_TEMPLATES["zh"])
     # Convert {{instruction}}/{{now}} → {instruction}/{now} for .format() compatibility
     return tmpl.replace("{{instruction}}", "{instruction}").replace("{{now}}", "{now}")
 

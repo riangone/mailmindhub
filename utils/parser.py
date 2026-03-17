@@ -6,6 +6,22 @@ from typing import Optional, Tuple
 from core.config import WEATHER_DEFAULT_LOCATION, NEWS_DEFAULT_QUERY
 from utils.logger import log
 
+
+def detect_lang(text: str) -> str:
+    """Detect the primary language of text: zh / ja / ko / en."""
+    # Korean (Hangul)
+    if re.search(r'[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]', text):
+        return "ko"
+    # Japanese (Hiragana / Katakana)
+    if re.search(r'[\u3040-\u309F\u30A0-\u30FF]', text):
+        return "ja"
+    # CJK (Chinese shared characters) vs Latin
+    cjk = len(re.findall(r'[\u4E00-\u9FFF]', text))
+    latin = len(re.findall(r'[a-zA-Z]', text))
+    if cjk > latin:
+        return "zh"
+    return "en"
+
 def _parse_time_hhmm(text: str):
     m = re.search(r"(\d{1,2})[:：](\d{2})", text)
     if m:
@@ -28,6 +44,7 @@ def parse_schedule_from_text(text: str):
     low = text.lower()
     schedule_at = None
     schedule_every = None
+    schedule_cron = None
     schedule_until = None
 
     rel_min = re.search(r"(?:每|every|毎|매)\s*(\d+)\s*(分钟|min|minutes|分|분)", low)
@@ -43,8 +60,11 @@ def parse_schedule_from_text(text: str):
     if any(k in text for k in ["每天", "毎日", "매일"]) and not schedule_every:
         schedule_every = "1d"
 
-    if any(k in text for k in ["每周", "毎週", "매주"]) and not schedule_every:
-        schedule_every = "7d"
+    # Weekly with specific day → cron (no drift); without day → interval fallback
+    if any(k in text for k in ["每周", "毎週", "매주"]) and not schedule_every and not schedule_cron:
+        has_specific_day = bool(re.search(r"(?:每周|毎週|매주)[一二三四五六日天月火水木金土日曜월화수목금토일]", text))
+        if not has_specific_day:
+            schedule_every = "7d"
 
     date_time = re.search(r"(\d{4}-\d{2}-\d{2})(?:\s*[tT ]\s*(\d{1,2}:\d{2}))?", low)
     if date_time:
@@ -98,17 +118,18 @@ def parse_schedule_from_text(text: str):
         if any(k in text for k in ["每周", "毎週", "매주"]):
             weekday_map = {
                 "一": 0, "二": 1, "三": 2, "四": 3, "五": 4, "六": 5, "日": 6, "天": 6,
-                "月": 0, "火": 1, "水": 2, "木": 3, "金": 4, "土": 5, "日曜": 6, "日": 6,
+                "月": 0, "火": 1, "水": 2, "木": 3, "金": 4, "土": 5, "日曜": 6,
                 "월": 0, "화": 1, "수": 2, "목": 3, "금": 4, "토": 5, "일": 6,
             }
-            m = re.search(r"(?:每周|毎週|매주)([一二三四五六日天月火水木金土日曜월화수목금토일])", text)
-            if m:
-                target = weekday_map[m.group(1)]
+            wd_match = re.search(r"(?:每周|毎週|매주)([一二三四五六日天月火水木金土日曜월화수목금토일])", text)
+            if wd_match:
+                target = weekday_map[wd_match.group(1)]
                 h, m2 = _parse_time_hhmm(text)
                 h = 9 if h is None else h
                 m2 = 0 if m2 is None else m2
-                dt = _next_weekday(now, target).replace(hour=h, minute=m2, second=0, microsecond=0)
-                schedule_at = dt.strftime("%Y-%m-%dT%H:%M:%S")
+                # Convert Python weekday (Mon=0) → cron weekday (Sun=0)
+                cron_day = (target + 1) % 7
+                schedule_cron = f"{m2} {h} * * {cron_day}"
         if any(k in text for k in ["每天", "毎日", "매일"]):
             h, m = _parse_time_hhmm(text)
             if h is not None:
@@ -117,7 +138,7 @@ def parse_schedule_from_text(text: str):
                     dt = dt + timedelta(days=1)
                 schedule_at = dt.strftime("%Y-%m-%dT%H:%M:%S")
 
-    return schedule_at, schedule_every, schedule_until
+    return schedule_at, schedule_every, schedule_cron, schedule_until
 
 def auto_detect_task(instruction: str):
     low = instruction.lower()
@@ -125,10 +146,10 @@ def auto_detect_task(instruction: str):
     payload = {}
     output = {}
 
-    sys_keywords = ["系统", "os", "系统运行状态", "系统状态", "运行状态", "资源使用", "cpu", "内存", "磁盘", "进程", "sysinfo", "system status"]
+    sys_keywords = ["系统", "os", "系统运行状态", "系统状态", "运行状态", "资源使用", "cpu", "内存", "磁盘", "sysinfo", "system status"]
     if any(k in low for k in sys_keywords):
         task_type = "system_status"
-        if any(k in low for k in ["进程", "process"]):
+        if any(k in low for k in ["进程列表", "process list", "process"]):
             payload["include_processes"] = True
     
     if not task_type:
@@ -161,7 +182,7 @@ def auto_detect_task(instruction: str):
             if any(k in low for k in ["新闻", "news", "ニュース", "뉴스"]):
                 payload["news_query"] = NEWS_DEFAULT_QUERY
 
-    if any(k in low for k in ["ai", "分析", "总结", "润色", "翻译", "生成", "分析", "要約", "翻訳", "生成", "분석", "요약", "번역", "생성"]):
+    if re.search(r'\bai\b', low) or any(k in low for k in ["分析", "总结", "润色", "翻译", "生成", "要約", "翻訳", "분석", "요약", "번역", "생성"]):
         if not task_type:
             task_type = "ai_job"
         payload.setdefault("prompt", instruction.strip())
@@ -172,21 +193,22 @@ def auto_detect_task(instruction: str):
     if any(k in low for k in ["仅归档", "no email", "不要发邮件", "メール不要", "메일 보내지", "이메일 필요없음"]):
         output["email"] = False
 
-    schedule_at, schedule_every, schedule_until = parse_schedule_from_text(instruction)
-    return task_type, payload, output, schedule_at, schedule_every, schedule_until
+    schedule_at, schedule_every, schedule_cron, schedule_until = parse_schedule_from_text(instruction)
+    return task_type, payload, output, schedule_at, schedule_every, schedule_cron, schedule_until
 
 def auto_detect_tasks(instruction: str):
     parts = [p.strip() for p in re.split(r"[；;\n]+", instruction) if p.strip()]
     tasks = []
     for part in parts:
-        task_type, payload, output, sch_at, sch_every, sch_until = auto_detect_task(part)
-        if task_type or sch_at or sch_every:
+        task_type, payload, output, sch_at, sch_every, sch_cron, sch_until = auto_detect_task(part)
+        if task_type or sch_at or sch_every or sch_cron:
             tasks.append({
                 "task_type": task_type or "email",
                 "task_payload": payload or {},
                 "output": output or {},
                 "schedule_at": sch_at,
                 "schedule_every": sch_every,
+                "schedule_cron": sch_cron,
                 "schedule_until": sch_until,
                 "raw": part,
             })
@@ -232,11 +254,19 @@ def trim_email_body(body: str, max_chars: int = 4000) -> str:
     return trimmed_body.strip()
 
 def parse_ai_response(raw: str):
-    # マークダウンコードブロックを除去
-    cleaned = re.sub(r'```(?:json)?\s*', '', raw).strip()
-    match = re.search(r'\{.*\}', cleaned, re.DOTALL)
-    if match:
-        json_str = match.group()
+    json_str = None
+
+    # まず外側のコードフェンス内の JSON オブジェクトを抽出する（内側の ``` は保持）
+    outer = re.search(r'```(?:json)?\s*(\{[\s\S]*\})\s*`*', raw)
+    if outer:
+        json_str = outer.group(1)
+    else:
+        # コードフェンスなし：直接 JSON オブジェクトを検索
+        m = re.search(r'\{[\s\S]*\}', raw)
+        if m:
+            json_str = m.group()
+
+    if json_str:
         try:
             data = json.loads(json_str)
             return (
@@ -262,4 +292,5 @@ def parse_ai_response(raw: str):
                 except Exception:
                     pass
     # JSON が見つからない場合はそのまま body として返す
+    cleaned = re.sub(r'```(?:json)?', '', raw).strip()
     return "", cleaned, None, None, None, None, [], None, None, None

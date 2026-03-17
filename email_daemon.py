@@ -14,12 +14,12 @@ from datetime import datetime
 from typing import Optional
 
 # 核心配置与模块
-from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE, AI_CONCURRENCY, AI_MODIFY_SUBJECT, PROMPT_LANG
+from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE, PROMPT_TEMPLATES, AI_CONCURRENCY, AI_MODIFY_SUBJECT, PROMPT_LANG, MAX_EMAIL_CHARS
 from core.validator import validate_config
 from core.mail_client import fetch_unread_emails, imap_login, get_oauth_token, fetch_thread_context, push_templates_to_mailbox
 from core.mail_sender import send_reply, archive_output
 from ai.providers import get_ai_provider
-from utils.parser import parse_ai_response, auto_detect_tasks, trim_email_body
+from utils.parser import parse_ai_response, auto_detect_tasks, trim_email_body, detect_lang
 from utils.logger import log
 from tasks.scheduler import scheduler
 from tasks.registry import execute_task_logic
@@ -236,9 +236,17 @@ def save_processed_ids(path: str, ids: set):
 
 # ────────────────────────────────────────────────────────────────
 
-def call_ai(ai_name: str, backend: dict, instruction: str):
+def _get_prompt_template(lang: str) -> str:
+    """Return the prompt template for the given language, falling back to PROMPT_LANG."""
+    if lang == PROMPT_LANG:
+        return PROMPT_TEMPLATE
+    tmpl_raw = PROMPT_TEMPLATES.get(lang) or PROMPT_TEMPLATES.get(PROMPT_LANG) or PROMPT_TEMPLATES.get("zh", "")
+    return tmpl_raw.replace("{{instruction}}", "{instruction}").replace("{{now}}", "{now}")
+
+def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None):
     now = datetime.now().strftime("%Y-%m-%d %H:%M (%Z)")
-    prompt = PROMPT_TEMPLATE.format(instruction=instruction, now=now)
+    tmpl = _get_prompt_template(lang or PROMPT_LANG)
+    prompt = tmpl.format(instruction=instruction, now=now)
     ai = get_ai_provider(ai_name, backend)
     with _ai_semaphore:
         raw = ai.call(prompt)
@@ -282,8 +290,13 @@ def process_email(mailbox_name, ai_name, backend, em):
                 return
 
 
+    # 検出言語を優先、グローバル設定を fallback
+    email_text = f"{em.get('subject', '')} {em.get('body', '')}"
+    em_lang = detect_lang(email_text)
+    lang = em_lang if em_lang in ("zh", "ja", "en") else PROMPT_LANG
+
     instr = f"发件人：{em['from']}\n主题：{em['subject']}\n\n"
-    instr += (em['body'] or "")[:4000]
+    instr += trim_email_body(em['body'] or "", max_chars=MAX_EMAIL_CHARS)
     for att in em.get("attachments", []):
         if att["is_text"]:
             content = att["content"]
@@ -291,10 +304,10 @@ def process_email(mailbox_name, ai_name, backend, em):
                 content = content[:5000] + "...(附件内容过长已截断)"
             instr += f"\n\n--- 附件：{att['filename']} ---\n{content}"
 
-    sub, body, sch_at, sch_every, sch_until, sch_cron, atts, task_type, task_payload, output = call_ai(ai_name, backend, instr)
+    sub, body, sch_at, sch_every, sch_until, sch_cron, atts, task_type, task_payload, output = call_ai(ai_name, backend, instr, lang=lang)
 
     if not task_type:
-        detected_tasks = auto_detect_tasks(em["body"] or "")
+        detected_tasks = auto_detect_tasks(trim_email_body(em["body"] or ""))
         if detected_tasks:
             det = detected_tasks[0]
             task_type = det.get("task_type") or task_type
@@ -302,6 +315,7 @@ def process_email(mailbox_name, ai_name, backend, em):
             if not output and det.get("output"): output = det.get("output")
             if not sch_at and det.get("schedule_at"): sch_at = det.get("schedule_at")
             if not sch_every and det.get("schedule_every"): sch_every = det.get("schedule_every")
+            if not sch_cron and det.get("schedule_cron"): sch_cron = det.get("schedule_cron")
             if not sch_until and det.get("schedule_until"): sch_until = det.get("schedule_until")
 
     if AI_MODIFY_SUBJECT and sub:
@@ -329,15 +343,29 @@ def process_email(mailbox_name, ai_name, backend, em):
             atts,
             in_reply_to=em.get("message_id", "")
         )
+        def _tl(zh, ja, en):
+            return {"zh": zh, "ja": ja, "en": en}.get(lang, zh)
         if sch_cron:
-            msg = f"您的任务已按 cron 表达式 [{sch_cron}] 调度，截止至 {sch_until or '未指定'}。\n\n内容预览：\n{body}"
-            send_reply(MAILBOXES[mailbox_name], em["from_email"], f"已安排定时任务：{sub}", msg)
+            msg = _tl(
+                f"您的任务已按 cron 表达式 [{sch_cron}] 调度，截止至 {sch_until or '未指定'}。\n\n内容预览：\n{body}",
+                f"タスクは cron 式 [{sch_cron}] でスケジュールされました（終了：{sch_until or '未指定'}）。\n\n内容プレビュー：\n{body}",
+                f"Task scheduled with cron [{sch_cron}], until {sch_until or 'not set'}.\n\nPreview:\n{body}",
+            )
+            send_reply(MAILBOXES[mailbox_name], em["from_email"], _tl(f"已安排定时任务：{sub}", f"定期タスク設定済み：{sub}", f"Scheduled task: {sub}"), msg)
         elif sch_every:
-            msg = f"您的任务将每 {sch_every} 发送一次，截止至 {sch_until or '未指定'}。\n\n内容预览：\n{body}"
-            send_reply(MAILBOXES[mailbox_name], em["from_email"], f"已安排定时任务：{sub}", msg)
+            msg = _tl(
+                f"您的任务将每 {sch_every} 发送一次，截止至 {sch_until or '未指定'}。\n\n内容预览：\n{body}",
+                f"タスクは {sch_every} ごとに実行されます（終了：{sch_until or '未指定'}）。\n\n内容プレビュー：\n{body}",
+                f"Task will run every {sch_every}, until {sch_until or 'not set'}.\n\nPreview:\n{body}",
+            )
+            send_reply(MAILBOXES[mailbox_name], em["from_email"], _tl(f"已安排定时任务：{sub}", f"定期タスク設定済み：{sub}", f"Scheduled task: {sub}"), msg)
         else:
-            msg = f"您的任务已安排在 {sch_at} 左右执行。\n\n内容预览：\n{body}"
-            send_reply(MAILBOXES[mailbox_name], em["from_email"], f"已安排定时任务：{sub}", msg)
+            msg = _tl(
+                f"您的任务已安排在 {sch_at} 左右执行。\n\n内容预览：\n{body}",
+                f"タスクは {sch_at} 頃に実行されます。\n\n内容プレビュー：\n{body}",
+                f"Task scheduled for {sch_at}.\n\nPreview:\n{body}",
+            )
+            send_reply(MAILBOXES[mailbox_name], em["from_email"], _tl(f"已安排定时任务：{sub}", f"タスク設定済み：{sub}", f"Scheduled task: {sub}"), msg)
     elif task_type == "email_manage":
         log.info("📂 email_manage：执行邮件整理（干运行+确认）")
         from core.email_manager import search_matching_emails, build_confirmation_body, add_pending_op
@@ -369,7 +397,7 @@ def process_email(mailbox_name, ai_name, backend, em):
                 log.info(f"📋 已发送确认邮件，等待用户授权（{len(uid_list)} 封邮件）")
             else:
                 log.warning("email_manage: send_reply 未返回 Message-ID，无法存储待确认操作")
-    elif task_type and task_type != "email":
+    elif task_type and task_type not in ("email", "ai_job"):
         log.info(f"⚡ 立即执行工具任务: {task_type}")
         t_sub, t_body = execute_task_logic({
             "type": task_type,

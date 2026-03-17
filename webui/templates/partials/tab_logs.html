@@ -4,22 +4,7 @@
     <button class="btn-sm" onclick="document.getElementById('log-content').innerHTML=''">{{ t.logs_clear }}</button>
   </div>
   <div id="log-wrap" hx-ext="sse" sse-connect="/logs/stream">
-    <div id="log-content" sse-swap="message" hx-swap="beforeend">
+    <div id="log-content" sse-swap="message" hx-swap="afterbegin">
     </div>
   </div>
 </div>
-
-<script>
-(function() {
-  var lc = document.getElementById('log-content');
-  if (!lc) return;
-
-  var observer = new MutationObserver(function() {
-    var wrap = document.getElementById('log-wrap');
-    if (wrap) {
-      wrap.scrollTop = wrap.scrollHeight;
-    }
-  });
-  observer.observe(lc, { childList: true });
-})();
-</script>

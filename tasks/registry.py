@@ -125,22 +125,18 @@ def pick_task_ai(task_payload: dict):
     # 如果 payload 没指定，且没有全局默认配置，则尝试使用常见后端或列表第一个
     ai_name = (task_payload or {}).get("ai_name") or DEFAULT_TASK_AI
     if not ai_name or ai_name not in AI_BACKENDS:
-        # 尝试从已配置的后端中选一个可用的
-        priorities = ["claude", "openai", "gemini", "qwen"]
-        for p in priorities:
-            if p not in AI_BACKENDS:
-                continue
-            b = AI_BACKENDS[p]
+        # 动态从 AI_BACKENDS 中选择可用的后端（CLI 优先，然后 API）
+        cli_candidates = []
+        api_candidates = []
+        for name, b in AI_BACKENDS.items():
             if b.get("type") == "cli":
                 cmd = b.get("cmd", "")
                 if cmd and (shutil.which(cmd) or os.path.isfile(cmd)):
-                    ai_name = p
-                    break
+                    cli_candidates.append(name)
             elif b.get("api_key"):
-                ai_name = p
-                break
-        if not ai_name or ai_name not in AI_BACKENDS:
-            ai_name = list(AI_BACKENDS.keys())[0]
+                api_candidates.append(name)
+        candidates = cli_candidates + api_candidates
+        ai_name = candidates[0] if candidates else list(AI_BACKENDS.keys())[0]
 
     backend = AI_BACKENDS.get(ai_name)
     return ai_name, backend
@@ -284,13 +280,31 @@ def execute_task_logic(task: dict):
     elif task_type == "report":
         report_text = ""
         if payload.get("include_system_status"):
-            report_text += "【系统运行状态】\n" + fetch_system_status(payload)
+            report_text += "【系统运行状态】\n" + fetch_system_status(payload) + "\n"
+        weather_locations = payload.get("weather_locations") or []
+        for loc in weather_locations:
+            weather_data = fetch_weather_data(loc)
+            if weather_data:
+                report_text += f"\n【天气：{loc}】\n{weather_data}\n"
+        news_query = payload.get("news_query")
+        if news_query:
+            results = web_search(news_query, SEARCH_RESULTS_COUNT)
+            if results:
+                report_text += f"\n【新闻：{news_query}】\n{format_search_results(results)}\n"
         if payload.get("use_ai_summary", True):
             ai_name, backend = pick_task_ai(payload)
             ai = get_ai_provider(ai_name, backend)
-            prompt = f"请将以下内容汇总成简洁日报，分点输出，重点突出。⚠️ 核心要求：必须完整保留并显示所有新闻和网页检索结果中的原始链接（URL），严禁删减链接信息！\n\n内容如下：\n{report_text}"
-            body = ai.call(prompt).strip() or report_text
-            subject = subject or f"日报 ({ai_name})"
+            if report_text:
+                prompt = f"请将以下内容汇总成简洁日报，分点输出，重点突出。⚠️ 核心要求：必须完整保留并显示所有新闻和网页检索结果中的原始链接（URL），严禁删减链接信息！\n\n内容如下：\n{report_text}"
+            elif body:
+                prompt = body
+            else:
+                body = "没有可汇总的内容。请在任务中指定 include_system_status、weather_locations 或 news_query。"
+                subject = subject or "日报"
+                prompt = None
+            if prompt:
+                body = ai.call(prompt).strip() or report_text
+                subject = subject or f"日报 ({ai_name})"
         else:
             body = report_text
             subject = subject or "日报"
@@ -300,6 +314,16 @@ def execute_task_logic(task: dict):
     elif task_type == "task_manage":
         body = _handle_task_manage(payload, subject)
         subject = subject or _t("任务管理结果", "タスク管理結果", "Task management result")
+    elif task_type == "mcp_call":
+        from utils.mcp_client import call_mcp_tool, list_mcp_tools
+        server = payload.get("server", "")
+        tool = payload.get("tool", "")
+        args = payload.get("args") or {}
+        if tool == "__list__":
+            body = list_mcp_tools(server)
+        else:
+            body = call_mcp_tool(server, tool, args)
+        subject = subject or f"MCP: {server}/{tool}"
     else:
         body = f"⚠️ 未知任务类型：{task_type}"
 
