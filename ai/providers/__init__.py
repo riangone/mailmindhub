@@ -205,6 +205,86 @@ class ErnieAPIProvider(AIBase):
             return f"AI 出错：{e}"
 
 
+class OllamaProvider(AIBase):
+    """Ollama 本地 LLM 提供商（支持自动检测、模型列表、流式输出）"""
+
+    DEFAULT_BASE_URL = "http://localhost:11434"
+
+    def __init__(self, backend: dict):
+        self.backend = backend
+        self.base_url = backend.get("base_url", self.DEFAULT_BASE_URL).rstrip("/")
+        self.model = backend.get("model", "")
+        self.stream = backend.get("stream", True)
+        if not self.model:
+            self.model = self._pick_model()
+
+    def _pick_model(self) -> str:
+        """从 Ollama /api/tags 自动选取第一个可用模型"""
+        try:
+            resp = requests.get(f"{self.base_url}/api/tags", timeout=5)
+            resp.raise_for_status()
+            models = resp.json().get("models", [])
+            if models:
+                return models[0]["name"]
+        except Exception as e:
+            log.warning(f"Ollama 模型列表获取失败：{e}")
+        return "llama3"
+
+    @staticmethod
+    def list_models(base_url: str = DEFAULT_BASE_URL) -> list[str]:
+        """返回 Ollama 服务上已安装的模型名称列表"""
+        try:
+            resp = requests.get(f"{base_url.rstrip('/')}/api/tags", timeout=5)
+            resp.raise_for_status()
+            return [m["name"] for m in resp.json().get("models", [])]
+        except Exception as e:
+            log.warning(f"Ollama 模型列表获取失败：{e}")
+            return []
+
+    @staticmethod
+    def is_available(base_url: str = DEFAULT_BASE_URL) -> bool:
+        """检测 Ollama 服务是否正在运行"""
+        try:
+            resp = requests.get(f"{base_url.rstrip('/')}/api/tags", timeout=3)
+            return resp.status_code == 200
+        except Exception:
+            return False
+
+    def call(self, prompt: str) -> str:
+        try:
+            url = f"{self.base_url}/api/chat"
+            payload = {
+                "model": self.model,
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": self.stream,
+            }
+            if self.stream:
+                resp = requests.post(url, json=payload, stream=True, timeout=300)
+                resp.raise_for_status()
+                parts = []
+                for line in resp.iter_lines():
+                    if not line:
+                        continue
+                    try:
+                        import json as _json
+                        chunk = _json.loads(line)
+                        content = chunk.get("message", {}).get("content", "")
+                        if content:
+                            parts.append(content)
+                        if chunk.get("done"):
+                            break
+                    except Exception:
+                        continue
+                return "".join(parts).strip()
+            else:
+                resp = requests.post(url, json=payload, timeout=300)
+                resp.raise_for_status()
+                return resp.json()["message"]["content"].strip()
+        except Exception as e:
+            log.error(f"Ollama API 调用失败：{e}")
+            return f"AI 出错：{e}"
+
+
 def get_ai_provider(ai_name: str, backend: dict) -> AIBase:
     t = backend["type"]
     if t == "cli": return CLIProvider(ai_name, backend)
@@ -215,4 +295,5 @@ def get_ai_provider(ai_name: str, backend: dict) -> AIBase:
     if t == "api_cohere": return CohereProvider(backend)
     if t == "api_spark": return SparkAPIProvider(backend)
     if t == "api_ernie": return ErnieAPIProvider(backend)
+    if t == "api_ollama": return OllamaProvider(backend)
     raise ValueError(f"未知 AI 类型：{t}")

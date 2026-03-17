@@ -2,11 +2,9 @@ import os
 import shutil
 import time
 import subprocess
-import logging
 import requests
 from typing import Optional
-from core.config import WEATHER_API_KEY, WEATHER_DEFAULT_LOCATION, SEARCH_RESULTS_COUNT, AI_BACKENDS, DEFAULT_TASK_AI, PROMPT_LANG
-from utils.search import web_search, format_search_results
+from core.config import WEATHER_API_KEY, WEATHER_DEFAULT_LOCATION, AI_BACKENDS, DEFAULT_TASK_AI, PROMPT_LANG
 from ai.providers import get_ai_provider
 from utils.logger import log
 
@@ -235,79 +233,8 @@ def execute_task_logic(task: dict):
     subject = task.get("subject") or "定时任务结果"
     body = task.get("body") or ""
 
-    if task_type == "email": pass
-    elif task_type == "weather":
-        loc = payload.get("location") or WEATHER_DEFAULT_LOCATION
-        ai_name, backend = pick_task_ai(payload)
-        ai = get_ai_provider(ai_name, backend)
-        weather_data = fetch_weather_data(loc)
-        if weather_data:
-            prompt = f"以下是 {loc} 的实时天气数据，请用自然语言整理成简洁的天气播报：\n\n{weather_data}"
-        else:
-            prompt = f"请搜索并告诉我现在 {loc} 的天气情况，包括温度和天气现象。"
-        body = ai.call(prompt)
-        subject = subject or f"天气更新：{loc}"
-    elif task_type == "news":
-        ai_name, backend = pick_task_ai(payload)
-        ai = get_ai_provider(ai_name, backend)
-        q = payload.get("query") or body or "最新的新闻"
-        if backend.get("native_web_search"):
-            prompt = f"请搜索并总结关于以下主题的最新新闻：{q}。重要提示：必须在回复中包含每条新闻的原始链接（URL），不要删减链接信息。"
-            body = ai.call(prompt)
-        else:
-            results = web_search(q, SEARCH_RESULTS_COUNT)
-            if results:
-                search_ctx = format_search_results(results)
-                prompt = f"以下是关于「{q}」的网络搜索结果，请将其整理为新闻摘要，按重要性排列，保留并完整显示每条的原始链接（URL）。\n\n{search_ctx}"
-            else:
-                prompt = f"请搜索并总结关于以下主题的最新新闻：{q}。重要提示：必须在回复中包含每条新闻的原始链接（URL），不要删减链接信息。"
-            body = ai.call(prompt)
-        subject = subject or "新闻汇总"
-    elif task_type == "web_search":
-        q = payload.get("query") or ""
-        results = web_search(q, payload.get("count", 5), payload.get("engine"))
-        body = format_search_results(results) if results else "没有找到结果。"
-        subject = subject or f"网页检索：{q}"
-    elif task_type == "system_status":
-        body = fetch_system_status(payload)
-        subject = subject or "OS 系统运行状态"
-    elif task_type == "ai_job":
-        ai_name, backend = pick_task_ai(payload)
-        ai = get_ai_provider(ai_name, backend)
-        prompt = payload.get("prompt") or body
-        body = ai.call(prompt) or "AI 没有返回内容。"
-        subject = subject or f"AI 任务结果 ({ai_name})"
-    elif task_type == "report":
-        report_text = ""
-        if payload.get("include_system_status"):
-            report_text += "【系统运行状态】\n" + fetch_system_status(payload) + "\n"
-        weather_locations = payload.get("weather_locations") or []
-        for loc in weather_locations:
-            weather_data = fetch_weather_data(loc)
-            if weather_data:
-                report_text += f"\n【天气：{loc}】\n{weather_data}\n"
-        news_query = payload.get("news_query")
-        if news_query:
-            results = web_search(news_query, SEARCH_RESULTS_COUNT)
-            if results:
-                report_text += f"\n【新闻：{news_query}】\n{format_search_results(results)}\n"
-        if payload.get("use_ai_summary", True):
-            ai_name, backend = pick_task_ai(payload)
-            ai = get_ai_provider(ai_name, backend)
-            if report_text:
-                prompt = f"请将以下内容汇总成简洁日报，分点输出，重点突出。⚠️ 核心要求：必须完整保留并显示所有新闻和网页检索结果中的原始链接（URL），严禁删减链接信息！\n\n内容如下：\n{report_text}"
-            elif body:
-                prompt = body
-            else:
-                body = "没有可汇总的内容。请在任务中指定 include_system_status、weather_locations 或 news_query。"
-                subject = subject or "日报"
-                prompt = None
-            if prompt:
-                body = ai.call(prompt).strip() or report_text
-                subject = subject or f"日报 ({ai_name})"
-        else:
-            body = report_text
-            subject = subject or "日报"
+    if task_type == "email":
+        pass
     elif task_type == "email_manage":
         # email_manage is handled interactively in process_email(); scheduled runs are not supported.
         body = "⚠️ email_manage 仅支持即时执行，不支持定时任务。"
@@ -325,7 +252,7 @@ def execute_task_logic(task: dict):
             body = call_mcp_tool(server, tool, args)
         subject = subject or f"MCP: {server}/{tool}"
     else:
-        # Try to dispatch to a dynamically loaded skill
+        # Dispatch to skills (includes built-ins: weather, news, web_search, system_status, ai_job, report)
         try:
             from skills.loader import get_skill
             skill = get_skill(task_type)

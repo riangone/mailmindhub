@@ -184,6 +184,10 @@ AI_BACKENDS = {
     "spark":       {"type": "api_spark",     "api_key": os.environ.get("SPARK_API_KEY", ""),      "model": os.environ.get("SPARK_MODEL",      "4.0Ultra"),                                                               "label": "讯飞星火",           "env_key": "SPARK_API_KEY"},
     "ernie":       {"type": "api_ernie",     "api_key": os.environ.get("ERNIE_API_KEY", ""),      "model": os.environ.get("ERNIE_MODEL",      "ernie-4.0-8k"),                                                           "label": "百度文心一言",        "env_key": "ERNIE_API_KEY"},
     "yi":          {"type": "api_openai",    "api_key": os.environ.get("YI_API_KEY", ""),         "model": os.environ.get("YI_MODEL",         "yi-lightning"),        "url": "https://api.lingyiwanwu.com/v1/chat/completions",     "label": "零一万物 Yi",        "env_key": "YI_API_KEY"},
+
+    # 本地 LLM
+    "ollama":      {"type": "api_ollama",    "base_url": os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"), "model": os.environ.get("OLLAMA_MODEL", ""),    "stream": True,  "label": "Ollama (本地)",      "env_key": None},
+    "vllm":        {"type": "api_openai",    "api_key":  os.environ.get("VLLM_API_KEY",  "EMPTY"),                   "model": os.environ.get("VLLM_MODEL",   ""),    "url":    os.environ.get("VLLM_BASE_URL", "http://localhost:8000") + "/v1/chat/completions", "label": "vLLM (本地)",        "env_key": None},
 }
 
 # ────────────────────────────────────────────────────────────────
