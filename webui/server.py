@@ -806,7 +806,28 @@ async def task_delete(request: Request, task_id: int, _auth=Depends(require_auth
 
 @app.get("/tabs/logs", response_class=HTMLResponse)
 async def tab_logs(request: Request, _auth=Depends(require_auth)):
-    return templates.TemplateResponse("partials/tab_logs.html", _ctx(request))
+    """最新 200 行をサーバーサイドでレンダリングして返す。SSE はライブ更新専用。"""
+    INITIAL_LINES = 200
+
+    def _classify(line: str) -> str:
+        lower = line.lower()
+        if any(w in lower for w in ("error", "exception", "traceback", "failed", "critical")):
+            return "ll error"
+        if any(w in lower for w in ("warn", "warning")):
+            return "ll warn"
+        return "ll"
+
+    html_lines = []
+    if LOG_FILE.exists():
+        with LOG_FILE.open("r", encoding="utf-8", errors="replace") as f:
+            all_lines = f.readlines()
+        recent = [l.rstrip() for l in all_lines if l.rstrip()][-INITIAL_LINES:]
+        for line in reversed(recent):  # 新→旧の順でDOM上部から並べる（最新が最上部）
+            html_lines.append(f'<div class="{_classify(line)}">{html.escape(line)}</div>')
+
+    return templates.TemplateResponse("partials/tab_logs.html", _ctx(
+        request, initial_log_html="".join(html_lines)
+    ))
 
 
 @app.post("/autoconfig", response_class=HTMLResponse)
@@ -980,7 +1001,7 @@ async def daemon_action(request: Request, action: str, _auth=Depends(require_aut
 
 @app.get("/logs/stream")
 async def logs_stream(request: Request, _auth=Depends(require_auth)):
-    """SSE endpoint: tail daemon.log and push each new line to client."""
+    """SSE endpoint: 新着行のみをリアルタイムで push する（初期表示は /tabs/logs が担当）。"""
 
     async def event_generator() -> AsyncGenerator[str, None]:
 
@@ -996,22 +1017,9 @@ async def logs_stream(request: Request, _auth=Depends(require_auth)):
             div = f'<div class="{_classify(line)}">{html.escape(line)}</div>'
             return f"data: {div}\n\n"
 
-        def _within_last_hour(line: str) -> bool:
-            cutoff = (datetime.now() - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
-            try:
-                ts = json.loads(line).get("timestamp", "")
-                return ts >= cutoff
-            except Exception:
-                return True
-
-        # Send lines from the last 1 hour (newest first)
+        # 現在のファイル末尾から監視開始（初期ロードは /logs/initial で行う）
         if LOG_FILE.exists():
-            with LOG_FILE.open("r", encoding="utf-8", errors="replace") as f:
-                all_lines = f.readlines()
-                offset = f.tell()
-            recent_lines = [l.rstrip() for l in all_lines if l.rstrip() and _within_last_hour(l.rstrip())]
-            for line in reversed(recent_lines):
-                yield _make_event(line)
+            offset = LOG_FILE.stat().st_size
         else:
             offset = 0
 

@@ -187,6 +187,18 @@ def auto_detect_task(instruction: str):
             task_type = "ai_job"
         payload.setdefault("prompt", instruction.strip())
 
+    # Check loaded skills keywords
+    if not task_type:
+        try:
+            from skills.loader import get_registry
+            for skill_name, skill in get_registry().items():
+                if any(k.lower() in low for k in (skill.keywords or [])):
+                    task_type = skill_name
+                    payload.setdefault("prompt", instruction.strip())
+                    break
+        except Exception:
+            pass
+
     if any(k in low for k in ["归档", "archive", "保存", "save", "保存", "アーカイブ", "저장", "아카이브"]):
         output["archive"] = True
         output["archive_dir"] = "reports"

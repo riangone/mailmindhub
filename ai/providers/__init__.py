@@ -36,12 +36,10 @@ class CLIProvider(AIBase):
                     val = os.environ.get(key, "")
                     if val: env[key] = val
 
-            timeout = int(os.environ.get("CLI_AI_TIMEOUT", "300"))
             return subprocess.run(
                 [self.backend["cmd"]] + self.backend["args"] + [prompt],
                 capture_output=True,
                 text=True,
-                timeout=timeout,
                 env=env
             ).stdout.strip()
         except Exception as e:

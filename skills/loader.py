@@ -44,3 +44,28 @@ def reload_skills() -> dict:
     global _loaded
     _loaded = False
     return load_all_skills()
+
+
+def get_skills_hint(lang: str = "zh") -> str:
+    """Return a string listing loaded skills for injection into the AI prompt."""
+    skills = get_registry()
+    if not skills:
+        return ""
+    if lang == "ja":
+        lines = ["利用可能なスキル（task_typeに指定可能）:"]
+        for name, sk in skills.items():
+            desc = sk.description_ja or sk.description_en or sk.description
+            kw = "、".join(sk.keywords[:3]) if sk.keywords else ""
+            lines.append(f"  {name}: {desc}" + (f"（キーワード例: {kw}）" if kw else ""))
+    elif lang == "en":
+        lines = ["Available skills (usable as task_type):"]
+        for name, sk in skills.items():
+            desc = sk.description_en or sk.description
+            kw = ", ".join(sk.keywords[:3]) if sk.keywords else ""
+            lines.append(f"  {name}: {desc}" + (f" (keywords: {kw})" if kw else ""))
+    else:
+        lines = ["可用技能（可作为 task_type 使用）："]
+        for name, sk in skills.items():
+            kw = "、".join(sk.keywords[:3]) if sk.keywords else ""
+            lines.append(f"  {name}: {sk.description}" + (f"（关键词：{kw}）" if kw else ""))
+    return "\n".join(lines)

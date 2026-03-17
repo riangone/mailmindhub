@@ -325,6 +325,18 @@ def execute_task_logic(task: dict):
             body = call_mcp_tool(server, tool, args)
         subject = subject or f"MCP: {server}/{tool}"
     else:
-        body = f"⚠️ 未知任务类型：{task_type}"
+        # Try to dispatch to a dynamically loaded skill
+        try:
+            from skills.loader import get_skill
+            skill = get_skill(task_type)
+        except Exception:
+            skill = None
+        if skill:
+            ai_name, backend = pick_task_ai(payload)
+            ai = get_ai_provider(ai_name, backend)
+            body = skill.run(payload, ai_caller=ai)
+            subject = subject or skill.description
+        else:
+            body = f"⚠️ 未知任务类型：{task_type}"
 
     return subject, body

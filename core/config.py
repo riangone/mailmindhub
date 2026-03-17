@@ -162,7 +162,7 @@ def _copilot_cmd() -> str:
 
 AI_BACKENDS = {
     # CLI 方式
-    "claude":      {"type": "cli",           "cmd": _find_cli("claude", "CLAUDE_CMD"), "args": ["--print", "--dangerously-skip-permissions", "--tools", ""],              "native_web_search": True, "label": "Claude CLI",       "env_key": None},
+    "claude":      {"type": "cli",           "cmd": _find_cli("claude", "CLAUDE_CMD"), "args": ["--print", "--dangerously-skip-permissions"],                           "native_web_search": True, "label": "Claude CLI",       "env_key": None},
     "codex":       {"type": "cli",           "cmd": _find_cli("codex", "CODEX_CMD"),  "args": ["exec", "--skip-git-repo-check", "--full-auto"],                            "native_web_search": True, "label": "Codex CLI",        "env_key": None},
     "gemini":      {"type": "cli",           "cmd": _find_cli("gemini", "GEMINI_CMD"), "args": ["-p", "-y"],                                                               "native_web_search": True, "label": "Gemini CLI",       "env_key": None},
     "qwen":        {"type": "cli",           "cmd": _find_cli("qwen", "QWEN_CMD"),   "args": ["--prompt", "--web-search-default", "--yolo"],                               "native_web_search": True, "label": "Qwen CLI",         "env_key": None},

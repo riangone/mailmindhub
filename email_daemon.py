@@ -250,6 +250,9 @@ def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None):
     ai = get_ai_provider(ai_name, backend)
     with _ai_semaphore:
         raw = ai.call(prompt)
+    # AI error prefix indicates a failure — return sentinel rather than parse garbage
+    if isinstance(raw, str) and raw.startswith("AI 出错："):
+        return None
     return parse_ai_response(raw)
 
 def process_email(mailbox_name, ai_name, backend, em):
@@ -304,7 +307,19 @@ def process_email(mailbox_name, ai_name, backend, em):
                 content = content[:5000] + "...(附件内容过长已截断)"
             instr += f"\n\n--- 附件：{att['filename']} ---\n{content}"
 
-    sub, body, sch_at, sch_every, sch_until, sch_cron, atts, task_type, task_payload, output = call_ai(ai_name, backend, instr, lang=lang)
+    ai_result = call_ai(ai_name, backend, instr, lang=lang)
+    if ai_result is None:
+        # AI call failed — notify user and stop processing
+        err_msg = {
+            "zh": "AI 处理失败，请稍后重试。",
+            "ja": "AI の処理に失敗しました。しばらく経ってから再送してください。",
+            "en": "AI processing failed, please try again later.",
+        }.get(lang, "AI 处理失败，请稍后重试。")
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], em["subject"], err_msg, em.get("message_id"))
+        processed_ids.add(em["id"])
+        save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
+        return
+    sub, body, sch_at, sch_every, sch_until, sch_cron, atts, task_type, task_payload, output = ai_result
 
     if not task_type:
         detected_tasks = auto_detect_tasks(trim_email_body(em["body"] or ""))

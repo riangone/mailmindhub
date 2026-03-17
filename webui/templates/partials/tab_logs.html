@@ -5,6 +5,7 @@
   </div>
   <div id="log-wrap" hx-ext="sse" sse-connect="/logs/stream">
     <div id="log-content" sse-swap="message" hx-swap="afterbegin">
+      {{ initial_log_html | default('', true) | safe }}
     </div>
   </div>
 </div>
