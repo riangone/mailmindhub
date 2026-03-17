@@ -166,7 +166,7 @@ AI_BACKENDS = {
     "codex":       {"type": "cli",           "cmd": _find_cli("codex", "CODEX_CMD"),  "args": ["exec", "--skip-git-repo-check", "--full-auto"],                            "native_web_search": True, "label": "Codex CLI",        "env_key": None},
     "gemini":      {"type": "cli",           "cmd": _find_cli("gemini", "GEMINI_CMD"), "args": ["-p", "-y"],                                                               "native_web_search": True, "label": "Gemini CLI",       "env_key": None},
     "qwen":        {"type": "cli",           "cmd": _find_cli("qwen", "QWEN_CMD"),   "args": ["--prompt", "--web-search-default", "--yolo"],                               "native_web_search": True, "label": "Qwen CLI",         "env_key": None},
-    "copilot":     {"type": "cli_copilot",   "cmd": _copilot_cmd(),                                                                                                        "native_web_search": True, "label": "GitHub Copilot",   "env_key": "GITHUB_COPILOT_TOKEN"},
+    "copilot":     {"type": "cli",            "cmd": _copilot_cmd(),                  "args": [],                                                                          "native_web_search": True, "label": "GitHub Copilot",   "env_key": "GITHUB_COPILOT_TOKEN"},
 
     # API 方式 - 国际模型
     "anthropic":   {"type": "api_anthropic", "api_key": os.environ.get("ANTHROPIC_API_KEY", ""),  "model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6"),                                                      "label": "Anthropic Claude",  "env_key": "ANTHROPIC_API_KEY"},
@@ -202,6 +202,9 @@ BRAVE_API_KEY = os.environ.get("BRAVE_API_KEY", "")
 WEATHER_API_KEY = os.environ.get("WEATHER_API_KEY", "")
 WEATHER_DEFAULT_LOCATION = os.environ.get("WEATHER_DEFAULT_LOCATION", "Tokyo")
 NEWS_DEFAULT_QUERY = os.environ.get("NEWS_DEFAULT_QUERY", "technology OR AI")
+NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
+NEWS_DEFAULT_LANGUAGE = os.environ.get("NEWS_DEFAULT_LANGUAGE", "en")
+NEWS_DEFAULT_PAGE_SIZE = int(os.environ.get("NEWS_DEFAULT_PAGE_SIZE", "5"))
 
 POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "60"))
 DEFAULT_TASK_AI = os.environ.get("TASK_DEFAULT_AI", "")
@@ -305,6 +308,37 @@ Rules:
 - Attachments: text content only.
 - Loaded skills can be used as task_type (see skill list below).
 Email:
+{{instruction}}""",
+
+    "ko": """\
+현재 시각: {{now}}
+당신은 이메일 AI 어시스턴트입니다. 아래 이메일을 읽고 작업을 수행하세요. 순수 JSON만으로 답변하세요:
+{{"subject": "선택: 짧은 제목(Re:/답장: 접두사 불필요)",
+  "body": "답장 본문",
+  "schedule_at": "일회성 예약: ISO 형식 또는 상대 초, 예: 2026-03-17T09:00:00 또는 3600",
+  "schedule_every": "고정 간격 반복: 예 5m/2h/1d（schedule_cron과 택일）",
+  "schedule_cron": "규칙적 반복: cron 표현식, 예 매일 9시→'0 9 * * *', 평일 9시→'0 9 * * 1-5'（schedule_every와 택일）",
+  "schedule_until": "반복 작업 종료 시각（ISO 형식）, schedule_every/schedule_cron과 함께 사용",
+  "attachments": [{{"filename": "a.txt", "content": "텍스트 내용"}}],
+  "task_type": "email|ai_job|weather|news|web_search|report|system_status|email_manage|task_manage|<스킬명>",
+  "task_payload": {{"query": "...", "location": "...", "prompt": "...",
+    "action": "move|delete|mark_read|mark_unread（email_manage）또는 list|cancel|pause|resume|delete（task_manage）",
+    "task_id": 3,
+    "filter": {{"type": "news", "subject": "키워드", "status": "pending|paused"}},
+    "filter（email_manage）": {{"from_contains": "...", "subject_contains": "...", "folder": "INBOX", "since_days": 30, "before_days": 90, "unread": true}},
+    "target_folder": "대상 폴더（email_manage action=move 시 필수）"}},
+  "output": {{"email": true, "archive": true}}
+}}
+규칙:
+- schedule_at / schedule_every / schedule_cron 중 하나만 사용, 동시 설정 불가.
+- 예약 작업 시 task_type 필수 설정: 뉴스/주식→news, 날씨→weather, AI 분석→ai_job, 시스템→system_status, 종합 보고서→report.
+- task_payload에 필요한 파라미터 설정（예: {{"query": "일본 주식 시장"}}）.
+- 이메일 정리/이동/삭제/읽음 표시 → email_manage, task_payload에 action과 filter 필수, action=move 시 target_folder도 필요.
+- 예약 작업 확인/취소/일시정지/재개/삭제 → task_manage, action（list/cancel/pause/resume/delete）과 task_id 또는 filter 지정.
+- 즉시 답장의 경우 schedule_* 필드 생략.
+- 첨부 파일은 텍스트 내용만 가능.
+- 로드된 스킬을 task_type으로 사용 가능（아래 스킬 목록 참조）.
+이메일:
 {{instruction}}""",
 }
 

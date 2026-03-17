@@ -95,6 +95,24 @@ def web_search(query: str, num_results: int = 5, engine: Optional[str] = None) -
             except Exception as e:
                 log.warning(f"Bing 搜索失败：{e}")
 
+    elif engine == "google_api":
+        api_key = os.environ.get("GOOGLE_API_KEY", "")
+        cse_id = os.environ.get("GOOGLE_CSE_ID", "")
+        if not api_key or not cse_id:
+            log.warning("Google API 搜索：未配置 GOOGLE_API_KEY 或 GOOGLE_CSE_ID")
+        else:
+            try:
+                resp = requests.get(
+                    "https://www.googleapis.com/customsearch/v1",
+                    params={"key": api_key, "cx": cse_id, "q": query, "num": min(num_results, 10)},
+                    timeout=WEB_SEARCH_TIMEOUT,
+                )
+                resp.raise_for_status()
+                for item in resp.json().get("items", [])[:num_results]:
+                    results.append({"title": item.get("title", ""), "snippet": item.get("snippet", ""), "url": item.get("link", "")})
+            except Exception as e:
+                log.warning(f"Google API 搜索失败：{e}")
+
     return results
 
 def format_search_results(results: list) -> str:

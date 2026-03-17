@@ -13,7 +13,7 @@
       <label>{{ t.ai_backend }}</label>
       <select name="AI" id="ai-select" onchange="updateAiKeyFields()">
         {% for key, info in ai_backends.items() %}
-        <option value="{{ key }}" {% if env.get('AI', 'deepseek') == key %}selected{% endif %}>
+        <option value="{{ key }}" {% if env.get('AI', '') == key %}selected{% endif %}>
           {{ info.label }}{% if info.type == 'cli' %} (CLI){% endif %}
         </option>
         {% endfor %}
@@ -25,7 +25,7 @@
     {% if info.key %}
     <div class="api-key-field form-group"
          data-backend="{{ key }}"
-         style="display: {{ 'block' if env.get('AI', 'deepseek') == key else 'none' }}">
+         style="display: {{ 'block' if env.get('AI', '') == key else 'none' }}">
       <label>{{ info.key }}</label>
       <input type="password"
              name="{{ info.key }}"
@@ -35,6 +35,47 @@
     </div>
     {% endif %}
     {% endfor %}
+
+    <!-- Ollama specific fields -->
+    <div class="api-key-field form-group" data-backend="ollama"
+         style="display: {{ 'block' if env.get('AI', '') == 'ollama' else 'none' }}">
+      <label>{{ t.ollama_base_url }}</label>
+      <input type="text" name="OLLAMA_BASE_URL"
+             value="{{ env.get('OLLAMA_BASE_URL', 'http://localhost:11434') }}"
+             placeholder="http://localhost:11434">
+      <div class="hint">{{ t.local_llm_hint }}</div>
+    </div>
+    <div class="api-key-field form-group" data-backend="ollama"
+         style="display: {{ 'block' if env.get('AI', '') == 'ollama' else 'none' }}">
+      <label>{{ t.ollama_model }}</label>
+      <input type="text" name="OLLAMA_MODEL"
+             value="{{ env.get('OLLAMA_MODEL', '') }}"
+             placeholder="llama3">
+    </div>
+
+    <!-- vLLM specific fields -->
+    <div class="api-key-field form-group" data-backend="vllm"
+         style="display: {{ 'block' if env.get('AI', '') == 'vllm' else 'none' }}">
+      <label>{{ t.vllm_base_url }}</label>
+      <input type="text" name="VLLM_BASE_URL"
+             value="{{ env.get('VLLM_BASE_URL', 'http://localhost:8000') }}"
+             placeholder="http://localhost:8000">
+      <div class="hint">{{ t.local_llm_hint }}</div>
+    </div>
+    <div class="api-key-field form-group" data-backend="vllm"
+         style="display: {{ 'block' if env.get('AI', '') == 'vllm' else 'none' }}">
+      <label>{{ t.vllm_model }}</label>
+      <input type="text" name="VLLM_MODEL"
+             value="{{ env.get('VLLM_MODEL', '') }}"
+             placeholder="meta-llama/Meta-Llama-3-8B-Instruct">
+    </div>
+    <div class="api-key-field form-group" data-backend="vllm"
+         style="display: {{ 'block' if env.get('AI', '') == 'vllm' else 'none' }}">
+      <label>{{ t.vllm_api_key }}</label>
+      <input type="password" name="VLLM_API_KEY"
+             value="{{ env.get('VLLM_API_KEY', '') }}"
+             placeholder="EMPTY">
+    </div>
 
     <!-- CLI backends notice -->
     <div class="api-key-field form-group" id="cli-notice" style="display: none">
@@ -119,6 +160,14 @@
                min="1" max="20">
       </div>
 
+      <div class="form-group">
+        <label>{{ t.ws_timeout }}</label>
+        <input type="number" name="WEB_SEARCH_TIMEOUT"
+               value="{{ env.get('WEB_SEARCH_TIMEOUT', '10') }}"
+               min="1" max="60">
+        <div class="hint">{{ t.ws_timeout_hint }}</div>
+      </div>
+
       <div class="form-group" id="ws-wiki-group"
            style="display: {{ 'block' if env.get('WEB_SEARCH_ENGINE') == 'wikipedia' else 'none' }}">
         <label>{{ t.ws_wiki_lang }}</label>
@@ -181,7 +230,7 @@
       <label>{{ t.weather_default_loc }}</label>
       <input type="text" name="WEATHER_DEFAULT_LOCATION"
              value="{{ env.get('WEATHER_DEFAULT_LOCATION', '') }}"
-             placeholder="Beijing">
+             placeholder="Tokyo">
     </div>
 
     <div class="form-group">
@@ -242,11 +291,29 @@
     </div>
 
     <div class="form-group">
+      <label>{{ t.max_email_chars }}</label>
+      <input type="number" name="MAX_EMAIL_CHARS"
+             value="{{ env.get('MAX_EMAIL_CHARS', '4000') }}"
+             min="500" max="100000">
+      <div class="hint">{{ t.max_email_chars_hint }}</div>
+    </div>
+
+    <div class="form-group">
+      <label class="toggle-label">
+        <input type="checkbox" name="AI_MODIFY_SUBJECT" value="true"
+               {% if env.get('AI_MODIFY_SUBJECT') == 'true' %}checked{% endif %}>
+        {{ t.ai_modify_subject }}
+      </label>
+      <div class="hint">{{ t.ai_modify_subject_hint }}</div>
+    </div>
+
+    <div class="form-group">
       <label>{{ t.prompt_lang_label }}</label>
       <select name="PROMPT_LANG">
         <option value="zh" {% if env.get('PROMPT_LANG', 'zh') == 'zh' %}selected{% endif %}>{{ t.prompt_lang_zh }}</option>
         <option value="ja" {% if env.get('PROMPT_LANG') == 'ja' %}selected{% endif %}>{{ t.prompt_lang_ja }}</option>
         <option value="en" {% if env.get('PROMPT_LANG') == 'en' %}selected{% endif %}>{{ t.prompt_lang_en }}</option>
+        <option value="ko" {% if env.get('PROMPT_LANG') == 'ko' %}selected{% endif %}>{{ t.prompt_lang_ko }}</option>
       </select>
       <div class="hint">{{ t.prompt_lang_hint }}</div>
     </div>
@@ -268,7 +335,7 @@
 
 <script>
 (function() {
-  // Map of backend key → whether it's a CLI type
+  // Map of backend key → { key_var, type }
   var AI_KEY_MAP = {
     {% for key, info in ai_backends.items() %}
     "{{ key }}": { key_var: "{{ info.key or '' }}", type: "{{ info.type }}" },
@@ -279,7 +346,7 @@
     var selected = document.getElementById('ai-select').value;
     var info = AI_KEY_MAP[selected] || {};
 
-    // Hide all API key fields
+    // Hide all backend-specific fields
     document.querySelectorAll('.api-key-field[data-backend]').forEach(function(el) {
       el.style.display = 'none';
     });
@@ -287,12 +354,20 @@
     var cliNotice = document.getElementById('cli-notice');
 
     if (info.type === 'cli') {
+      // Show CLI notice
       if (cliNotice) cliNotice.style.display = 'block';
+      // Also show key field if this CLI backend has one (e.g. copilot → GITHUB_COPILOT_TOKEN)
+      if (info.key_var) {
+        document.querySelectorAll('.api-key-field[data-backend="' + selected + '"]').forEach(function(el) {
+          el.style.display = 'block';
+        });
+      }
     } else {
       if (cliNotice) cliNotice.style.display = 'none';
-      // Show the matching key field
-      var target = document.querySelector('.api-key-field[data-backend="' + selected + '"]');
-      if (target) target.style.display = 'block';
+      // Show all fields for the selected backend (handles multi-field backends like ollama/vllm)
+      document.querySelectorAll('.api-key-field[data-backend="' + selected + '"]').forEach(function(el) {
+        el.style.display = 'block';
+      });
     }
   };
 

@@ -183,7 +183,7 @@ I18N: dict[str, dict[str, str]] = {
         "context_depth_hint": "获取邮件会话历史的最大层数（用于回复时携带上下文），默认 5",
         "prompt_lang_label": "提示语言（PROMPT_LANG）",
         "prompt_lang_hint": "AI 提示词语言；若设置了自定义模板文件则此项无效",
-        "prompt_lang_zh": "中文（默认）", "prompt_lang_ja": "日本語", "prompt_lang_en": "English",
+        "prompt_lang_zh": "中文（默认）", "prompt_lang_ja": "日本語", "prompt_lang_en": "English", "prompt_lang_ko": "한국어",
         "prompt_template_file": "自定义提示模板文件（PROMPT_TEMPLATE_FILE）",
         "prompt_template_file_ph": "留空则使用内置模板（优先于 PROMPT_LANG）",
         "prompt_template_file_hint": "须包含 {instruction} 占位符",
@@ -194,9 +194,12 @@ I18N: dict[str, dict[str, str]] = {
         "tasks_col_next": "下次执行", "tasks_col_repeat": "重复", "tasks_col_status": "状态",
         "tasks_col_to": "收件人", "tasks_col_actions": "操作",
         "tasks_btn_trigger": "立即", "tasks_btn_delete": "删除",
+        "tasks_btn_pause": "暂停", "tasks_btn_resume": "恢复",
+        "tasks_filter_paused": "已暂停",
         "tasks_empty": "暂无任务",
         "tasks_confirm_trigger": "立即执行此任务？",
         "tasks_confirm_delete": "删除此任务？此操作不可撤销。",
+        "tasks_confirm_pause": "暂停此任务？", "tasks_confirm_resume": "恢复此任务？",
         "logs_title": "DAEMON LOG", "logs_clear": "清空显示",
         "login_placeholder": "访问密码", "login_btn": "进入", "login_error": "密码错误",
         "mail_detected": "已检测到", "mail_detected_builtin": "已识别，使用内置服务器配置",
@@ -212,6 +215,18 @@ I18N: dict[str, dict[str, str]] = {
         "skills_hint": "将技能名称（如 translate、summarize）作为 task_type 发送邮件，即可直接触发对应技能。",
         "skills_col_name": "技能名", "skills_col_description": "描述", "skills_col_keywords": "关键词",
         "skills_empty": "未发现技能（请检查 skills/ 目录）",
+        "max_email_chars": "正文截断字数（MAX_EMAIL_CHARS）",
+        "max_email_chars_hint": "超出此字符数的邮件正文将被截断，默认 4000",
+        "ai_modify_subject": "允许 AI 修改邮件标题（AI_MODIFY_SUBJECT）",
+        "ai_modify_subject_hint": "开启后 AI 可在回复中修改 subject 字段，默认关闭",
+        "ws_timeout": "搜索超时（WEB_SEARCH_TIMEOUT）",
+        "ws_timeout_hint": "Web 搜索 HTTP 请求超时秒数，默认 10",
+        "ollama_base_url": "Ollama 服务地址（OLLAMA_BASE_URL）",
+        "ollama_model": "Ollama 模型（OLLAMA_MODEL）",
+        "vllm_base_url": "vLLM 服务地址（VLLM_BASE_URL）",
+        "vllm_model": "vLLM 模型（VLLM_MODEL）",
+        "vllm_api_key": "vLLM API Key（VLLM_API_KEY）",
+        "local_llm_hint": "需先在本地启动推理服务",
     },
     "ja": {
         "nav_mail": "メール設定", "nav_ai": "AI 設定", "nav_tasks": "タスク", "nav_skills": "スキル", "nav_logs": "ログ",
@@ -261,7 +276,7 @@ I18N: dict[str, dict[str, str]] = {
         "context_depth_hint": "返信時に取得するメールスレッドの最大階層数。デフォルト 5",
         "prompt_lang_label": "プロンプト言語（PROMPT_LANG）",
         "prompt_lang_hint": "AI プロンプトの言語。カスタムテンプレートファイルが設定されている場合は無効。",
-        "prompt_lang_zh": "中文", "prompt_lang_ja": "日本語（デフォルト）", "prompt_lang_en": "English",
+        "prompt_lang_zh": "中文", "prompt_lang_ja": "日本語（デフォルト）", "prompt_lang_en": "English", "prompt_lang_ko": "한국어",
         "prompt_template_file": "カスタムプロンプトテンプレートファイル（PROMPT_TEMPLATE_FILE）",
         "prompt_template_file_ph": "空白の場合は内蔵テンプレートを使用（PROMPT_LANG より優先）",
         "prompt_template_file_hint": "{instruction} プレースホルダーを含むファイルパスを指定",
@@ -272,9 +287,12 @@ I18N: dict[str, dict[str, str]] = {
         "tasks_col_next": "次回実行", "tasks_col_repeat": "繰り返し", "tasks_col_status": "ステータス",
         "tasks_col_to": "宛先", "tasks_col_actions": "操作",
         "tasks_btn_trigger": "今すぐ", "tasks_btn_delete": "削除",
+        "tasks_btn_pause": "一時停止", "tasks_btn_resume": "再開",
+        "tasks_filter_paused": "一時停止中",
         "tasks_empty": "タスクがありません",
         "tasks_confirm_trigger": "このタスクを今すぐ実行しますか？",
         "tasks_confirm_delete": "このタスクを削除しますか？この操作は取り消せません。",
+        "tasks_confirm_pause": "このタスクを一時停止しますか？", "tasks_confirm_resume": "このタスクを再開しますか？",
         "logs_title": "DAEMON LOG", "logs_clear": "表示をクリア",
         "login_placeholder": "パスワード", "login_btn": "ログイン", "login_error": "パスワードが違います",
         "mail_detected": "検出しました", "mail_detected_builtin": "認識済み、内蔵サーバー設定を使用",
@@ -290,6 +308,18 @@ I18N: dict[str, dict[str, str]] = {
         "skills_hint": "スキル名（例: translate、summarize）を task_type としてメールを送信するとスキルを直接呼び出せます。",
         "skills_col_name": "スキル名", "skills_col_description": "説明", "skills_col_keywords": "キーワード",
         "skills_empty": "スキルが見つかりません（skills/ ディレクトリを確認してください）",
+        "max_email_chars": "本文最大文字数 (MAX_EMAIL_CHARS)",
+        "max_email_chars_hint": "この文字数を超えるメール本文は切り詰められます。デフォルト 4000",
+        "ai_modify_subject": "AI による件名変更を許可 (AI_MODIFY_SUBJECT)",
+        "ai_modify_subject_hint": "有効にすると AI が返信の subject フィールドを変更できます。デフォルト無効",
+        "ws_timeout": "検索タイムアウト (WEB_SEARCH_TIMEOUT)",
+        "ws_timeout_hint": "Web 検索 HTTP リクエストのタイムアウト秒数。デフォルト 10",
+        "ollama_base_url": "Ollama サービス URL (OLLAMA_BASE_URL)",
+        "ollama_model": "Ollama モデル (OLLAMA_MODEL)",
+        "vllm_base_url": "vLLM サービス URL (VLLM_BASE_URL)",
+        "vllm_model": "vLLM モデル (VLLM_MODEL)",
+        "vllm_api_key": "vLLM API Key (VLLM_API_KEY)",
+        "local_llm_hint": "ローカル推論サービスを事前に起動してください",
     },
     "en": {
         "nav_mail": "Mail Settings", "nav_ai": "AI Settings", "nav_tasks": "Tasks", "nav_skills": "Skills", "nav_logs": "Logs",
@@ -339,7 +369,7 @@ I18N: dict[str, dict[str, str]] = {
         "context_depth_hint": "Max email thread levels to fetch for context in replies. Default 5.",
         "prompt_lang_label": "Prompt Language (PROMPT_LANG)",
         "prompt_lang_hint": "Language of AI prompts. Ignored if a custom template file is set.",
-        "prompt_lang_zh": "中文", "prompt_lang_ja": "日本語", "prompt_lang_en": "English (default)",
+        "prompt_lang_zh": "中文", "prompt_lang_ja": "日本語", "prompt_lang_en": "English (default)", "prompt_lang_ko": "한국어",
         "prompt_template_file": "Custom Prompt Template File (PROMPT_TEMPLATE_FILE)",
         "prompt_template_file_ph": "Leave empty to use built-in template (overrides PROMPT_LANG)",
         "prompt_template_file_hint": "Path to a file containing the {instruction} placeholder",
@@ -350,9 +380,12 @@ I18N: dict[str, dict[str, str]] = {
         "tasks_col_next": "Next Run", "tasks_col_repeat": "Repeat", "tasks_col_status": "Status",
         "tasks_col_to": "Recipient", "tasks_col_actions": "Actions",
         "tasks_btn_trigger": "Run Now", "tasks_btn_delete": "Delete",
+        "tasks_btn_pause": "Pause", "tasks_btn_resume": "Resume",
+        "tasks_filter_paused": "Paused",
         "tasks_empty": "No tasks found",
         "tasks_confirm_trigger": "Run this task immediately?",
         "tasks_confirm_delete": "Delete this task? This cannot be undone.",
+        "tasks_confirm_pause": "Pause this task?", "tasks_confirm_resume": "Resume this task?",
         "logs_title": "DAEMON LOG", "logs_clear": "Clear display",
         "login_placeholder": "Password", "login_btn": "Login", "login_error": "Incorrect password",
         "mail_detected": "Detected", "mail_detected_builtin": "Recognized, using built-in server config",
@@ -368,6 +401,18 @@ I18N: dict[str, dict[str, str]] = {
         "skills_hint": "Send an email with a skill name (e.g. translate, summarize) as task_type to invoke it directly.",
         "skills_col_name": "Skill", "skills_col_description": "Description", "skills_col_keywords": "Keywords",
         "skills_empty": "No skills found (check the skills/ directory)",
+        "max_email_chars": "Email Body Char Limit (MAX_EMAIL_CHARS)",
+        "max_email_chars_hint": "Email bodies exceeding this length will be truncated. Default 4000.",
+        "ai_modify_subject": "Allow AI to Modify Subject (AI_MODIFY_SUBJECT)",
+        "ai_modify_subject_hint": "When enabled, AI can change the subject field in replies. Default off.",
+        "ws_timeout": "Search Timeout (WEB_SEARCH_TIMEOUT)",
+        "ws_timeout_hint": "HTTP timeout in seconds for web search requests. Default 10.",
+        "ollama_base_url": "Ollama Service URL (OLLAMA_BASE_URL)",
+        "ollama_model": "Ollama Model (OLLAMA_MODEL)",
+        "vllm_base_url": "vLLM Service URL (VLLM_BASE_URL)",
+        "vllm_model": "vLLM Model (VLLM_MODEL)",
+        "vllm_api_key": "vLLM API Key (VLLM_API_KEY)",
+        "local_llm_hint": "Start the local inference service before use",
     },
     "ko": {
         "nav_mail": "메일 설정", "nav_ai": "AI 설정", "nav_tasks": "작업", "nav_skills": "스킬", "nav_logs": "로그",
@@ -417,7 +462,7 @@ I18N: dict[str, dict[str, str]] = {
         "context_depth_hint": "답장 시 컨텍스트로 가져올 메일 스레드 최대 단계 수. 기본값 5.",
         "prompt_lang_label": "프롬프트 언어 (PROMPT_LANG)",
         "prompt_lang_hint": "AI 프롬프트 언어. 커스텀 템플릿 파일이 설정된 경우 무시됩니다.",
-        "prompt_lang_zh": "中文", "prompt_lang_ja": "日本語", "prompt_lang_en": "English",
+        "prompt_lang_zh": "中文", "prompt_lang_ja": "日本語", "prompt_lang_en": "English", "prompt_lang_ko": "한국어（기본）",
         "prompt_template_file": "커스텀 프롬프트 템플릿 파일 (PROMPT_TEMPLATE_FILE)",
         "prompt_template_file_ph": "비워두면 내장 템플릿 사용 (PROMPT_LANG보다 우선)",
         "prompt_template_file_hint": "{instruction} 플레이스홀더를 포함한 파일 경로",
@@ -428,9 +473,12 @@ I18N: dict[str, dict[str, str]] = {
         "tasks_col_next": "다음 실행", "tasks_col_repeat": "반복", "tasks_col_status": "상태",
         "tasks_col_to": "수신자", "tasks_col_actions": "작업",
         "tasks_btn_trigger": "즉시 실행", "tasks_btn_delete": "삭제",
+        "tasks_btn_pause": "일시정지", "tasks_btn_resume": "재개",
+        "tasks_filter_paused": "일시정지",
         "tasks_empty": "작업이 없습니다",
         "tasks_confirm_trigger": "이 작업을 지금 즉시 실행하시겠습니까?",
         "tasks_confirm_delete": "이 작업을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+        "tasks_confirm_pause": "이 작업을 일시정지하시겠습니까?", "tasks_confirm_resume": "이 작업을 재개하시겠습니까?",
         "logs_title": "DAEMON LOG", "logs_clear": "화면 지우기",
         "login_placeholder": "비밀번호", "login_btn": "로그인", "login_error": "비밀번호가 올바르지 않습니다",
         "mail_detected": "감지됨", "mail_detected_builtin": "인식됨, 내장 서버 설정 사용",
@@ -446,6 +494,18 @@ I18N: dict[str, dict[str, str]] = {
         "skills_hint": "스킬 이름(예: translate, summarize)을 task_type으로 이메일을 보내면 스킬이 직접 실행됩니다.",
         "skills_col_name": "스킬명", "skills_col_description": "설명", "skills_col_keywords": "키워드",
         "skills_empty": "스킬이 없습니다 (skills/ 디렉토리를 확인하세요)",
+        "max_email_chars": "메일 본문 최대 문자 수 (MAX_EMAIL_CHARS)",
+        "max_email_chars_hint": "이 문자 수를 초과하는 메일 본문은 잘립니다. 기본값 4000.",
+        "ai_modify_subject": "AI의 제목 변경 허용 (AI_MODIFY_SUBJECT)",
+        "ai_modify_subject_hint": "활성화 시 AI가 답장의 subject 필드를 변경할 수 있습니다. 기본값 비활성화.",
+        "ws_timeout": "검색 타임아웃 (WEB_SEARCH_TIMEOUT)",
+        "ws_timeout_hint": "웹 검색 HTTP 요청 타임아웃(초). 기본값 10.",
+        "ollama_base_url": "Ollama 서비스 URL (OLLAMA_BASE_URL)",
+        "ollama_model": "Ollama 모델 (OLLAMA_MODEL)",
+        "vllm_base_url": "vLLM 서비스 URL (VLLM_BASE_URL)",
+        "vllm_model": "vLLM 모델 (VLLM_MODEL)",
+        "vllm_api_key": "vLLM API Key (VLLM_API_KEY)",
+        "local_llm_hint": "사전에 로컬 추론 서비스를 실행해 주세요",
     },
 }
 
@@ -839,6 +899,38 @@ async def task_delete(request: Request, task_id: int, _auth=Depends(require_auth
     ))
 
 
+@app.post("/tasks/{task_id}/pause", response_class=HTMLResponse)
+async def task_pause(request: Request, task_id: int, _auth=Depends(require_auth)):
+    try:
+        with sqlite3.connect(str(DB_FILE)) as conn:
+            conn.execute(
+                "UPDATE tasks SET status='paused', paused_at=? WHERE id=? AND status='pending'",
+                (time.time(), task_id),
+            )
+        feedback = {"ok": True, "message": f"Task #{task_id} paused"}
+    except Exception as e:
+        feedback = {"ok": False, "message": f"Error: {e}"}
+    return templates.TemplateResponse("partials/tab_tasks.html", _ctx(
+        request, tasks=get_tasks(), status_filter="all", feedback=feedback,
+    ))
+
+
+@app.post("/tasks/{task_id}/resume", response_class=HTMLResponse)
+async def task_resume(request: Request, task_id: int, _auth=Depends(require_auth)):
+    try:
+        with sqlite3.connect(str(DB_FILE)) as conn:
+            conn.execute(
+                "UPDATE tasks SET status='pending', paused_at=NULL WHERE id=? AND status='paused'",
+                (task_id,),
+            )
+        feedback = {"ok": True, "message": f"Task #{task_id} resumed"}
+    except Exception as e:
+        feedback = {"ok": False, "message": f"Error: {e}"}
+    return templates.TemplateResponse("partials/tab_tasks.html", _ctx(
+        request, tasks=get_tasks(), status_filter="all", feedback=feedback,
+    ))
+
+
 @app.get("/tabs/skills", response_class=HTMLResponse)
 async def tab_skills(request: Request, _auth=Depends(require_auth)):
     from skills.loader import get_registry
@@ -991,9 +1083,11 @@ async def config_ai(request: Request, _auth=Depends(require_auth)):
                     continue
             updates[key] = value
 
-    # Handle WEB_SEARCH checkbox — if not in form data, it was unchecked
+    # Handle checkboxes — if not in form data, the box was unchecked
     if "WEB_SEARCH" not in data:
         updates["WEB_SEARCH"] = "false"
+    if "AI_MODIFY_SUBJECT" not in data:
+        updates["AI_MODIFY_SUBJECT"] = "false"
 
     try:
         write_env(updates)

@@ -9,3 +9,18 @@
     </div>
   </div>
 </div>
+
+<script>
+(function () {
+  var wrap = document.getElementById('log-wrap');
+  if (!wrap) return;
+  // 初期表示は最上部（最新ログ）に固定
+  wrap.scrollTop = 0;
+  // SSE で afterbegin 挿入されても最上部を維持
+  document.body.addEventListener('htmx:afterSwap', function (evt) {
+    if (evt.detail && evt.detail.target && evt.detail.target.id === 'log-content') {
+      wrap.scrollTop = 0;
+    }
+  });
+})();
+</script>
