@@ -1,7 +1,7 @@
 """
 one_click_unsubscribe.py — RFC 8058 one-click List-Unsubscribe support.
 
-When MailMind sends scheduled/recurring emails (news digests, reminders, etc.),
+When MailMindHub sends scheduled/recurring emails (news digests, reminders, etc.),
 it embeds signed List-Unsubscribe and List-Unsubscribe-Post headers so that
 compliant email clients (Gmail, Outlook, Apple Mail, etc.) display a native
 one-click "Unsubscribe" button.

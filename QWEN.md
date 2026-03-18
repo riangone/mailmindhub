@@ -1,13 +1,13 @@
-# MailMind — QWEN.md
+# MailMindHub — QWEN.md
 
 ## 项目概述
 
-**MailMind** 是一个邮件到 AI 的桥接守护进程。用户发送包含指令的邮件，守护进程通过 IMAP 接收邮件，将指令传递给 AI 后端处理，然后通过 SMTP 将结果回复到用户邮箱。
+**MailMindHub** 是一个邮件到 AI 的桥接守护进程。用户发送包含指令的邮件，守护进程通过 IMAP 接收邮件，将指令传递给 AI 后端处理，然后通过 SMTP 将结果回复到用户邮箱。
 
 **核心理念**：邮件即是界面，无需打开任何 App。
 
 ```
-你发邮件（指令）→ MailMind 接收 → AI 处理 → 邮件回复结果
+你发邮件（指令）→ MailMindHub 接收 → AI 处理 → 邮件回复结果
 ```
 
 ## 技术栈
@@ -24,7 +24,7 @@
 ## 项目结构
 
 ```
-MailMind/
+MailMindHub/
 ├── email_daemon.py          # 主入口 (~230 行，模块化重构版)
 ├── manage.sh                # 统一管理脚本（启动/停止/重启/日志/systemd 安装）
 ├── requirements.txt         # Python 依赖
@@ -81,8 +81,8 @@ MailMind/
 
 ```bash
 # 克隆项目
-git clone https://github.com/yourname/MailMind.git
-cd MailMind
+git clone https://github.com/yourname/MailMindHub.git
+cd MailMindHub
 
 # 创建虚拟环境
 python3 -m venv venv

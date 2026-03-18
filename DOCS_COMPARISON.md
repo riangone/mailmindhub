@@ -1,12 +1,12 @@
-# MailMind vs. OpenClaw 对比分析报告
+# MailMindHub vs. OpenClaw 对比分析报告
 
-本文档旨在对比 **MailMind** (Email-based AI Daemon) 与 **OpenClaw** (典型 AI Agent/Client) 的核心差异，帮助用户根据需求选择合适的工具。
+本文档旨在对比 **MailMindHub** (Email-based AI Daemon) 与 **OpenClaw** (典型 AI Agent/Client) 的核心差异，帮助用户根据需求选择合适的工具。
 
 ---
 
 ## 1. 核心哲学与定位
 
-| 维度 | MailMind | OpenClaw |
+| 维度 | MailMindHub | OpenClaw |
 | :--- | :--- | :--- |
 | **产品定位** | **邮件即界面 (Email-as-an-Interface)** | **功能性 AI 客户端/代理 (AI Agent)** |
 | **运行模式** | 后台守护进程 (Daemon)，长期静默运行 | 交互式客户端，侧重即时会话 |
@@ -16,7 +16,7 @@
 
 ## 2. 技术特性对比
 
-### MailMind
+### MailMindHub
 - **轻量化**：纯 Python 编写，依赖极少，适合部署在云服务器、树莓派或 NAS。
 - **协议驱动**：基于标准的 IMAP/SMTP 协议，支持所有主流邮箱服务。
 - **多模型原生支持**：通过简单的配置即可切换 `Gemini`, `Claude`, `DeepSeek`, `Qwen` 等多种 CLI 或 API 后端。
@@ -31,7 +31,7 @@
 
 ## 3. 功能矩阵
 
-| 功能特性 | MailMind | OpenClaw |
+| 功能特性 | MailMindHub | OpenClaw |
 | :--- | :--- | :--- |
 | **交互媒介** | 电子邮件 (Email) | Web UI / CLI / API |
 | **实时性** | 异步（秒级延迟，支持 IDLE 推送） | 实时（即时对话响应） |
@@ -44,7 +44,7 @@
 
 ## 4. 适用场景建议
 
-### 选择 **MailMind** 的场景：
+### 选择 **MailMindHub** 的场景：
 - **移动办公助手**：在手机上通过发邮件快速获取 AI 摘要、搜索结果或天气新闻。
 - **定时汇报专家**：需要每天定时接收“系统运行状态”或“全球 AI 动态日报”。
 - **受限环境使用**：在不方便使用专用 App（如公司内网、低功耗设备）的环境下使用 AI。
@@ -59,4 +59,4 @@
 
 ## 5. 总结
 
-**MailMind** 不是要取代你的 AI 对话窗口，而是要成为你的 **“数字管家”**。它的核心价值在于**低门槛的接入**（邮件）和**高效率的自动化**（定时任务）。对于追求稳定、静默、自动化信息处理的用户，MailMind 是更具生产力的选择。
+**MailMindHub** 不是要取代你的 AI 对话窗口，而是要成为你的 **“数字管家”**。它的核心价值在于**低门槛的接入**（邮件）和**高效率的自动化**（定时任务）。对于追求稳定、静默、自动化信息处理的用户，MailMindHub 是更具生产力的选择。

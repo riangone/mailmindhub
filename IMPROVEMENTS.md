@@ -1,6 +1,6 @@
-# MailMind 代码改进与架构演进建议
+# MailMindHub 代码改进与架构演进建议
 
-本文档旨在为 `MailMind` 项目的后续开发提供路线图，重点关注系统的稳定性、可维护性、安全性和 AI 交互体验。
+本文档旨在为 `MailMindHub` 项目的后续开发提供路线图，重点关注系统的稳定性、可维护性、安全性和 AI 交互体验。
 
 ## 1. 架构重构：模块化拆分 (Architecture & Modularization)
 

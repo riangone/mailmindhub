@@ -1,4 +1,4 @@
-# MailMind — Docker Compose
+# MailMindHub — Docker Compose
 #
 # Usage:
 #   docker compose up -d            # start both daemon + WebUI

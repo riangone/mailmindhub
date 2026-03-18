@@ -6,13 +6,13 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/ws/MailMind
+WorkingDirectory=/home/ubuntu/ws/MailMindHub
 
 # 环境变量（按需修改 /etc/mailmind.env）
 EnvironmentFile=/etc/mailmind.env
 
 # 启动命令（按需修改 --mailbox 和 --ai）
-ExecStart=/home/ubuntu/ws/MailMind/venv/bin/python email_daemon.py --mailbox 126 --ai claude
+ExecStart=/home/ubuntu/ws/MailMindHub/venv/bin/python email_daemon.py --mailbox 126 --ai claude
 
 # 崩溃自动重启
 Restart=on-failure

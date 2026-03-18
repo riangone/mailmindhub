@@ -252,8 +252,8 @@ def trim_email_body(body: str, max_chars: int = 4000) -> str:
     # Gmail/Outlook 中文引用头："<email> 于 <日期> 写道：" 格式
     trimmed_body = re.split(r'\n\S.*于\s+\d{4}年.*写道[：:]', trimmed_body)[0]
 
-    # MailMind 签名分隔符
-    trimmed_body = re.split(r'\n---\s*\n✉️\s+由 MailMind', trimmed_body)[0]
+    # MailMindHub 签名分隔符
+    trimmed_body = re.split(r'\n---\s*\n✉️\s+由 MailMindHub', trimmed_body)[0]
 
     # 去除 > 引用行（引用邮件正文）
     lines = [l for l in trimmed_body.splitlines() if not l.startswith('>')]

@@ -41,8 +41,8 @@ def send_reply(mailbox: dict, to: str, subject: str, body: str, in_reply_to: str
                        for RFC 8058 one-click unsubscribe support).
     """
     ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    footer_plain = f"\n\n---\n✉️  由 MailMind AI 自动回复 | {ts}"
-    footer_html = f'<br><hr><p style="color: #666; font-size: 12px;">✉️  由 MailMind AI 自动回复 | {ts}</p>'
+    footer_plain = f"\n\n---\n✉️  由 MailMindHub AI 自动回复 | {ts}"
+    footer_html = f'<br><hr><p style="color: #666; font-size: 12px;">✉️  由 MailMindHub AI 自动回复 | {ts}</p>'
 
     full_body_plain = body + footer_plain
 

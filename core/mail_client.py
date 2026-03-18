@@ -109,9 +109,9 @@ _TEMPLATES = {
 }
 
 _FOLDER_NAMES = {
-    "zh": "MailMind模板",
-    "ja": "MailMindテンプレート",
-    "en": "MailMind Templates",
+    "zh": "MailMindHub模板",
+    "ja": "MailMindHubテンプレート",
+    "en": "MailMindHub Templates",
 }
 
 def list_imap_folders(mailbox: dict) -> list:
@@ -244,7 +244,7 @@ def imap_set_flag(mail, uid_list: list, flag: str, add: bool = True) -> int:
 def push_templates_to_mailbox(mailbox: dict, lang: str = "zh") -> int:
     """通过 IMAP APPEND 将模板邮件写入邮箱专属文件夹，返回成功写入数量。"""
     templates = _TEMPLATES.get(lang, _TEMPLATES["zh"])
-    folder = _FOLDER_NAMES.get(lang, "MailMind Templates")
+    folder = _FOLDER_NAMES.get(lang, "MailMindHub Templates")
     address = mailbox["address"]
 
     mail = imap_login(mailbox)

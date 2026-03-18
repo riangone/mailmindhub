@@ -1,6 +1,6 @@
-# MailMind Project Context
+# MailMindHub Project Context
 
-MailMind 是一个 AI 驱动的邮件守护进程，它将用户的电子邮箱转变为 AI 交互界面。它监听传入邮件，通过各种 AI 后端（CLI 或 API）处理指令，并自动回复处理结果。
+MailMindHub 是一个 AI 驱动的邮件守护进程，它将用户的电子邮箱转变为 AI 交互界面。它监听传入邮件，通过各种 AI 后端（CLI 或 API）处理指令，并自动回复处理结果。
 
 ## 🏗️ 架构与核心组件
 

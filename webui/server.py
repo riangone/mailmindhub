@@ -1,5 +1,5 @@
 """
-MailMind Web UI — FastAPI admin panel for the email-to-AI daemon.
+MailMindHub Web UI — FastAPI admin panel for the email-to-AI daemon.
 
 Start:
     python3 webui/server.py [--host HOST] [--port PORT]
@@ -561,7 +561,7 @@ class _LoginRedirect(Exception):
 
 
 # ─── FastAPI app ──────────────────────────────────────────────────────────────
-app = FastAPI(title="MailMind Web UI")
+app = FastAPI(title="MailMindHub Web UI")
 app.add_middleware(SessionMiddleware, secret_key=_SESSION_SECRET, max_age=86400 * 30)
 
 app.mount("/static", StaticFiles(directory=str(WEBUI_DIR / "static")), name="static")
@@ -1244,7 +1244,7 @@ async def unsubscribe_get(request: Request, token: str = ""):
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Unsubscribe — MailMind</title>
+  <title>Unsubscribe — MailMindHub</title>
   <style>
     body {{ font-family: sans-serif; max-width: 480px; margin: 80px auto; color: #333; }}
     h1 {{ font-size: 1.4rem; }}
@@ -1267,7 +1267,7 @@ async def unsubscribe_get(request: Request, token: str = ""):
     <input type="hidden" name="token" value="{safe_token}">
     <button type="submit">Unsubscribe</button>
   </form>
-  <p class="note">This will immediately cancel task #{safe_task_id} in MailMind.</p>
+  <p class="note">This will immediately cancel task #{safe_task_id} in MailMindHub.</p>
 </body>
 </html>"""
     return HTMLResponse(page)
@@ -1330,7 +1330,7 @@ async def unsubscribe_post(request: Request, token: str = Form(""), **_kwargs):
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Unsubscribed — MailMind</title>
+  <title>Unsubscribed — MailMindHub</title>
   <style>
     body {{ font-family: sans-serif; max-width: 480px; margin: 80px auto; color: #333; }}
     .ok {{ color: #276749; background: #f0fff4; border: 1px solid #9ae6b4;
@@ -1349,13 +1349,13 @@ async def unsubscribe_post(request: Request, token: str = Form(""), **_kwargs):
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="MailMind Web UI")
+    parser = argparse.ArgumentParser(description="MailMindHub Web UI")
     parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=7000, help="Bind port (default: 7000)")
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload (dev mode)")
     args = parser.parse_args()
 
-    print(f"  MailMind Web UI → http://{args.host}:{args.port}")
+    print(f"  MailMindHub Web UI → http://{args.host}:{args.port}")
     uvicorn.run(
         "webui.server:app" if not args.reload else "webui.server:app",
         host=args.host,

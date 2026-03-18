@@ -39,7 +39,7 @@ def web_search(query: str, num_results: int = 5, engine: Optional[str] = None) -
         try:
             lang = os.environ.get("WIKIPEDIA_LANG", "zh")
             params = {"action": "query", "list": "search", "srsearch": query, "format": "json", "srlimit": num_results}
-            resp = requests.get(f"https://{lang}.wikipedia.org/w/api.php", params=params, headers={"User-Agent": "MailMind/1.0"}, timeout=WEB_SEARCH_TIMEOUT)
+            resp = requests.get(f"https://{lang}.wikipedia.org/w/api.php", params=params, headers={"User-Agent": "MailMindHub/1.0"}, timeout=WEB_SEARCH_TIMEOUT)
             for item in resp.json().get("query", {}).get("search", [])[:num_results]:
                 results.append({"title": item.get("title", ""), "snippet": item.get("snippet", "").replace('<span class="searchmatch">', "").replace("</span>", ""), "url": f"https://{lang}.wikipedia.org/wiki/{item.get('title', '')}"})
         except Exception as e:

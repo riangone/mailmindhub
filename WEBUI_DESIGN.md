@@ -1,4 +1,4 @@
-# MailMind Web UI 设计文档
+# MailMindHub Web UI 设计文档
 
 ## 技术栈
 

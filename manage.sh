@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
-#  MailMind 统一管理脚本
+#  MailMindHub 统一管理脚本
 #  用法: bash manage.sh [setup|start|stop|restart|status|log|webui ...]
 # ═══════════════════════════════════════════════════════════════
 
@@ -99,7 +99,7 @@ PYEOF
 
 # ─── 交互式配置向导 ───────────────────────────────────────────
 do_setup() {
-    heading "MailMind 一键配置向导"
+    heading "MailMindHub 一键配置向导"
     echo ""
     echo "本向导将引导您完成所有配置，结束后自动生成 .env 并安装依赖。"
     echo ""

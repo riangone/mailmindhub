@@ -210,7 +210,7 @@ def build_confirmation_body(op_data: dict, lang: str = "zh") -> str:
 
     lines = []
     if lang == "zh":
-        lines.append(f"MailMind 将对邮箱执行以下整理操作：\n")
+        lines.append(f"MailMindHub 将对邮箱执行以下整理操作：\n")
         lines.append(f"  操作：{action_label}")
         lines.append(f"  筛选：{filter_summary}")
         lines.append(f"  匹配：{count} 封邮件\n")
@@ -220,7 +220,7 @@ def build_confirmation_body(op_data: dict, lang: str = "zh") -> str:
                 lines.append(f"  {i}. {s[:60]}")
             lines.append("")
     elif lang == "ja":
-        lines.append(f"MailMind は以下のメール整理を実行します：\n")
+        lines.append(f"MailMindHub は以下のメール整理を実行します：\n")
         lines.append(f"  操作：{action_label}")
         lines.append(f"  条件：{filter_summary}")
         lines.append(f"  対象：{count} 件のメール\n")
@@ -230,7 +230,7 @@ def build_confirmation_body(op_data: dict, lang: str = "zh") -> str:
                 lines.append(f"  {i}. {s[:60]}")
             lines.append("")
     else:
-        lines.append(f"MailMind will perform the following email organization:\n")
+        lines.append(f"MailMindHub will perform the following email organization:\n")
         lines.append(f"  Action: {action_label}")
         lines.append(f"  Filter: {filter_summary}")
         lines.append(f"  Matched: {count} emails\n")

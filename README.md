@@ -1,4 +1,4 @@
-# MailMind
+# MailMindHub
 
 > **Send an email, get an AI response. That simple.**
 
@@ -9,12 +9,12 @@
 <a name="中文"></a>
 # 中文
 
-## MailMind — 通过邮件与 AI 对话
+## MailMindHub — 通过邮件与 AI 对话
 
 通过发送邮件向 AI 下达指令，AI 处理后自动将结果回复到你的邮箱。无需打开任何 App，邮件即是界面。
 
 ```
-你发邮件（指令）→ MailMind 接收 → AI 处理 → 邮件回复结果
+你发邮件（指令）→ MailMindHub 接收 → AI 处理 → 邮件回复结果
 ```
 
 ### ✨ 功能特性
@@ -32,8 +32,8 @@
 ### 📦 安装
 
 ```bash
-git clone https://github.com/yourname/MailMind.git
-cd MailMind
+git clone https://github.com/yourname/MailMindHub.git
+cd MailMindHub
 python3 -m venv venv
 source venv/bin/activate
 pip install requests
@@ -78,7 +78,7 @@ export NEWS_DEFAULT_PAGE_SIZE="8"
 
 **方式一：推送模板到邮箱（推荐）**
 
-运行以下命令将 7 个预制模板直接写入邮箱的 `MailMind模板` 文件夹，在邮件客户端打开即可编辑发送：
+运行以下命令将 7 个预制模板直接写入邮箱的 `MailMindHub模板` 文件夹，在邮件客户端打开即可编辑发送：
 
 ```bash
 bash manage.sh push-templates
@@ -86,7 +86,7 @@ bash manage.sh push-templates
 
 **方式二：发送「帮助」获取模板列表**
 
-给 MailMind 邮箱发一封正文为 `帮助`（或 `模板`）的邮件，系统会自动回复全部模板，无需调用 AI。
+给 MailMindHub 邮箱发一封正文为 `帮助`（或 `模板`）的邮件，系统会自动回复全部模板，无需调用 AI。
 
 ---
 
@@ -256,7 +256,7 @@ bash manage.sh uninstall        # 卸载 systemd 服务
 
 > **💡 如何选择 CLI 还是 API？**
 >
-> - **CLI 模式（推荐简单使用）**：AI 工具本身具备读取本地文件、联网搜索、执行代码等能力，MailMind 只需将你的邮件指令传递过去，AI 会自主收集所需上下文。配置最少，开箱即用。
+> - **CLI 模式（推荐简单使用）**：AI 工具本身具备读取本地文件、联网搜索、执行代码等能力，MailMindHub 只需将你的邮件指令传递过去，AI 会自主收集所需上下文。配置最少，开箱即用。
 > - **API 模式（适合服务器/云部署）**：AI 只能处理你显式发送的文本内容。若需要天气、新闻、网页搜索等实时数据，必须在 `.env` 中单独配置对应的数据源（`WEATHER_API_KEY`、`NEWS_API_KEY`、`WEB_SEARCH` 等）。
 
 #### CLI 方式
@@ -303,12 +303,12 @@ bash manage.sh uninstall        # 卸载 systemd 服务
 <a name="日本語"></a>
 # 日本語
 
-## MailMind — メールで AI と対話する
+## MailMindHub — メールで AI と対話する
 
 メールで指示を送ると、AI が処理して結果をメールで返信します。アプリ不要、メールがインターフェースです。
 
 ```
-メール送信（指示）→ MailMind 受信 → AI 処理 → メールで返信
+メール送信（指示）→ MailMindHub 受信 → AI 処理 → メールで返信
 ```
 
 ### ✨ 主な機能
@@ -322,8 +322,8 @@ bash manage.sh uninstall        # 卸载 systemd 服务
 ### 📦 インストール
 
 ```bash
-git clone https://github.com/yourname/MailMind.git
-cd MailMind
+git clone https://github.com/yourname/MailMindHub.git
+cd MailMindHub
 python3 -m venv venv
 source venv/bin/activate
 pip install requests
@@ -431,7 +431,7 @@ export TASK_DEFAULT_AI="openai"
 
 **方法 1：メールボックスにテンプレートを送信（推奨）**
 
-以下のコマンドで7つのテンプレートをメールボックスの `MailMindテンプレート` フォルダに直接書き込み、メールクライアントから開いて編集して送信できます：
+以下のコマンドで7つのテンプレートをメールボックスの `MailMindHubテンプレート` フォルダに直接書き込み、メールクライアントから開いて編集して送信できます：
 
 ```bash
 bash manage.sh push-templates
@@ -439,7 +439,7 @@ bash manage.sh push-templates
 
 **方法 2：「テンプレート」と送信してテンプレート一覧を取得**
 
-MailMind のメールボックスに本文が `テンプレート`（または `ヘルプ`）のメールを送ると、AI を呼ばず自動でテンプレート一覧を返信します。
+MailMindHub のメールボックスに本文が `テンプレート`（または `ヘルプ`）のメールを送ると、AI を呼ばず自動でテンプレート一覧を返信します。
 
 ### 🚀 使い方
 
@@ -458,7 +458,7 @@ bash manage.sh uninstall         # systemd サービスを削除
 
 > **💡 CLI と API、どちらを選ぶ？**
 >
-> - **CLI モード（シンプルに使いたい方に推奨）**：AIツール自身がローカルファイルの読み取り・Web 検索・コード実行などを自律的に行えます。MailMind はメール本文の指示を渡すだけで OK。設定が最小限で済みます。
+> - **CLI モード（シンプルに使いたい方に推奨）**：AIツール自身がローカルファイルの読み取り・Web 検索・コード実行などを自律的に行えます。MailMindHub はメール本文の指示を渡すだけで OK。設定が最小限で済みます。
 > - **API モード（サーバー/クラウド運用向け）**：AI が受け取るのは送信したテキストのみ。天気・ニュース・Web 検索などのリアルタイムデータが必要な場合は、`.env` で `WEATHER_API_KEY`・`NEWS_API_KEY`・`WEB_SEARCH` 等を別途設定する必要があります。
 
 #### CLI 方式
@@ -499,12 +499,12 @@ bash manage.sh uninstall         # systemd サービスを削除
 <a name="english"></a>
 # English
 
-## MailMind — Chat with AI via Email
+## MailMindHub — Chat with AI via Email
 
 Send an email with your instructions, AI processes it and replies with the result. No app needed — your inbox is the interface.
 
 ```
-Send email (instruction) → MailMind receives → AI processes → Reply via email
+Send email (instruction) → MailMindHub receives → AI processes → Reply via email
 ```
 
 ### ✨ Features
@@ -518,8 +518,8 @@ Send email (instruction) → MailMind receives → AI processes → Reply via em
 ### 📦 Installation
 
 ```bash
-git clone https://github.com/yourname/MailMind.git
-cd MailMind
+git clone https://github.com/yourname/MailMindHub.git
+cd MailMindHub
 python3 -m venv venv
 source venv/bin/activate
 pip install requests
@@ -645,7 +645,7 @@ Every day 09:30 web search deep learning trends
 
 **Option 1: Push templates to your mailbox (recommended)**
 
-Run the command below to write 7 ready-to-use templates directly into a `MailMind Templates` folder in your mailbox. Open any template, fill in the placeholders, and send:
+Run the command below to write 7 ready-to-use templates directly into a `MailMindHub Templates` folder in your mailbox. Open any template, fill in the placeholders, and send:
 
 ```bash
 bash manage.sh push-templates
@@ -653,7 +653,7 @@ bash manage.sh push-templates
 
 **Option 2: Send "help" to get the template list**
 
-Send an email to your MailMind mailbox with just `help` (or `templates`) as the body. The system replies with all templates instantly — no AI call needed.
+Send an email to your MailMindHub mailbox with just `help` (or `templates`) as the body. The system replies with all templates instantly — no AI call needed.
 
 ### 🚀 Usage
 
@@ -674,7 +674,7 @@ Once running, send an email to your configured mailbox with your instruction as 
 
 > **💡 CLI vs API — which should I choose?**
 >
-> - **CLI mode (recommended for simple use)**: The AI tool itself can read local files, browse the web, execute code, and gather context autonomously. MailMind just forwards your email instruction — minimal configuration needed.
+> - **CLI mode (recommended for simple use)**: The AI tool itself can read local files, browse the web, execute code, and gather context autonomously. MailMindHub just forwards your email instruction — minimal configuration needed.
 > - **API mode (for server/cloud deployment)**: The AI only sees what you explicitly send it. To provide real-time data like weather, news, or web search results, you must configure the corresponding data sources in `.env` (`WEATHER_API_KEY`, `NEWS_API_KEY`, `WEB_SEARCH`, etc.).
 
 #### CLI Backends
@@ -721,12 +721,12 @@ Once running, send an email to your configured mailbox with your instruction as 
 <a name="한국어"></a>
 # 한국어
 
-## MailMind — 이메일로 AI와 대화하기
+## MailMindHub — 이메일로 AI와 대화하기
 
 이메일로 지시를 보내면 AI가 처리하여 결과를 이메일로 회신합니다. 별도의 앱 없이 이메일이 인터페이스입니다.
 
 ```
-이메일 발송（지시）→ MailMind 수신 → AI 처리 → 이메일로 회신
+이메일 발송（지시）→ MailMindHub 수신 → AI 처리 → 이메일로 회신
 ```
 
 ### ✨ 주요 기능
@@ -740,8 +740,8 @@ Once running, send an email to your configured mailbox with your instruction as 
 ### 📦 설치
 
 ```bash
-git clone https://github.com/yourname/MailMind.git
-cd MailMind
+git clone https://github.com/yourname/MailMindHub.git
+cd MailMindHub
 python3 -m venv venv
 source venv/bin/activate
 pip install requests
@@ -851,7 +851,7 @@ export TASK_DEFAULT_AI="openai"
 
 **방법 1：메일함에 템플릿 푸시（권장）**
 
-아래 명령으로 7개 템플릿을 메일함의 `MailMind Templates` 폴더에 직접 저장합니다. 메일 클라이언트에서 열어 편집 후 전송하면 됩니다：
+아래 명령으로 7개 템플릿을 메일함의 `MailMindHub Templates` 폴더에 직접 저장합니다. 메일 클라이언트에서 열어 편집 후 전송하면 됩니다：
 
 ```bash
 bash manage.sh push-templates
@@ -859,7 +859,7 @@ bash manage.sh push-templates
 
 **방법 2：「help」 전송으로 템플릿 목록 받기**
 
-MailMind 메일함에 본문이 `help`（또는 `templates`）인 이메일을 보내면 AI 호출 없이 즉시 템플릿 목록을 회신합니다.
+MailMindHub 메일함에 본문이 `help`（또는 `templates`）인 이메일을 보내면 AI 호출 없이 즉시 템플릿 목록을 회신합니다.
 
 ### 🚀 사용법
 

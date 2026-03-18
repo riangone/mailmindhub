@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class BaseSkill(ABC):
-    """Base class for all MailMind skills."""
+    """Base class for all MailMindHub skills."""
     name: str = ""
     description: str = ""
     description_ja: str = ""
