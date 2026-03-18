@@ -51,6 +51,16 @@ header {
   flex-shrink: 0;
 }
 
+.slogan {
+  font-size: 11px;
+  color: #666;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  margin-left: -10px;
+  flex-shrink: 0;
+}
+
 /* ─── Header Status ─────────────────────────────────────────────────────────── */
 #header-status {
   display: flex;

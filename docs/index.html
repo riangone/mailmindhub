@@ -245,9 +245,20 @@
       color: var(--muted);
       max-width: 540px;
       line-height: 1.8;
-      margin-bottom: 44px;
+      margin-bottom: 24px;
       animation: rise 0.8s cubic-bezier(.16,1,.3,1) both;
       animation-delay: 0.2s;
+    }
+
+    .hero-slogan {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-size: clamp(1.3rem, 3vw, 2.2rem);
+      color: var(--cyan);
+      margin-bottom: 44px;
+      animation: rise 0.8s cubic-bezier(.16,1,.3,1) both;
+      animation-delay: 0.25s;
+      letter-spacing: -0.01em;
     }
 
     .flow {
@@ -706,7 +717,7 @@
 
 <!-- ══ NAV ══ -->
 <nav>
-  <a href="#" class="nav-logo"><span class="nav-logo-brand">MailMindHub</span><sup class="nav-dev-badge">dev</sup></a>
+  <a href="#" class="nav-logo"><span class="nav-logo-brand">Mail</span>Mind<span class="nav-logo-brand">Hub</span><sup class="nav-dev-badge">dev</sup></a>
   <ul class="nav-links">
     <li><a href="#features" data-i18n="nav_features"></a></li>
     <li><a href="#how" data-i18n="nav_how"></a></li>
@@ -743,6 +754,7 @@
   <span class="hero-badge" data-i18n="hero_badge"></span>
   <h1 data-i18n="hero_h1"></h1>
   <p class="hero-sub" data-i18n="hero_sub"></p>
+  <div class="hero-slogan" data-i18n="hero_slogan"></div>
 
   <div class="flow">
     <div class="flow-node">
@@ -1105,7 +1117,8 @@ const T = {
     nav_features: 'Features', nav_how: 'How it works', nav_webui: 'Web UI', nav_ai: 'AI Backends', nav_start: 'Quick Start',
     hero_badge: 'open source · email-to-ai bridge',
     hero_h1: 'Your inbox is now<br/><em>an AI interface</em>',
-    hero_sub: 'Send an email with any instruction. MailMindHub routes it to Claude, GPT, Gemini, or Qwen — and replies with the result. No app. No new interface. Just email.',
+    hero_sub: 'Send an email with any instruction. MailMindHub routes it to Claude, GPT, Gemini, or Qwen — and replies with the result.',
+    hero_slogan: 'No app. No new interface. Just email.',
     flow_1: 'You send', flow_3: 'AI processes', flow_4: 'You receive',
     cta_github: 'View on GitHub', cta_start: 'Quick Start →',
     usp1: 'No new UI — email is the interface', usp2: 'Async & non-blocking', usp3: 'Fully self-hosted & private', usp4: 'Works on any device with email', usp5: 'MIT open source',
@@ -1188,7 +1201,8 @@ const T = {
     nav_features: '功能', nav_how: '工作原理', nav_webui: 'Web UI', nav_ai: 'AI 后端', nav_start: '快速开始',
     hero_badge: '开源 · 邮件转 AI 网关',
     hero_h1: '你的收件箱<br/>现在是 <em>AI 接口</em>',
-    hero_sub: '发一封邮件写下你的指令，MailMindHub 将其转发给 Claude、GPT、Gemini 或 Qwen，然后把结果回复到你的邮箱。无需安装 App，无需学习新界面，邮件就是一切。',
+    hero_sub: '发一封邮件写下你的指令，MailMindHub 将其转发给 Claude、GPT、Gemini 或 Qwen，然后把结果回复到你的邮箱。',
+    hero_slogan: '无需 App，无需新界面，只有邮件。',
     flow_1: '你发送', flow_3: 'AI 处理', flow_4: '你收到',
     cta_github: '在 GitHub 查看', cta_start: '快速开始 →',
     usp1: '无需新界面 — 邮件即接口', usp2: '异步非阻塞，即发即走', usp3: '完全自托管，数据自控', usp4: '任何支持邮件的设备', usp5: 'MIT 开源免费',
@@ -1271,7 +1285,8 @@ const T = {
     nav_features: '機能', nav_how: '仕組み', nav_webui: 'Web UI', nav_ai: 'AI バックエンド', nav_start: 'クイックスタート',
     hero_badge: 'オープンソース · メール to AI ブリッジ',
     hero_h1: 'あなたの受信箱が<br/><em>AI インターフェース</em>に',
-    hero_sub: 'メールで指示を送るだけ。MailMindHub が Claude、GPT、Gemini、Qwen に橋渡しし、結果をメールで返信します。アプリ不要。新しいUIも不要。メールだけ。',
+    hero_sub: 'メールで指示を送るだけ。MailMindHub が Claude、GPT、Gemini、Qwen に橋渡しし、結果をメールで返信します。',
+    hero_slogan: 'アプリ不要。新UI不要。メールだけ。',
     flow_1: '送信', flow_3: 'AI が処理', flow_4: '受信',
     cta_github: 'GitHub で見る', cta_start: 'クイックスタート →',
     usp1: '新UIは不要 — メールがインターフェース', usp2: '非同期・ノンブロッキング', usp3: '完全セルフホスト・プライバシー', usp4: 'メール対応のどの端末でも使える', usp5: 'MIT オープンソース',
@@ -1354,7 +1369,8 @@ const T = {
     nav_features: '기능', nav_how: '작동 원리', nav_webui: 'Web UI', nav_ai: 'AI 백엔드', nav_start: '빠른 시작',
     hero_badge: '오픈소스 · 이메일 to AI 브리지',
     hero_h1: '받은 편지함이<br/><em>AI 인터페이스</em>가 됩니다',
-    hero_sub: '이메일로 지시를 보내면 MailMindHub가 Claude, GPT, Gemini, Qwen에 전달하고 결과를 이메일로 회신합니다. 앱 불필요. 새 UI 불필요. 이메일만.',
+    hero_sub: '이메일로 지시를 보내면 MailMindHub가 Claude, GPT, Gemini, Qwen에 전달하고 결과를 이메일로 회신합니다.',
+    hero_slogan: '앱도, 새로운 인터페이스도 필요 없습니다. 오직 이메일뿐입니다.',
     flow_1: '발송', flow_3: 'AI 처리', flow_4: '수신',
     cta_github: 'GitHub에서 보기', cta_start: '빠른 시작 →',
     usp1: '새 UI 불필요 — 이메일이 인터페이스', usp2: '비동기·논블로킹', usp3: '완전 셀프호스트·프라이버시', usp4: '이메일 지원 기기라면 어디서든', usp5: 'MIT 오픈소스',

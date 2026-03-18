@@ -38,6 +38,7 @@ class TaskScheduler:
                     output TEXT,
                     attachments TEXT,
                     in_reply_to TEXT,
+                    lang TEXT DEFAULT 'zh',
                     status TEXT DEFAULT 'pending'
                 )
             """)
@@ -46,6 +47,7 @@ class TaskScheduler:
                 ("cron_expr", "TEXT"),
                 ("paused_at", "REAL"),
                 ("retry_count", "INTEGER DEFAULT 0"),
+                ("lang", "TEXT DEFAULT 'zh'"),
             ]:
                 try:
                     conn.execute(f"ALTER TABLE tasks ADD COLUMN {col} {definition}")
@@ -98,6 +100,7 @@ class TaskScheduler:
         output: Optional[dict] = None,
         attachments: Optional[list] = None,
         in_reply_to: str = "",
+        lang: str = "zh",
     ):
         try:
             interval = self._parse_duration(schedule_every)
@@ -119,12 +122,12 @@ class TaskScheduler:
 
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute("""
-                    INSERT INTO tasks (mailbox_name, "to", subject, body, trigger_time, interval_seconds, until_time, cron_expr, type, payload, output, attachments, in_reply_to)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO tasks (mailbox_name, "to", subject, body, trigger_time, interval_seconds, until_time, cron_expr, type, payload, output, attachments, in_reply_to, lang)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     mailbox_name, to, subject, body, trigger_time, interval, until_ts, cron_expr,
                     task_type or "email", json.dumps(task_payload or {}),
-                    json.dumps(output or {}), json.dumps(attachments or []), in_reply_to
+                    json.dumps(output or {}), json.dumps(attachments or []), in_reply_to, lang
                 ))
             log.info(f"📅 任务已存入数据库：[{subject}] 将在 {datetime.fromtimestamp(trigger_time)} 发送")
             return True
@@ -263,6 +266,7 @@ class TaskScheduler:
 
     def _execute_single_task(self, t: dict):
         log.info(f"🔔 执行任务：[{t['subject']}] -> {t['to']}")
+        lang = t.get("lang", "zh")
 
         # Prepare task dict for registry
         task_for_logic = {
@@ -272,7 +276,7 @@ class TaskScheduler:
             "body": t["body"],
         }
 
-        subject, body = execute_task_logic(task_for_logic)
+        subject, body = execute_task_logic(task_for_logic, lang=lang)
 
         output = json.loads(t["output"])
         attachments = json.loads(t["attachments"])
@@ -296,6 +300,7 @@ class TaskScheduler:
                 in_reply_to=t.get("in_reply_to", ""),
                 attachments=attachments,
                 extra_headers=extra_headers if extra_headers else None,
+                lang=lang,
             )
 
         if output.get("archive", False):

@@ -33,17 +33,27 @@ def smtp_login(mailbox: dict):
         server.docmd("AUTH", f"XOAUTH2 {make_oauth_string(mailbox['address'], token)}")
     return server
 
-def send_reply(mailbox: dict, to: str, subject: str, body: str, in_reply_to: str = "", attachments: list = None, extra_headers: dict = None) -> str:
+def send_reply(mailbox: dict, to: str, subject: str, body: str, in_reply_to: str = "", attachments: list = None, extra_headers: dict = None, lang: str = "zh") -> str:
     """Send a reply email. Returns the Message-ID of the sent message.
 
     Args:
         extra_headers: Optional dict of additional MIME headers to set on the
                        message (e.g. List-Unsubscribe / List-Unsubscribe-Post
                        for RFC 8058 one-click unsubscribe support).
+        lang: Language for the footer (zh/ja/ko/en).
     """
     ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    footer_plain = f"\n\n---\n✉️  由 MailMindHub AI 自动回复 | {ts}"
-    footer_html = f'<br><hr><p style="color: #666; font-size: 12px;">✉️  由 MailMindHub AI 自动回复 | {ts}</p>'
+    
+    footer_texts = {
+        "zh": f"✉️  由 MailMindHub AI 自动回复 | {ts}",
+        "ja": f"✉️  MailMindHub AI による自動返信 | {ts}",
+        "ko": f"✉️  MailMindHub AI 자동 회신 | {ts}",
+        "en": f"✉️  Automatically replied by MailMindHub AI | {ts}",
+    }
+    footer_text = footer_texts.get(lang, footer_texts["zh"])
+    
+    footer_plain = f"\n\n---\n{footer_text}"
+    footer_html = f'<br><hr><p style="color: #666; font-size: 12px;">{footer_text}</p>'
 
     full_body_plain = body + footer_plain
 

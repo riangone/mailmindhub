@@ -136,6 +136,7 @@ BUILTIN_SERVERS: dict[str, dict] = {
 
 I18N: dict[str, dict[str, str]] = {
     "zh": {
+        "slogan": "无需 App，无需新界面，只有邮件。",
         "nav_mail": "邮件设置", "nav_ai": "AI 设置", "nav_tasks": "任务", "nav_skills": "技能", "nav_logs": "日志",
         "status_running": "运行中", "status_stopped": "STOPPED",
         "btn_start": "启动", "btn_stop": "停止", "btn_restart": "重启",
@@ -229,6 +230,7 @@ I18N: dict[str, dict[str, str]] = {
         "local_llm_hint": "需先在本地启动推理服务",
     },
     "ja": {
+        "slogan": "アプリ不要。新UI不要。メールだけ。",
         "nav_mail": "メール設定", "nav_ai": "AI 設定", "nav_tasks": "タスク", "nav_skills": "スキル", "nav_logs": "ログ",
         "status_running": "実行中", "status_stopped": "停止中",
         "btn_start": "起動", "btn_stop": "停止", "btn_restart": "再起動",
@@ -322,6 +324,7 @@ I18N: dict[str, dict[str, str]] = {
         "local_llm_hint": "ローカル推論サービスを事前に起動してください",
     },
     "en": {
+        "slogan": "No app. No new interface. Just email.",
         "nav_mail": "Mail Settings", "nav_ai": "AI Settings", "nav_tasks": "Tasks", "nav_skills": "Skills", "nav_logs": "Logs",
         "status_running": "Running", "status_stopped": "STOPPED",
         "btn_start": "Start", "btn_stop": "Stop", "btn_restart": "Restart",
@@ -415,6 +418,7 @@ I18N: dict[str, dict[str, str]] = {
         "local_llm_hint": "Start the local inference service before use",
     },
     "ko": {
+        "slogan": "앱도, 새로운 인터페이스도 필요 없습니다. 오직 이메일뿐입니다.",
         "nav_mail": "메일 설정", "nav_ai": "AI 설정", "nav_tasks": "작업", "nav_skills": "스킬", "nav_logs": "로그",
         "status_running": "실행 중", "status_stopped": "정지됨",
         "btn_start": "시작", "btn_stop": "정지", "btn_restart": "재시작",

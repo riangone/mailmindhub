@@ -227,20 +227,28 @@ def _handle_task_manage(payload: dict, subject: str) -> str:
     return _t(f"⚠️ 未知 task_manage 操作：{action}", f"⚠️ 不明な操作：{action}", f"⚠️ Unknown action: {action}")
 
 
-def execute_task_logic(task: dict):
+def execute_task_logic(task: dict, lang: str = "zh"):
     task_type = (task.get("type") or "email").lower()
     payload = task.get("payload") or {}
     subject = task.get("subject") or "定时任务结果"
     body = task.get("body") or ""
 
+    # Helper for task logic to return translated results
+    def _tl(zh, ja, en, ko):
+        return {"zh": zh, "ja": ja, "en": en, "ko": ko}.get(lang, zh)
+
     if task_type == "email":
         pass
     elif task_type == "email_manage":
         # email_manage is handled interactively in process_email(); scheduled runs are not supported.
-        body = "⚠️ email_manage 仅支持即时执行，不支持定时任务。"
+        body = _tl("⚠️ email_manage 仅支持即时执行，不支持定时任务。",
+                   "⚠️ email_manage は即時実行のみ対応で、定期実行はサポートされていません。",
+                   "⚠️ email_manage only supports immediate execution; scheduled runs are not supported.",
+                   "⚠️ email_manage는 즉시 실행만 지원하며 예약된 작업은 지원하지 않습니다.")
     elif task_type == "task_manage":
+        # Note: _handle_task_manage already uses internal i18n if available
         body = _handle_task_manage(payload, subject)
-        subject = subject or _t("任务管理结果", "タスク管理結果", "Task management result")
+        subject = subject or _tl("任务管理结果", "タスク管理結果", "Task management result", "작업 관리 결과")
     elif task_type == "mcp_call":
         from utils.mcp_client import call_mcp_tool, list_mcp_tools
         server = payload.get("server", "")
@@ -265,9 +273,13 @@ def execute_task_logic(task: dict):
             # If payload has no text content, inject task body/subject as fallback prompt
             if not payload.get("prompt") and not payload.get("text") and not payload.get("code"):
                 payload = {**payload, "prompt": body or subject}
-            body = skill.run(payload, ai_caller=ai)
+            # Pass lang if skill supports it
+            try:
+                body = skill.run(payload, ai_caller=ai, lang=lang)
+            except TypeError:
+                body = skill.run(payload, ai_caller=ai)
             subject = subject or skill.description
         else:
-            body = f"⚠️ 未知任务类型：{task_type}"
+            body = _tl(f"⚠️ 未知任务类型：{task_type}", f"⚠️ 不明なタスク：{task_type}", f"⚠️ Unknown task type: {task_type}", f"⚠️ 알 수 없는 작업 유형: {task_type}")
 
     return subject, body

@@ -299,11 +299,16 @@ def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None):
 def process_email(mailbox_name, ai_name, backend, em):
     log.info(f"📨 收到指令: [{em['subject']}] 来自 {em['from_email']}")
 
+    # 优先检测语言，用于后续回复
+    email_text = f"{em.get('subject', '')} {em.get('body', '')}"
+    em_lang = detect_lang(email_text)
+    lang = em_lang if em_lang in ("zh", "ja", "en", "ko") else PROMPT_LANG
+
     # 帮助/模板请求：直接回复模板列表，不调用 AI
     if _is_help_request(em):
         log.info("📋 检测到帮助请求，回复模板列表")
-        help_body = _HELP_BODY.get(PROMPT_LANG, _HELP_BODY["zh"])
-        send_reply(MAILBOXES[mailbox_name], em["from_email"], "MailMindHub 使用模板", help_body, em.get("message_id"))
+        help_body = _HELP_BODY.get(lang, _HELP_BODY["zh"])
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], "MailMindHub 使用模板", help_body, em.get("message_id"), lang=lang)
         processed_ids.add(em["id"])
         save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
         return
@@ -322,22 +327,16 @@ def process_email(mailbox_name, ai_name, backend, em):
                 pop_pending_op(em["in_reply_to"])
                 if is_confirm:
                     log.info(f"✅ email_manage 已确认，开始执行 {len(pending_op.get('matched_ids', []))} 个操作")
-                    result = execute_email_manage_op(MAILBOXES[mailbox_name], pending_op, PROMPT_LANG)
-                    reply_sub = {"zh": "邮件整理：完成", "ja": "メール整理：完了", "en": "Email organization: done"}.get(PROMPT_LANG, "邮件整理：完成")
+                    result = execute_email_manage_op(MAILBOXES[mailbox_name], pending_op, lang)
+                    reply_sub = {"zh": "邮件整理：完成", "ja": "メール整理：完了", "en": "Email organization: done", "ko": "이메일 정리: 완료"}.get(lang, "邮件整理：完成")
                 else:
                     log.info("❌ email_manage 已取消")
-                    result = {"zh": "操作已取消。", "ja": "操作をキャンセルしました。", "en": "Operation cancelled."}.get(PROMPT_LANG, "操作已取消。")
-                    reply_sub = {"zh": "邮件整理：已取消", "ja": "メール整理：キャンセル済み", "en": "Email organization: cancelled"}.get(PROMPT_LANG, "邮件整理：已取消")
-                send_reply(MAILBOXES[mailbox_name], em["from_email"], reply_sub, result, em.get("message_id"))
+                    result = {"zh": "操作已取消。", "ja": "操作をキャンセルしました。", "en": "Operation cancelled.", "ko": "작업이 취소되었습니다."}.get(lang, "操作已取消。")
+                    reply_sub = {"zh": "邮件整理：已取消", "ja": "メール整理：キャンセル済み", "en": "Email organization: cancelled", "ko": "이메일 정리: 취소됨"}.get(lang, "邮件整理：已取消")
+                send_reply(MAILBOXES[mailbox_name], em["from_email"], reply_sub, result, em.get("message_id"), lang=lang)
                 processed_ids.add(em["id"])
                 save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
                 return
-
-
-    # 検出言語を優先、グローバル設定を fallback
-    email_text = f"{em.get('subject', '')} {em.get('body', '')}"
-    em_lang = detect_lang(email_text)
-    lang = em_lang if em_lang in ("zh", "ja", "en") else PROMPT_LANG
 
     instr = f"发件人：{em['from']}\n主题：{em['subject']}\n\n"
     instr += trim_email_body(em['body'] or "", max_chars=MAX_EMAIL_CHARS)
@@ -355,8 +354,9 @@ def process_email(mailbox_name, ai_name, backend, em):
             "zh": "AI 处理失败，请稍后重试。",
             "ja": "AI の処理に失敗しました。しばらく経ってから再送してください。",
             "en": "AI processing failed, please try again later.",
+            "ko": "AI 처리 실패, 잠시 후 다시 시도해 주세요.",
         }.get(lang, "AI 处理失败，请稍后重试。")
-        send_reply(MAILBOXES[mailbox_name], em["from_email"], em["subject"], err_msg, em.get("message_id"))
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], em["subject"], err_msg, em.get("message_id"), lang=lang)
         processed_ids.add(em["id"])
         save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
         return
@@ -397,31 +397,35 @@ def process_email(mailbox_name, ai_name, backend, em):
             task_payload or {},
             output or {},
             atts,
-            in_reply_to=em.get("message_id", "")
+            in_reply_to=em.get("message_id", ""),
+            lang=lang
         )
-        def _tl(zh, ja, en):
-            return {"zh": zh, "ja": ja, "en": en}.get(lang, zh)
+        def _tl(zh, ja, en, ko):
+            return {"zh": zh, "ja": ja, "en": en, "ko": ko}.get(lang, zh)
         if sch_cron:
             msg = _tl(
                 f"您的任务已按 cron 表达式 [{sch_cron}] 调度，截止至 {sch_until or '未指定'}。\n\n内容预览：\n{body}",
                 f"タスクは cron 式 [{sch_cron}] でスケジュールされました（終了：{sch_until or '未指定'}）。\n\n内容プレビュー：\n{body}",
                 f"Task scheduled with cron [{sch_cron}], until {sch_until or 'not set'}.\n\nPreview:\n{body}",
+                f"작업이 cron 표현식 [{sch_cron}]에 따라 예약되었습니다 (종료: {sch_until or '지정되지 않음'}).\n\n내용 미리보기:\n{body}",
             )
-            send_reply(MAILBOXES[mailbox_name], em["from_email"], _tl(f"已安排定时任务：{sub}", f"定期タスク設定済み：{sub}", f"Scheduled task: {sub}"), msg)
+            send_reply(MAILBOXES[mailbox_name], em["from_email"], _tl(f"已安排定时任务：{sub}", f"定期タスク設定済み：{sub}", f"Scheduled task: {sub}", f"예약 작업 설정됨: {sub}"), msg, lang=lang)
         elif sch_every:
             msg = _tl(
                 f"您的任务将每 {sch_every} 发送一次，截止至 {sch_until or '未指定'}。\n\n内容预览：\n{body}",
                 f"タスクは {sch_every} ごとに実行されます（終了：{sch_until or '未指定'}）。\n\n内容プレビュー：\n{body}",
                 f"Task will run every {sch_every}, until {sch_until or 'not set'}.\n\nPreview:\n{body}",
+                f"작업이 매 {sch_every}마다 실행됩니다 (종료: {sch_until or '지정되지 않음'}).\n\n내용 미리보기:\n{body}",
             )
-            send_reply(MAILBOXES[mailbox_name], em["from_email"], _tl(f"已安排定时任务：{sub}", f"定期タスク設定済み：{sub}", f"Scheduled task: {sub}"), msg)
+            send_reply(MAILBOXES[mailbox_name], em["from_email"], _tl(f"已安排定时任务：{sub}", f"定期タスク設定済み：{sub}", f"Scheduled task: {sub}", f"예약 작업 설정됨: {sub}"), msg, lang=lang)
         else:
             msg = _tl(
                 f"您的任务已安排在 {sch_at} 左右执行。\n\n内容预览：\n{body}",
                 f"タスクは {sch_at} 頃に実行されます。\n\n内容プレビュー：\n{body}",
                 f"Task scheduled for {sch_at}.\n\nPreview:\n{body}",
+                f"작업이 {sch_at} 경에 실행되도록 예약되었습니다.\n\n내용 미리보기:\n{body}",
             )
-            send_reply(MAILBOXES[mailbox_name], em["from_email"], _tl(f"已安排定时任务：{sub}", f"タスク設定済み：{sub}", f"Scheduled task: {sub}"), msg)
+            send_reply(MAILBOXES[mailbox_name], em["from_email"], _tl(f"已安排定时任务：{sub}", f"タスク設定済み：{sub}", f"Scheduled task: {sub}", f"예약 작업 설정됨: {sub}"), msg, lang=lang)
     elif task_type == "email_manage":
         log.info("📂 email_manage：执行邮件整理（干运行+确认）")
         from core.email_manager import search_matching_emails, build_confirmation_body, add_pending_op
@@ -430,8 +434,8 @@ def process_email(mailbox_name, ai_name, backend, em):
         target_folder = (task_payload or {}).get("target_folder", "")
         uid_list, sample_subjects = search_matching_emails(MAILBOXES[mailbox_name], filter_spec)
         if not uid_list:
-            no_match = {"zh": "未找到符合条件的邮件，请检查筛选条件是否正确。", "ja": "条件に一致するメールが見つかりませんでした。", "en": "No emails matched the filter criteria."}.get(PROMPT_LANG, "未找到符合条件的邮件。")
-            send_reply(MAILBOXES[mailbox_name], em["from_email"], sub or em["subject"], no_match, em.get("message_id"))
+            no_match = {"zh": "未找到符合条件的邮件，请检查筛选条件是否正确。", "ja": "条件に一致するメールが見つかりませんでした。", "en": "No emails matched the filter criteria.", "ko": "조건에 일치하는 이메일을 찾을 수 없습니다."}.get(lang, "未找到符合条件的邮件。")
+            send_reply(MAILBOXES[mailbox_name], em["from_email"], sub or em["subject"], no_match, em.get("message_id"), lang=lang)
         else:
             op_data = {
                 "mailbox_name": mailbox_name,
@@ -445,9 +449,9 @@ def process_email(mailbox_name, ai_name, backend, em):
                 "sample_subjects": sample_subjects[:5],
                 "created_at": datetime.now().isoformat(),
             }
-            confirm_body = build_confirmation_body(op_data, PROMPT_LANG)
-            confirm_sub  = {"zh": f"请确认：{sub or em['subject']}", "ja": f"確認：{sub or em['subject']}", "en": f"Please confirm: {sub or em['subject']}"}.get(PROMPT_LANG, f"请确认：{sub or em['subject']}")
-            sent_msg_id  = send_reply(MAILBOXES[mailbox_name], em["from_email"], confirm_sub, confirm_body, em.get("message_id"))
+            confirm_body = build_confirmation_body(op_data, lang)
+            confirm_sub  = {"zh": f"请确认：{sub or em['subject']}", "ja": f"確認：{sub or em['subject']}", "en": f"Please confirm: {sub or em['subject']}", "ko": f"확인 부탁드립니다: {sub or em['subject']}"}.get(lang, f"请确认：{sub or em['subject']}")
+            sent_msg_id  = send_reply(MAILBOXES[mailbox_name], em["from_email"], confirm_sub, confirm_body, em.get("message_id"), lang=lang)
             if sent_msg_id:
                 add_pending_op(sent_msg_id, op_data)
                 log.info(f"📋 已发送确认邮件，等待用户授权（{len(uid_list)} 封邮件）")
@@ -460,14 +464,14 @@ def process_email(mailbox_name, ai_name, backend, em):
             "payload": task_payload or {},
             "subject": sub,
             "body": body
-        })
+        }, lang=lang)
         out_conf = output or {"email": True}
         if out_conf.get("email", True):
-            send_reply(MAILBOXES[mailbox_name], em["from_email"], t_sub, t_body, em.get("message_id"), atts)
+            send_reply(MAILBOXES[mailbox_name], em["from_email"], t_sub, t_body, em.get("message_id"), atts, lang=lang)
         if out_conf.get("archive", False):
             archive_output(out_conf, t_sub, t_body, atts)
     else:
-        send_reply(MAILBOXES[mailbox_name], em["from_email"], sub, body, em.get("message_id"), atts)
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], sub, body, em.get("message_id"), atts, lang=lang)
     
     processed_ids.add(em["id"])
     save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
