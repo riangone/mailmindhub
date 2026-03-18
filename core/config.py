@@ -215,6 +215,14 @@ AI_MODIFY_SUBJECT = os.environ.get("AI_MODIFY_SUBJECT", "false").lower() == "tru
 MAX_EMAIL_CHARS = int(os.environ.get("MAX_EMAIL_CHARS", "4000"))
 
 # ────────────────────────────────────────────────────────────────
+#  Workspace 配置（限制 AI 操作范围）
+# ────────────────────────────────────────────────────────────────
+
+WORKSPACE_DIR = os.environ.get("WORKSPACE_DIR", "")
+if WORKSPACE_DIR:
+    WORKSPACE_DIR = os.path.realpath(os.path.abspath(WORKSPACE_DIR))
+
+# ────────────────────────────────────────────────────────────────
 #  Prompts
 # ────────────────────────────────────────────────────────────────
 

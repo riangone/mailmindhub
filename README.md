@@ -298,6 +298,17 @@ bash manage.sh uninstall        # 卸载 systemd 服务
 - `credentials_gmail.json`、`token_*.json` 已加入 `.gitignore`，不会被提交
 - `manage.sh` 包含密码，推送前检查或加入 `.gitignore`
 
+### 🛡️ Workspace（可选）
+
+限制 AI 文件操作范围到指定目录，增强安全性：
+
+```bash
+# 在 .env 中配置
+WORKSPACE_DIR="./workspace"
+```
+
+设置后，所有归档输出（如 `reports/`）将限制在该目录内，防止路径穿越攻击。留空则不限制（向后兼容）。
+
 ---
 
 <a name="日本語"></a>
@@ -715,6 +726,17 @@ Once running, send an email to your configured mailbox with your instruction as 
 - Always set `ALLOWED` whitelist to your own email to prevent abuse
 - `credentials_gmail.json` and `token_*.json` are in `.gitignore` and won't be committed
 - `manage.sh` contains credentials — review before pushing, or add to `.gitignore`
+
+### 🛡️ Workspace (Optional)
+
+Limit AI file operations to a specific directory for enhanced security:
+
+```bash
+# In .env
+WORKSPACE_DIR="./workspace"
+```
+
+When set, all archive outputs (e.g., `reports/`) will be restricted to this directory, preventing path traversal attacks. Leave empty for no restrictions (backward compatible).
 
 ---
 

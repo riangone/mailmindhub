@@ -39,12 +39,13 @@ MailMindHub/
 ├── tasks.db                 # SQLite 定时任务数据库
 ├── tasks.json               # 定时任务 JSON（旧版，兼容用）
 ├── reports/                 # 定时报告归档目录
+├── workspace/               # Workspace 目录（可选，限制 AI 操作范围）
 ├── core/                    # 核心模块
 │   ├── __init__.py
-│   ├── config.py            # 邮箱/AI 配置，环境变量读取
+│   ├── config.py            # 邮箱/AI 配置，环境变量读取（含 WORKSPACE_DIR）
 │   ├── mail_client.py       # IMAP 客户端，邮件获取
-│   ├── mail_sender.py       # SMTP 发送，归档
-│   └── validator.py         # 配置验证
+│   ├── mail_sender.py       # SMTP 发送，归档（workspace 路径校验）
+│   └── validator.py         # 配置验证（含 validate_path 路径校验函数）
 ├── ai/                      # AI 模块
 │   ├── __init__.py
 │   ├── base.py              # AIBase 抽象类
@@ -385,6 +386,26 @@ elif task_type == "newtask":
 | 白名单 | `MAIL_<NAME>_ALLOWED` | `MAIL_126_ALLOWED` |
 | API Key | `<PROVIDER>_API_KEY` | `ANTHROPIC_API_KEY` |
 | 运行参数 | 大写 | `MAILBOX`, `AI`, `MODE`, `POLL_INTERVAL` |
+| Workspace | `WORKSPACE_DIR` | `WORKSPACE_DIR="./workspace"` |
+
+### Workspace（工作区）
+
+**功能**：限制 AI 文件操作范围到指定目录，防止路径穿越攻击，增强安全性。
+
+**配置**：
+```bash
+# 在 .env 中设置
+WORKSPACE_DIR="./workspace"
+```
+
+**影响范围**：
+- 归档输出（`reports/` 等）将限制在 workspace 目录内
+- 未设置时保持向后兼容（不限制路径）
+
+**安全机制**：
+- 使用 `os.path.realpath()` 解析符号链接，防止路径穿越
+- 通过 `validate_path()` 函数校验所有归档路径
+- 超出 workspace 的操作会被拒绝并记录日志
 
 ### 测试
 

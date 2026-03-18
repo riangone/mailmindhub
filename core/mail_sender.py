@@ -17,6 +17,7 @@ except ImportError:
     markdown = None
 
 from core.mail_client import get_oauth_token, make_oauth_string
+from core.validator import validate_path, is_path_in_workspace
 from utils.logger import log
 
 def smtp_login(mailbox: dict):
@@ -99,10 +100,25 @@ def archive_output(output: dict, subject: str, body: str, attachments: Optional[
     if not output or not output.get("archive"):
         return
     archive_dir = output.get("archive_dir", "reports")
-    os.makedirs(archive_dir, exist_ok=True)
+    
+    # Workspace 限制：确保归档路径在 workspace 内
+    from core.config import WORKSPACE_DIR
+    if WORKSPACE_DIR:
+        # 将归档目录限制在 workspace 内
+        archive_dir = validate_path(os.path.join(WORKSPACE_DIR, archive_dir))
+        os.makedirs(archive_dir, exist_ok=True)
+    else:
+        os.makedirs(archive_dir, exist_ok=True)
+    
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_subject = re.sub(r"[^\w\-_. ]+", "_", subject)[:80]
     path = os.path.join(archive_dir, f"{ts}_{safe_subject}.txt")
+    
+    # 再次校验完整路径
+    if WORKSPACE_DIR and not is_path_in_workspace(path):
+        log.error(f"⚠️ 归档路径超出 workspace 范围：{path}")
+        return
+    
     with open(path, "w", encoding="utf-8") as f:
         f.write(subject + "\n\n" + body + "\n")
         if attachments:
