@@ -146,7 +146,7 @@ def auto_detect_task(instruction: str):
     payload = {}
     output = {}
 
-    sys_keywords = ["系统", "os", "系统运行状态", "系统状态", "运行状态", "资源使用", "cpu", "内存", "磁盘", "sysinfo", "system status"]
+    sys_keywords = ["os", "系统运行状态", "系统状态", "运行状态", "资源使用", "cpu", "内存", "磁盘", "sysinfo", "system status"]
     if any(k in low for k in sys_keywords):
         task_type = "system_status"
         if any(k in low for k in ["进程列表", "process list", "process"]):
@@ -209,6 +209,23 @@ def auto_detect_task(instruction: str):
     return task_type, payload, output, schedule_at, schedule_every, schedule_cron, schedule_until
 
 def auto_detect_tasks(instruction: str):
+    # 仅当邮件以特定命令词开头时才解析为任务
+    # Chinese, English, Japanese, Korean
+    task_prefixes = ["任务：", "task:", "cmd:", "タスク：", "작업:", "命令："]
+    
+    instruction_lower = instruction.lower()
+    prefix_found = None
+    for prefix in task_prefixes:
+        if instruction_lower.startswith(prefix):
+            prefix_found = prefix
+            break
+            
+    if not prefix_found:
+        return []
+
+    # 移除前缀，获取真正的指令
+    instruction = instruction[len(prefix_found):].strip()
+
     parts = [p.strip() for p in re.split(r"[；;\n]+", instruction) if p.strip()]
     tasks = []
     for part in parts:
@@ -231,10 +248,16 @@ def trim_email_body(body: str, max_chars: int = 4000) -> str:
     if not body:
         return ""
 
+    # Normalize line endings
+    body = body.replace("\r\n", "\n").replace("\r", "\n")
+
     # 精确匹配邮件引用分隔符（避免误截断正文内容）
     exact_markers = [
         "-----Original Message-----",
         "--- Original Message ---",
+        "----- Forwarded message -----",
+        "Begin forwarded message:",
+        "-------------- Forwarded message --------------",
         "________________________________",
         "--- 会话历史 ---",
     ]
@@ -254,6 +277,27 @@ def trim_email_body(body: str, max_chars: int = 4000) -> str:
 
     # MailMindHub 签名分隔符
     trimmed_body = re.split(r'\n---\s*\n✉️\s+由 MailMindHub', trimmed_body)[0]
+
+    # 转发/回复头块（From/Sent/To/Subject 等）
+    header_block = re.search(r'\n(?:From:|发件人:|寄件者:).*\n(?:Sent:|发送时间:|送信日時:).*\n(?:To:|收件人:|宛先:).*\n(?:Subject:|主题:|件名:)', trimmed_body, re.I)
+    if header_block:
+        trimmed_body = trimmed_body[:header_block.start()]
+
+    # 常见手机签名（明确且低风险）
+    mobile_sig = re.search(r'\n(?:Sent from my .+|Sent via Gmail|发自我的 .+|来自我的 .+|由 iPhone 发送|由 iPad 发送)\s*$', trimmed_body, re.I)
+    if mobile_sig:
+        trimmed_body = trimmed_body[:mobile_sig.start()]
+
+    # 签名分隔线（保守：仅在正文至少 3 行后出现）
+    lines = trimmed_body.splitlines()
+    if len(lines) >= 3:
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if i < 2:
+                continue
+            if stripped in ("--", "-- ", "—", "— ", "__", "___", "____"):
+                trimmed_body = "\n".join(lines[:i])
+                break
 
     # 去除 > 引用行（引用邮件正文）
     lines = [l for l in trimmed_body.splitlines() if not l.startswith('>')]

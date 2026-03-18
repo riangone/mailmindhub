@@ -326,6 +326,14 @@
       <div class="hint">{{ t.prompt_template_file_hint }}</div>
     </div>
 
+    <div class="form-group">
+      <label>{{ t.workspace_dir }}</label>
+      <input type="text" name="WORKSPACE_DIR"
+             value="{{ env.get('WORKSPACE_DIR', '') }}"
+             placeholder="/home/user/workspace">
+      <div class="hint">{{ t.workspace_dir_hint }}</div>
+    </div>
+
     <div style="margin-top: 28px;">
       <button type="submit" class="btn">{{ t.btn_save_ai }}</button>
     </div>

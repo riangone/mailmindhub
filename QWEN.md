@@ -15,17 +15,17 @@
 | 类别 | 技术 |
 |------|------|
 | 语言 | Python 3.12+ |
-| 核心依赖 | `requests`, `imapclient`, `markdown`, `ddgs`, `googlesearch-python` |
+| 核心依赖 | `requests`, `imapclient`, `markdown`, `ddgs`, `googlesearch-python`, `croniter` |
 | 可选依赖 | `google-auth`, `google-auth-oauthlib`, `google-auth-httplib2` (Gmail OAuth), `msal` (Outlook OAuth) |
 | Web UI | `fastapi`, `uvicorn`, `jinja2`, `python-multipart` |
 | 部署方式 | 后台进程 / systemd 服务 / Docker |
-| 定时任务 | SQLite 持久化，支持单次/周期任务 |
+| 定时任务 | SQLite 持久化，支持单次/周期/cron 任务 |
 
 ## 项目结构
 
 ```
-MailMindHub/
-├── email_daemon.py          # 主入口 (~230 行，模块化重构版)
+MailMind/
+├── email_daemon.py          # 主入口 (~580 行，模块化重构版)
 ├── manage.sh                # 统一管理脚本（启动/停止/重启/日志/systemd 安装）
 ├── requirements.txt         # Python 依赖
 ├── .env.example             # 环境变量模板
@@ -43,24 +43,26 @@ MailMindHub/
 ├── core/                    # 核心模块
 │   ├── __init__.py
 │   ├── config.py            # 邮箱/AI 配置，环境变量读取（含 WORKSPACE_DIR）
-│   ├── mail_client.py       # IMAP 客户端，邮件获取
+│   ├── mail_client.py       # IMAP 客户端，邮件获取，模板推送
 │   ├── mail_sender.py       # SMTP 发送，归档（workspace 路径校验）
-│   └── validator.py         # 配置验证（含 validate_path 路径校验函数）
+│   ├── email_manager.py     # 邮件管理器
+│   ├── validator.py         # 配置验证（含 validate_path 路径校验函数）
+│   └── one_click_unsubscribe.py  # RFC 8058 一键退订支持
 ├── ai/                      # AI 模块
 │   ├── __init__.py
 │   ├── base.py              # AIBase 抽象类
 │   └── providers/           # AI 提供商实现
-│       ├── __init__.py      # CLI/API 提供商（OpenAI/Anthropic/Gemini/Qwen）
-│       └── ...
+│       └── __init__.py      # CLI/API 提供商（OpenAI/Anthropic/Gemini/Qwen/Cohere/Spark/Ernie）
 ├── tasks/                   # 定时任务模块
 │   ├── __init__.py
-│   ├── scheduler.py         # TaskScheduler（SQLite 持久化）
+│   ├── scheduler.py         # TaskScheduler（SQLite 持久化，支持 cron）
 │   └── registry.py          # 任务执行逻辑（天气/新闻/搜索/系统状态）
 ├── utils/                   # 工具模块
 │   ├── __init__.py
 │   ├── logger.py            # 日志封装
 │   ├── parser.py            # AI 响应解析，定时任务自动识别
-│   └── search.py            # 网页搜索（DuckDuckGo/Google/Wikipedia/Bing）
+│   ├── search.py            # 网页搜索（DuckDuckGo/Google/Wikipedia/Bing）
+│   └── mcp_client.py        # MCP (Model Context Protocol) 客户端
 ├── webui/                   # Web UI（可选）
 │   ├── __init__.py
 │   ├── server.py            # FastAPI 服务器
@@ -123,6 +125,7 @@ bash manage.sh log        # 实时查看日志
 bash manage.sh install    # 安装为 systemd 服务（开机自启）
 bash manage.sh uninstall  # 卸载 systemd 服务
 bash manage.sh webui      # 启动 Web UI
+bash manage.sh push-templates  # 推送指令模板到邮箱
 
 # 直接运行
 python3 email_daemon.py --mailbox 126 --ai claude          # IMAP IDLE 模式（默认）
@@ -135,13 +138,13 @@ python3 email_daemon.py --mailbox gmail --auth             # 首次 OAuth 授权
 
 ```bash
 # 构建并运行
-docker-compose up -d
+docker compose up -d
 
 # 查看日志
-docker-compose logs -f mailmind
+docker compose logs -f daemon
 ```
 
-### 运行模式
+### 启动模式
 
 | 模式 | 说明 | 配置 |
 |------|------|------|
@@ -198,9 +201,9 @@ python3 email_daemon.py --mailbox outlook --auth
 
 | 名称 | 所需环境变量 | 默认模型 | API 端点 |
 |------|-------------|----------|----------|
-| `anthropic` | `ANTHROPIC_API_KEY` | `claude-sonnet-4-6` | Anthropic 官方 |
+| `anthropic` | `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` | Anthropic 官方 |
 | `openai` | `OPENAI_API_KEY` | `gpt-4o` | OpenAI 官方 |
-| `gemini-api` | `GEMINI_API_KEY` | `gemini-3-flash-preview` | Google 官方 |
+| `gemini-api` | `GEMINI_API_KEY` | `gemini-2.0-flash` | Google 官方 |
 | `deepseek` | `DEEPSEEK_API_KEY` | `deepseek-chat` | DeepSeek 官方 |
 | `groq` | `GROQ_API_KEY` | `llama-3.3-70b-versatile` | Groq 高速推理 |
 | `perplexity` | `PERPLEXITY_API_KEY` | `sonar-pro` | Perplexity 搜索增强 |
@@ -217,6 +220,13 @@ python3 email_daemon.py --mailbox outlook --auth
 | `ernie` | `ERNIE_API_KEY` | `ernie-4.0-8k` | 百度文心一言 |
 | `yi` | `YI_API_KEY` | `yi-lightning` | 零一万物 |
 
+#### 本地模型
+
+| 名称 | 所需环境变量 | 说明 |
+|------|-------------|------|
+| `ollama` | `OLLAMA_BASE_URL` (可选) | Ollama 本地服务 |
+| `vllm` | `VLLM_BASE_URL`, `VLLM_MODEL` | vLLM 本地服务 |
+
 ## 核心架构
 
 ### 模块依赖关系
@@ -225,13 +235,16 @@ python3 email_daemon.py --mailbox outlook --auth
 email_daemon.py
 ├── core.config      → MAILBOXES, AI_BACKENDS, PROMPT_TEMPLATE
 ├── core.validator   → validate_config()
-├── core.mail_client → fetch_unread_emails(), imap_login(), get_oauth_token()
+├── core.mail_client → fetch_unread_emails(), imap_login(), get_oauth_token(), push_templates_to_mailbox()
 ├── core.mail_sender → send_reply(), archive_output()
-├── ai.providers     → get_ai_provider(), CLIProvider, OpenAIProvider, ...
-├── utils.parser     → parse_ai_response(), auto_detect_tasks()
+├── core.email_manager → 邮件管理器
+├── core.one_click_unsubscribe → RFC 8058 一键退订
+├── ai.providers     → get_ai_provider(), CLIProvider, OpenAIProvider, AnthropicProvider, ...
+├── utils.parser     → parse_ai_response(), auto_detect_tasks(), trim_email_body(), detect_lang()
 ├── utils.logger     → log
 ├── utils.search     → web_search(), format_search_results()
-├── tasks.scheduler  → TaskScheduler (SQLite)
+├── utils.mcp_client → MCP 客户端（filesystem/github/sqlite）
+├── tasks.scheduler  → TaskScheduler (SQLite, 支持 cron)
 └── tasks.registry   → execute_task_logic()
 ```
 
@@ -251,29 +264,32 @@ fetch_unread_emails() → process_email() → call_ai() → send_reply()
 
 **`AI_BACKENDS`** (core/config.py)
 - AI 后端预设字典
-- `type`: `cli`, `api_anthropic`, `api_openai`, `api_gemini`, `api_qwen`, `cli_copilot`
+- `type`: `cli`, `api_anthropic`, `api_openai`, `api_gemini`, `api_qwen`, `cli_copilot`, `api_cohere`, `api_spark`, `api_ernie`, `api_ollama`, `api_vllm`
 
 ### 邮件处理流程
 
 1. **接收邮件**: `fetch_unread_emails()` 通过 IMAP 获取未读邮件
 2. **白名单检查**: 验证发件人是否在 `ALLOWED` 列表中
 3. **提取内容**: `get_body_and_attachments()` 提取正文和附件
-4. **调用 AI**: `call_ai()` 使用 `PROMPT_TEMPLATE` 调用 AI
-5. **解析响应**: 期望 AI 返回 JSON:
+4. **语言检测**: `detect_lang()` 自动识别邮件语言（zh/ja/en/ko）
+5. **调用 AI**: `call_ai()` 使用 `PROMPT_TEMPLATE` 调用 AI（支持多语言提示）
+6. **解析响应**: 期望 AI 返回 JSON:
    ```json
    {
      "subject": "邮件标题",
      "body": "回复正文",
      "schedule_at": "可选：ISO 或相对秒",
-     "schedule_every": "可选：5m/2h",
+     "schedule_every": "可选：5m/2h/1d",
      "schedule_until": "可选：截止时间",
+     "schedule_cron": "可选：cron 表达式",
      "attachments": [{"filename": "report.md", "content": "文件内容"}],
-     "task_type": "email|ai_job|weather|news|web_search|report|system_status",
-     "task_payload": {"location": "...", "query": "...", "prompt": "..."},
+     "task_type": "email|ai_job|weather|news|web_search|report|system_status|mcp_call",
+     "task_payload": {"location": "...", "query": "...", "prompt": "...", "server": "...", "tool": "..."},
      "output": {"email": true, "archive": true, "archive_dir": "reports"}
    }
    ```
-6. **发送回复**: `send_reply()` 通过 SMTP 发送回复（含附件）
+7. **发送回复**: `send_reply()` 通过 SMTP 发送回复（含附件）
+8. **定时任务**: `scheduler.add_task()` 添加到 SQLite 持久化
 
 ### 定时任务调度
 
@@ -281,7 +297,9 @@ fetch_unread_emails() → process_email() → call_ai() → send_reply()
 - 使用 SQLite (`tasks.db`) 持久化任务
 - 后台线程轮询检查到期任务
 - 支持单次任务（`schedule_at`）和周期任务（`schedule_every`）
+- 支持 cron 表达式（`schedule_cron`）
 - 任务状态：`pending` → `processing` → `completed`/`failed`
+- 支持任务暂停/恢复功能
 
 ### 自动识别与多任务
 
@@ -289,6 +307,20 @@ fetch_unread_emails() → process_email() → call_ai() → send_reply()
 - **关键词**：`天气`/`新闻`/`检索`/`搜索`/`日报`/`AI`/`系统状态`
 - **时间解析**：`每 X 分钟/小时/天`、`每天 18:00`、`每周一 10:00`、`今天/明天/今晚/早上/下午`
 - **多任务**：用分号或换行分隔，可拆分多个任务分别定时执行
+
+### MCP (Model Context Protocol) 支持
+
+通过 MCP 扩展 AI 能力，支持调用本地 MCP 服务器工具：
+- **filesystem**: 文件系统操作（list_directory, read_file, write_file 等）
+- **github**: GitHub API 操作
+- **sqlite**: SQLite 数据库查询
+
+配置示例（`.env`）：
+```bash
+MCP_SERVERS=filesystem,github
+MCP_SERVER_FILESYSTEM=npx -y @modelcontextprotocol/server-filesystem /home/user/reports
+MCP_SERVER_GITHUB=npx -y @modelcontextprotocol/server-github
+```
 
 ### 附件支持
 
@@ -306,6 +338,16 @@ fetch_unread_emails() → process_email() → call_ai() → send_reply()
 - **Bing Search**（需 `BING_API_KEY`）
 - **WeatherAPI**（需 `WEATHER_API_KEY`）
 - **NewsAPI**（需 `NEWS_API_KEY`）
+
+### 一键退订 (RFC 8058)
+
+为定时/循环邮件自动添加 `List-Unsubscribe` 标头，支持 Gmail/Outlook/Apple Mail 的原生一键退订按钮。
+
+配置（`.env`）：
+```bash
+UNSUBSCRIBE_BASE_URL="https://mailmind.example.com"
+UNSUBSCRIBE_SECRET=""  # 留空则自动生成
+```
 
 ## 开发约定
 
@@ -326,6 +368,7 @@ fetch_unread_emails() → process_email() → call_ai() → send_reply()
     "auth":            "password",  # 或 "oauth_google" / "oauth_microsoft"
     "allowed_senders": [s.strip() for s in os.environ.get("MAIL_NEWMAIL_ALLOWED", "").split(",") if s.strip()],
     "spam_folder":     os.environ.get("MAIL_NEWMAIL_SPAM_FOLDER", "Junk"),
+    "trash_folder":    os.environ.get("MAIL_NEWMAIL_TRASH_FOLDER", "Trash"),
 },
 ```
 
@@ -351,20 +394,6 @@ class NewAIProvider(AIBase):
 # 在 get_ai_provider() 中添加分支
 if t == "api_newai": return NewAIProvider(backend)
 ```
-
-### 新增 Provider 实现（v2.0）
-
-以下 Provider 已实现：
-
-| Provider 类 | 类型 | 说明 |
-|------------|------|------|
-| `CohereProvider` | `api_cohere` | Cohere Command 系列模型 |
-| `SparkAPIProvider` | `api_spark` | 讯飞星火（OpenAI 兼容格式） |
-| `ErnieAPIProvider` | `api_ernie` | 百度文心一言（需 OAuth token） |
-
-**注意**：
-- Groq、Perplexity、Moonshot、GLM、Yi 使用 `OpenAIProvider`（OpenAI 兼容 API 格式）
-- Ernie 需要特殊处理 OAuth token，`ERNIE_API_KEY` 格式为 `APIKey:SecretKey`
 
 ### 添加新任务类型
 
@@ -424,11 +453,12 @@ python3 tests/test_email_logic.py
 
 ## 安全建议
 
-1. **白名单**: 始终设置 `ALLOWED` 为本人邮箱，防止滥用
+1. **白名单**: 始终设置 `ALLOWED` 为本人邮箱，防止陌生人滥用
 2. **敏感文件**: `.env`, `credentials_gmail.json`, `token_*.json` 已在 `.gitignore` 中
 3. **授权码**: 使用邮箱授权码而非登录密码
 4. **OAuth**: 优先使用 OAuth 而非应用密码（更安全）
 5. **manage.sh**: 包含敏感信息，不要提交到 git
+6. **Workspace**: 生产环境建议设置 `WORKSPACE_DIR` 限制 AI 操作范围
 
 ## systemd 服务
 
@@ -461,12 +491,14 @@ WEBUI_HOST="0.0.0.0"
 WEBUI_PORT="8000"
 WEBUI_PASSWORD=""       # 留空则不需要登录
 WEBUI_SECRET=""         # Session 签名密钥
+WEBUI_LANG="zh"         # 界面语言：zh/ja/ko/en
 ```
 
-**支持的 AI 后端**：Web UI 配置页面已同步更新，支持所有 18 个 AI 后端：
+**支持的 AI 后端**：Web UI 配置页面已同步更新，支持所有 AI 后端：
 - CLI 方式：Claude、Codex、Gemini、Qwen、Copilot
 - 国际 API：OpenAI、Anthropic、Gemini API、DeepSeek、Groq、Perplexity、Cohere
 - 中国 API：通义千问、月之暗面 Kimi、智谱 GLM、讯飞星火、百度文心一言、零一万物 Yi
+- 本地模型：Ollama、vLLM
 
 ## 常见问题
 
@@ -515,6 +547,9 @@ bash manage.sh install
 
 # 启动 Web UI
 bash manage.sh webui
+
+# 推送模板到邮箱
+bash manage.sh push-templates
 ```
 
 ### 示例指令模板
@@ -531,4 +566,23 @@ bash manage.sh webui
 
 # 系统状态监控
 每 10 分钟 提供 OS 系统运行状态信息（CPU/内存/磁盘/进程）
+
+# 使用 cron 表达式
+cron: 0 9 * * 1-5 工作日早上 9 点发送新闻摘要
+
+# MCP 调用示例
+查询 /home/user/reports 目录下的文件列表
+```
+
+## 多语言支持
+
+系统支持多语言邮件指令和回复：
+- **中文 (zh)**: 默认语言
+- **日本語 (ja)**: 自动检测并切换提示语言
+- **English (en)**: 自动检测并切换提示语言
+- **한국어 (ko)**: 自动检测并切换提示语言
+
+语言检测基于邮件正文内容自动识别，也可在 `.env` 中设置默认语言：
+```bash
+PROMPT_LANG="zh"  # zh/ja/en/ko
 ```

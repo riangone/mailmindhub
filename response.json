@@ -1,0 +1,6 @@
+{"subject": "Re: workspace指定功能现在有效吗？",
+  "body": "您好，\n\nWebUI 的「AI 设置」页面中已添加「Workspace 目录 (WORKSPACE_DIR)」配置项，位于“高级选项”区域。\n\n该功能目前已生效：\n1. 设置后，系统生成的文件（如定时任务的归档报告）将限制在此目录内。\n2. 若留空，则默认使用系统临时目录。\n\n请刷新 WebUI 页面查看。",
+  "task_type": "email_manage",
+  "task_payload": {"action": "mark_read", "filter": {"subject_contains": "workspace指定功能现在有效吗？"}},
+  "output": {"email": true, "archive": true}
+}

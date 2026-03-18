@@ -252,6 +252,28 @@ bash manage.sh uninstall        # 卸载 systemd 服务
 
 启动后，给配置的邮箱发一封邮件，正文写指令，60秒内收到 AI 回复。
 
+### 🧩 系统托盘（纯 Python 方案）
+
+托盘入口会同时管理「邮件守护进程」与「Web UI」，并提供快捷菜单操作：
+
+- **Start Service**：启动守护进程 + Web UI
+- **Restart**：重启两者
+- **Stop**：停止两者
+- **Open Console**：打开浏览器访问 `http://localhost:8000`
+- **Quit**：退出托盘并停止服务
+
+**启动方式**
+
+```bash
+python3 tray_app.py
+```
+
+**运行说明**
+
+- 托盘启动时会读取 `.env` 中的 `MAILBOX` / `AI` / `MODE` / `WEBUI_HOST` / `WEBUI_PORT` 作为启动参数。
+- 日志输出到 `daemon.log` 与 `webui.log`。
+- Web UI 依赖 `fastapi/uvicorn/jinja2/python-multipart/itsdangerous`，未安装会导致 Web UI 子进程启动失败（可在 `webui.log` 中查看）。
+
 ### 🤖 支持的 AI
 
 > **💡 如何选择 CLI 还是 API？**

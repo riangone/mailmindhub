@@ -5,6 +5,8 @@ markdown>=3.4.0         # 邮件 Markdown 转 HTML 渲染
 ddgs>=0.1.0               # DuckDuckGo 爬虫搜索（无需 API Key）
 googlesearch-python>=1.2.3  # Google 爬虫搜索（无需 API Key）
 croniter>=1.3.0         # cron 表达式解析（高级定时任务）
+pystray>=0.19.5         # 系统托盘图标
+Pillow>=10.0.0          # pystray 图标绘制依赖
 
 # ─── Gmail OAuth（可选，使用 gmail + oauth_google 时需要）───────
 # google-auth>=2.0.0
