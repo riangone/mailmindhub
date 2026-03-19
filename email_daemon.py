@@ -293,7 +293,8 @@ def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None):
             tmpl = tmpl.replace("{instruction}", hint + "\n{instruction}")
     except Exception:
         pass
-    prompt = tmpl.format(instruction=instruction, now=now)
+    # 安全格式化：转义非占位符的花括号（如 JSON 示例中的 {skill}）
+    prompt = tmpl.replace("{", "{{").replace("}", "}}").replace("{{instruction}}", "{instruction}").replace("{{now}}", "{now}").format(instruction=instruction, now=now)
     ai = get_ai_provider(ai_name, backend)
     with _ai_semaphore:
         raw = ai.call(prompt)
