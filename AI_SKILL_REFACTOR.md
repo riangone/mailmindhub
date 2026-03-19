@@ -31,9 +31,9 @@
 - `list_mcp_tools_wrapper()` - 列出 MCP 可用工具
 
 **技能注册**
-- `ai_skill_weather()` - 天气技能（支持 MCP→API→搜索三级回退）
-- `ai_skill_news()` - 新闻技能（支持 NewsAPI→搜索→AI 原生三级回退）
-- `ai_skill_stock()` - 股票技能（支持搜索→AI 原生二级回退）
+- `ai_skill_weather()` - 天气技能（AI 原生→WeatherAPI→MCP）
+- `ai_skill_news()` - 新闻技能（AI 原生→NewsAPI→网页搜索）
+- `ai_skill_stock()` - 股票技能（AI 原生→网页搜索）
 - `ai_skill_web_search()` - 网页搜索技能
 
 **提示词生成**
@@ -182,32 +182,32 @@ task_type 判断
     │                    ↓
     │               执行 skill 函数
     │                    ↓
+    │               优先级：AI 原生 → API → MCP
+    │                    ↓
     │               返回结果
     │
     ├── "weather"/"news"/"stock"/... → Python skill (skills/*.py)
     │                                    ↓
-    │                               优先调用 execute_ai_skill()
-    │                                    ↓
-    │                               回退到传统模式
+    │                               优先级：AI 原生 → API → MCP
     │
     └── 其他类型 → 原有逻辑
 ```
 
-## 回退策略
+## 回退策略（优先级从高到低）
 
 ### 天气查询
-1. MCP 天气服务器（如果配置）
-2. WeatherAPI.com（如果配置 API Key）
-3. AI 原生搜索（如果支持）
+1. AI 原生搜索（如果 AI 支持 `native_web_search`）
+2. WeatherAPI.com（如果配置了 API Key）
+3. MCP 天气服务器（如果配置了）
 
 ### 新闻搜索
-1. NewsAPI（如果配置 API Key）
-2. 网页搜索（Google/DuckDuckGo）
-3. AI 原生搜索（如果支持）
+1. AI 原生搜索（如果 AI 支持 `native_web_search`）
+2. NewsAPI（如果配置了 API Key）
+3. 网页搜索（Google/DuckDuckGo）
 
 ### 股票查询
-1. 网页搜索（Google/DuckDuckGo）
-2. AI 原生搜索（如果支持）
+1. AI 原生搜索（如果 AI 支持 `native_web_search`）
+2. 网页搜索（Google/DuckDuckGo）
 
 ## 配置示例
 
@@ -273,10 +273,10 @@ print(f'AI Skill Weather: {subject}')
 ## 优势
 
 1. **统一架构**: 所有技能通过统一的 `ai.skills` 模块管理
-2. **灵活回退**: 支持多级回退策略，确保服务可用性
-3. **MCP 扩展**: 通过 MCP 协议可轻松扩展新工具
-4. **向后兼容**: 现有定时任务无需修改即可正常工作
-5. **AI 原生优先**: 优先使用 AI 原生能力，减少本地依赖
+2. **AI 原生优先**: 优先使用 AI 原生联网搜索能力，获取最新数据
+3. **灵活回退**: 支持多级回退策略（AI → API → MCP），确保服务可用性
+4. **MCP 扩展**: 通过 MCP 协议可轻松扩展新工具
+5. **向后兼容**: 现有定时任务无需修改即可正常工作
 6. **多语言支持**: 所有提示词和输出支持中/日/英/韩四语
 
 ## 后续优化建议

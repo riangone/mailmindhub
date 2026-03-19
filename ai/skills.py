@@ -217,15 +217,24 @@ def ai_skill_weather(query: str, lang: str = "zh") -> Optional[str]:
     """
     AI skill: 天气查询
     调用方式：AI 返回 JSON {"skill": "weather", "payload": {"location": "Tokyo"}}
-    
-    执行策略：
-    1. 优先使用 MCP 天气服务器（如果已配置）
-    2. 其次使用 WeatherAPI.com
-    3. 返回 None 让 AI 使用 native_web_search 自行搜索
+
+    执行策略（优先级从高到低）:
+    1. 返回 None 让 AI 使用 native_web_search 自行搜索（AI 原生优先）
+    2. WeatherAPI.com（如果配置了 API Key）
+    3. MCP 天气服务器（如果已配置）
     """
     location = query or WEATHER_DEFAULT_LOCATION
+
+    # 1. 优先让 AI 使用 native_web_search 自行搜索（如果 AI 支持）
+    # 返回 None 表示让上层调用 AI 自行处理
+    # 这样可以让支持联网的 AI（如 Claude CLI、Gemini CLI）使用最新数据
     
-    # 1. 尝试 MCP 天气服务器
+    # 2. 尝试 WeatherAPI.com
+    data = fetch_weather_via_api(location)
+    if data:
+        return format_weather_result(data, lang)
+
+    # 3. 尝试 MCP 天气服务器
     mcp_result = fetch_weather_via_mcp(location)
     if mcp_result:
         try:
@@ -235,20 +244,15 @@ def ai_skill_weather(query: str, lang: str = "zh") -> Optional[str]:
         except json.JSONDecodeError:
             # MCP 返回的可能是格式化文本
             return mcp_result
-    
-    # 2. 尝试 WeatherAPI.com
-    data = fetch_weather_via_api(location)
-    if data:
-        return format_weather_result(data, lang)
-    
-    # 3. 返回 None，让 AI 使用 native_web_search 自行搜索
+
+    # 都失败了，返回 None 让 AI 自行搜索
     return None
 
 
 register_skill(
     "weather",
     ai_skill_weather,
-    "天气查询与播报（支持 MCP/WeatherAPI/网络搜索）",
+    "天气查询与播报（AI 原生→WeatherAPI→MCP）",
     ["天气", "weather", "天気", "날씨", "气温", "预报"],
 )
 
@@ -358,31 +362,34 @@ def format_news_result(articles: List[Dict[str, Any]], lang: str = "zh") -> str:
 def ai_skill_news(query: str, lang: str = "zh") -> Optional[str]:
     """
     AI skill: 新闻搜索
-    执行策略：
-    1. 优先使用 NewsAPI（如果已配置）
-    2. 其次使用网页搜索
-    3. 返回 None 让 AI 使用 native_web_search 自行搜索
+    执行策略（优先级从高到低）:
+    1. 返回 None 让 AI 使用 native_web_search 自行搜索（AI 原生优先）
+    2. NewsAPI（如果配置了 API Key）
+    3. 网页搜索（本地搜索引擎）
     """
     q = query or "最新新闻"
+
+    # 1. 优先让 AI 使用 native_web_search 自行搜索
+    # 返回 None 表示让上层调用 AI 自行处理
     
-    # 1. 尝试 NewsAPI
+    # 2. 尝试 NewsAPI
     articles = fetch_news_via_api(q, lang)
     if articles:
         return format_news_result(articles, lang)
-    
-    # 2. 尝试网页搜索
+
+    # 3. 尝试网页搜索
     results = fetch_news_via_search(q)
     if results:
         return format_news_result(results, lang)
-    
-    # 3. 返回 None，让 AI 使用 native_web_search 自行搜索
+
+    # 都失败了，返回 None 让 AI 自行搜索
     return None
 
 
 register_skill(
     "news",
     ai_skill_news,
-    "新闻搜索与摘要（支持 NewsAPI/网页搜索/AI 原生搜索）",
+    "新闻搜索与摘要（AI 原生→NewsAPI→网页搜索）",
     ["新闻", "新闻摘要", "news", "ニュース", "뉴스", "资讯"],
 )
 
@@ -452,27 +459,29 @@ def format_stock_result(results: List[Dict[str, Any]], lang: str = "zh") -> str:
 def ai_skill_stock(query: str, lang: str = "zh") -> Optional[str]:
     """
     AI skill: 股票/加密货币行情查询
-    执行策略：
-    1. 优先使用网页搜索获取实时行情
-    2. 返回结果让 AI 整理
-    3. 如果搜索失败，返回 None 让 AI 使用 native_web_search 自行搜索
+    执行策略（优先级从高到低）:
+    1. 返回 None 让 AI 使用 native_web_search 自行搜索（AI 原生优先）
+    2. 网页搜索获取实时行情
     """
     if not query:
         return None
+
+    # 1. 优先让 AI 使用 native_web_search 自行搜索
+    # 返回 None 表示让上层调用 AI 自行处理
     
-    # 1. 尝试网页搜索
+    # 2. 尝试网页搜索
     results = fetch_stock_via_search(query)
     if results:
         return format_stock_result(results, lang)
-    
-    # 2. 返回 None，让 AI 使用 native_web_search 自行搜索
+
+    # 都失败了，返回 None 让 AI 自行搜索
     return None
 
 
 register_skill(
     "stock",
     ai_skill_stock,
-    "查询股票/加密货币行情及分析（支持网页搜索/AI 原生搜索）",
+    "查询股票/加密货币行情及分析（AI 原生→网页搜索）",
     ["股票", "股市", "行情", "stock", "stocks", "crypto", "bitcoin", "加密货币", "株価", "相場", "주식", "코인"],
 )
 
