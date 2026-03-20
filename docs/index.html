@@ -830,6 +830,8 @@
       <div class="feature-card reveal"><div class="feature-icon">🛠️</div><h3 data-i18n="f6_h"></h3><p data-i18n="f6_p"></p></div>
       <div class="feature-card reveal"><div class="feature-icon">🌐</div><h3 data-i18n="f7_h"></h3><p data-i18n="f7_p"></p></div>
       <div class="feature-card reveal"><div class="feature-icon">📊</div><h3 data-i18n="f8_h"></h3><p data-i18n="f8_p"></p></div>
+      <div class="feature-card reveal"><div class="feature-icon">💻</div><h3 data-i18n="f9_h"></h3><p data-i18n="f9_p"></p></div>
+      <div class="feature-card reveal"><div class="feature-icon">📋</div><h3 data-i18n="f10_h"></h3><p data-i18n="f10_p"></p></div>
     </div>
   </div>
 </section>
@@ -1014,6 +1016,37 @@
   </div>
 </section>
 
+<!-- ══ CODING WORKFLOWS ══ -->
+<section id="coding">
+  <div class="section-wrap">
+    <div class="webui-inner">
+      <div class="webui-features reveal">
+        <span class="section-label" data-i18n="code_label"></span>
+        <h2 class="section-title" style="font-size:clamp(1.7rem,3.2vw,2.4rem);margin-bottom:28px;" data-i18n="code_title"></h2>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;font-weight:300;color:var(--muted);line-height:1.85;margin-bottom:28px;" data-i18n="code_p1"></p>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;font-weight:300;color:var(--muted);line-height:1.85;margin-bottom:28px;" data-i18n="code_p2"></p>
+      </div>
+      <div class="reveal">
+        <div class="terminal">
+          <div class="terminal-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="terminal-title" data-i18n="code_term_title"></span></div>
+          <div class="terminal-body" style="padding:14px 18px;line-height:1.9;">
+            <span class="t-comment" data-i18n="code_term_c1"></span><br/>
+            <span class="t-email" data-i18n="code_term_l1"></span>
+            <span class="t-blank"></span>
+            <span class="t-comment" data-i18n="code_term_c2"></span><br/>
+            <span class="t-email" data-i18n="code_term_l2"></span>
+            <span class="t-blank"></span>
+            <span class="t-comment" data-i18n="code_term_c3"></span><br/>
+            <span class="t-email" data-i18n="code_term_l3"></span>
+            <span class="t-blank"></span>
+            <span class="t-out" data-i18n="term_ok"></span><span class="cursor"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ══ MAILBOXES ══ -->
 <section id="mailboxes">
   <div class="section-wrap">
@@ -1079,6 +1112,7 @@
       <div class="faq-item reveal"><div class="faq-q"><span data-i18n="faq3_q"></span><span class="faq-chevron">▼</span></div><div class="faq-a" data-i18n="faq3_a"></div></div>
       <div class="faq-item reveal"><div class="faq-q"><span data-i18n="faq4_q"></span><span class="faq-chevron">▼</span></div><div class="faq-a" data-i18n="faq4_a"></div></div>
       <div class="faq-item reveal"><div class="faq-q"><span data-i18n="faq5_q"></span><span class="faq-chevron">▼</span></div><div class="faq-a" data-i18n="faq5_a"></div></div>
+      <div class="faq-item reveal"><div class="faq-q"><span data-i18n="faq6_q"></span><span class="faq-chevron">▼</span></div><div class="faq-a" data-i18n="faq6_a"></div></div>
     </div>
   </div>
 </section>
@@ -1139,6 +1173,8 @@ const T = {
     f6_h: 'One-Script Management', f6_p: 'Start, stop, restart, logs — one command each. Docker and systemd supported for 24/7 uptime.',
     f7_h: 'Web Search Injection', f7_p: 'MailMindHub fetches live search results before calling the AI — answers are always up to date.',
     f8_h: 'Report Archiving', f8_p: 'Task results archived to reports/ with timestamps. Perfect for daily digests and monitoring.',
+    f9_h: 'Coding Workflows', f9_p: 'Use CLI AI (Claude, Codex, Gemini) with WORKSPACE_DIR to run real coding tasks — edit files, run tests, review diffs — all via email.',
+    f10_h: 'Email Templates', f10_p: 'Push ready-to-use instruction templates to your mailbox with one command. Start tasks instantly without typing from scratch.',
     webui_label: 'Web UI', webui_title: 'Browser-based<br/>control panel',
     webui_desc: 'No need to memorize CLI commands. MailMindHub includes a built-in web admin panel — launch it with one command and manage everything from your browser.',
     wf1_h: 'Daemon control', wf1_p: 'Start, stop, restart from the browser. Live PID, mailbox, AI, and mode indicator.',
@@ -1193,6 +1229,16 @@ const T = {
     faq4_a: 'Anytime. Change <code>--ai</code> at startup or update the Web UI settings. You can also run multiple daemon instances on different ports, each using a different AI backend simultaneously.',
     faq5_q: 'Is it free? Any hidden costs?',
     faq5_a: 'MailMindHub itself is MIT open source — free forever. The only costs are your own API keys (Anthropic, OpenAI, etc.) or CLI tool subscriptions if you use API/CLI mode. Self-hosted means no per-request fees to MailMindHub.',
+    faq6_q: 'Can I use MailMindHub for coding and development tasks?',
+    faq6_a: 'Yes! Set AI to CLI mode (Claude, Codex, or Gemini) and configure WORKSPACE_DIR to point to your project. You can then email instructions like "add unit tests for auth module" or "refactor the payment service" — the AI edits files, runs tests, and replies with a git diff summary.',
+    code_label: 'Coding Workflows',
+    code_title: 'Email-driven<br/><em>code development</em>',
+    code_p1: 'Point WORKSPACE_DIR at your project, pick a CLI AI backend (Claude Code, Codex, Gemini), and start sending coding instructions via email. The daemon executes the task, applies changes to your workspace, and replies with a git diff summary.',
+    code_p2: 'Use <code>bash manage.sh push-templates [email]</code> to push ready-made coding templates to your mailbox — new feature, bug fix, code review, refactor, tests, and more.',
+    code_term_title: 'coding template examples',
+    code_term_c1: '# Add a new feature', code_term_l1: 'Add login rate limiting to auth.py — max 5 attempts, block 15 min',
+    code_term_c2: '# Fix a bug', code_term_l2: 'Fix pagination bug in /api/users — page 2+ returns duplicates',
+    code_term_c3: '# Code review', code_term_l3: 'Review src/payment/ for security issues and suggest improvements',
     footer_wip: '🚧 Under active development — <a href="https://github.com/riangone/MailMindHub/issues" target="_blank">report bugs</a> · <a href="https://github.com/riangone/MailMindHub/pulls" target="_blank">submit a PR</a>',
   },
 
@@ -1223,6 +1269,8 @@ const T = {
     f6_h: '一键管理', f6_p: '一条命令启停、查看日志。支持 Docker 和 systemd，24 小时无人值守。',
     f7_h: '网页搜索注入', f7_p: '调用 AI 前自动获取实时搜索结果，回答始终基于最新信息。',
     f8_h: '报告归档', f8_p: '任务结果归档到 reports/ 并附时间戳，适合日报和监控场景。',
+    f9_h: '编码开发工作流', f9_p: '使用 CLI AI（Claude、Codex、Gemini）配合 WORKSPACE_DIR，通过邮件执行真实编码任务——修改文件、运行测试、查看 diff，一切通过邮件完成。',
+    f10_h: '邮件指令模板', f10_p: '一条命令将预置指令模板推送到你的邮箱，无需手打即可快速启动编码任务。',
     webui_label: 'Web UI', webui_title: '浏览器管理面板',
     webui_desc: '无需记忆命令行。MailMindHub 内置 Web 管理界面，一条命令启动，在浏览器中完成所有配置和监控。',
     wf1_h: '守护进程控制', wf1_p: '在浏览器中直接启停守护进程。实时显示 PID、邮箱、AI 后端和模式。',
@@ -1277,6 +1325,16 @@ const T = {
     faq4_a: '随时可以。启动时修改 <code>--ai</code> 参数或在 Web UI 中更新设置即可。你也可以在不同端口运行多个守护进程实例，每个使用不同的 AI 后端。',
     faq5_q: '是免费的吗？有隐藏费用吗？',
     faq5_a: 'MailMindHub 本身是 MIT 开源软件，永久免费。唯一的费用是你自己的 API Key（如 Anthropic、OpenAI 等），或在使用 CLI 模式时对应工具的订阅费。自托管意味着不向 MailMindHub 支付任何按需费用。',
+    faq6_q: '可以通过 MailMindHub 进行编码开发吗？',
+    faq6_a: '完全可以！将 AI 设置为 CLI 模式（Claude Code、Codex 或 Gemini），配置 WORKSPACE_DIR 指向你的项目目录。之后就可以用邮件发送指令，如"给 auth 模块添加单元测试"或"重构支付服务"——AI 会修改文件、运行测试，并以 git diff 摘要回复。',
+    code_label: '编码开发',
+    code_title: '用邮件驱动的<br/><em>代码开发工作流</em>',
+    code_p1: '将 WORKSPACE_DIR 指向你的项目，选择 CLI AI 后端（Claude Code、Codex、Gemini），然后通过邮件发送编码指令。守护进程执行任务、修改文件，并将 git diff 摘要回复给你。',
+    code_p2: '运行 <code>bash manage.sh push-templates [邮箱]</code> 可将预置编码模板推送到指定邮箱——新功能、Bug 修复、代码审查、重构、测试等应有尽有。',
+    code_term_title: '编码模板示例',
+    code_term_c1: '# 新增功能', code_term_l1: '给 auth.py 添加登录频率限制——最多5次失败锁定15分钟',
+    code_term_c2: '# 修复 Bug', code_term_l2: '修复 /api/users 分页 Bug——第2页以后出现重复数据',
+    code_term_c3: '# 代码审查', code_term_l3: '审查 src/payment/ 目录的安全隐患并给出改进建议',
     footer_wip: '🚧 持续开发中 — <a href="https://github.com/riangone/MailMindHub/issues" target="_blank">反馈问题</a> · <a href="https://github.com/riangone/MailMindHub/pulls" target="_blank">提交 PR</a>',
   },
 
@@ -1307,6 +1365,8 @@ const T = {
     f6_h: 'ワンスクリプト管理', f6_p: '起動・停止・ログがワンコマンド。DockerとsystemdでZero-touch 24時間稼働。',
     f7_h: 'Web検索インジェクション', f7_p: 'AI呼び出し前にリアルタイム検索結果を取得するため、回答は常に最新。',
     f8_h: 'レポートアーカイブ', f8_p: 'タスク結果をreports/にタイムスタンプ付きで保存。日次ダイジェストに最適。',
+    f9_h: 'コーディングワークフロー', f9_p: 'CLI AI（Claude、Codex、Gemini）と WORKSPACE_DIR を組み合わせて、メールで実際のコーディング作業——ファイル編集・テスト実行・diff確認——をすべて実行できます。',
+    f10_h: 'メール指示テンプレート', f10_p: 'ワンコマンドで用意済みのコーディングテンプレートをメールボックスに送信。ゼロから入力せずに素早くタスクを開始できます。',
     webui_label: 'Web UI', webui_title: 'ブラウザで操作する<br/>管理パネル',
     webui_desc: 'CLIコマンドを覚える必要はありません。MailMindHubには組み込みのWeb管理パネルが付属しています。コマンド1つで起動し、ブラウザからすべてを管理できます。',
     wf1_h: 'デーモン制御', wf1_p: 'ブラウザから直接起動・停止・再起動。PID・メールボックス・AI・モードをリアルタイム表示。',
@@ -1361,6 +1421,16 @@ const T = {
     faq4_a: 'いつでも変更できます。起動時の <code>--ai</code> フラグを変更するか、Web UIの設定を更新するだけです。複数のインスタンスを異なるポートで起動し、それぞれ別のAIを使うこともできます。',
     faq5_q: '無料ですか？隠れたコストはありますか？',
     faq5_a: 'MailMindHub 自体はMITオープンソースで永久無料です。費用が発生するのは利用するAPIキー（Anthropic、OpenAI等）またはCLIツールのサブスクリプションのみ。セルフホストなのでMailMindHubへの従量課金はありません。',
+    faq6_q: 'MailMindHub でコーディング・開発作業はできますか？',
+    faq6_a: 'できます！AIをCLIモード（Claude Code、Codex、Gemini）に設定し、WORKSPACE_DIRをプロジェクトに向けるだけ。「認証モジュールにユニットテストを追加して」「決済サービスをリファクタリング」といった指示をメールで送ると、AIがファイルを編集・テスト実行し、git diffサマリーを返信します。',
+    code_label: 'コーディングワークフロー',
+    code_title: 'メール駆動の<br/><em>コード開発</em>',
+    code_p1: 'WORKSPACE_DIRをプロジェクトに向け、CLI AIバックエンド（Claude Code、Codex、Gemini）を選択し、メールでコーディング指示を送信。デーモンがタスクを実行してファイルを変更し、git diffサマリーで返信します。',
+    code_p2: '<code>bash manage.sh push-templates [メール]</code> で用意済みのコーディングテンプレートをメールボックスに送信——新機能追加・バグ修正・コードレビュー・リファクタリング・テストなどを即座に開始。',
+    code_term_title: 'コーディングテンプレート例',
+    code_term_c1: '# 新機能追加', code_term_l1: 'auth.pyにログイン制限を追加——失敗5回で15分ブロック',
+    code_term_c2: '# バグ修正', code_term_l2: '/api/usersのページネーションバグ修正——2ページ目以降で重複が発生',
+    code_term_c3: '# コードレビュー', code_term_l3: 'src/payment/のセキュリティ問題をレビューし改善提案を出してください',
     footer_wip: '🚧 継続開発中 — <a href="https://github.com/riangone/MailMindHub/issues" target="_blank">Issue 報告</a> · <a href="https://github.com/riangone/MailMindHub/pulls" target="_blank">PR を送る</a>',
   },
 
@@ -1391,6 +1461,8 @@ const T = {
     f6_h: '단일 스크립트 관리', f6_p: '시작·정지·로그 모두 명령어 하나. Docker 및 systemd로 24/7 무인 운영.',
     f7_h: '웹 검색 주입', f7_p: 'AI 호출 전 실시간 검색 결과를 가져와 항상 최신 답변 제공.',
     f8_h: '보고서 아카이브', f8_p: '결과를 reports/에 타임스탬프로 아카이브. 일간 다이제스트에 최적.',
+    f9_h: '코딩 워크플로우', f9_p: 'CLI AI(Claude, Codex, Gemini)와 WORKSPACE_DIR을 조합해 이메일로 실제 코딩 작업——파일 편집·테스트 실행·diff 확인——을 모두 처리합니다.',
+    f10_h: '이메일 지시 템플릿', f10_p: '명령어 하나로 미리 만든 코딩 템플릿을 메일함에 전송. 처음부터 입력하지 않고 바로 작업을 시작할 수 있습니다.',
     webui_label: 'Web UI', webui_title: '브라우저 기반<br/>관리 패널',
     webui_desc: 'CLI 명령어를 외울 필요가 없습니다. MailMindHub에는 내장 웹 관리 패널이 포함되어 있습니다. 명령어 하나로 실행하고 브라우저에서 모든 것을 관리하세요.',
     wf1_h: '데몬 제어', wf1_p: '브라우저에서 직접 시작·정지·재시작. PID·메일박스·AI·모드 실시간 표시.',
@@ -1445,6 +1517,16 @@ const T = {
     faq4_a: '언제든지 변경할 수 있습니다. 시작 시 <code>--ai</code> 플래그를 변경하거나 Web UI 설정을 업데이트하면 됩니다. 서로 다른 포트에서 여러 인스턴스를 실행해 각각 다른 AI를 동시에 사용할 수도 있습니다.',
     faq5_q: '무료인가요? 숨겨진 비용이 있나요?',
     faq5_a: 'MailMindHub 자체는 MIT 오픈소스로 영구 무료입니다. 비용이 발생하는 것은 본인의 API 키(Anthropic, OpenAI 등) 또는 CLI 모드 사용 시 해당 도구의 구독료뿐입니다. 셀프호스트이므로 MailMindHub에 종량 요금은 없습니다.',
+    faq6_q: 'MailMindHub로 코딩·개발 작업을 할 수 있나요?',
+    faq6_a: '가능합니다! AI를 CLI 모드(Claude Code, Codex, Gemini)로 설정하고 WORKSPACE_DIR을 프로젝트 디렉토리로 지정하세요. 그런 다음 "auth 모듈에 유닛 테스트 추가", "결제 서비스 리팩토링" 같은 지시를 이메일로 보내면 AI가 파일을 편집·테스트하고 git diff 요약으로 회신합니다.',
+    code_label: '코딩 워크플로우',
+    code_title: '이메일 기반<br/><em>코드 개발</em>',
+    code_p1: 'WORKSPACE_DIR을 프로젝트에 연결하고, CLI AI 백엔드(Claude Code, Codex, Gemini)를 선택한 다음 이메일로 코딩 지시를 보내세요. 데몬이 작업을 실행해 파일을 변경하고 git diff 요약으로 회신합니다.',
+    code_p2: '<code>bash manage.sh push-templates [이메일]</code>로 미리 만든 코딩 템플릿을 메일함에 전송——새 기능 추가·버그 수정·코드 리뷰·리팩토링·테스트 등을 즉시 시작.',
+    code_term_title: '코딩 템플릿 예시',
+    code_term_c1: '# 새 기능 추가', code_term_l1: 'auth.py에 로그인 횟수 제한 추가——5회 실패 시 15분 차단',
+    code_term_c2: '# 버그 수정', code_term_l2: '/api/users 페이지네이션 버그 수정——2페이지 이후 중복 데이터 발생',
+    code_term_c3: '# 코드 리뷰', code_term_l3: 'src/payment/ 디렉토리 보안 취약점 검토 및 개선안 제시',
     footer_wip: '🚧 지속 개발 중 — <a href="https://github.com/riangone/MailMindHub/issues" target="_blank">이슈 보고</a> · <a href="https://github.com/riangone/MailMindHub/pulls" target="_blank">PR 제출</a>',
   }
 };
