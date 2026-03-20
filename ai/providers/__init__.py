@@ -10,38 +10,94 @@ class CLIProvider(AIBase):
         self.name = name
         self.backend = backend
 
-    def call(self, prompt: str) -> str:
+    def _build_env(self):
+        env = os.environ.copy()
+        extra_paths = [
+            os.path.expanduser("~/.local/bin"),
+            os.path.expanduser("~/bin"),
+            "/usr/local/bin",
+        ]
+        nvm_dir = os.path.expanduser("~/.nvm/versions/node")
+        if os.path.isdir(nvm_dir):
+            for ver in sorted(os.listdir(nvm_dir), reverse=True):
+                extra_paths.append(os.path.join(nvm_dir, ver, "bin"))
+                break
+        current_path = env.get("PATH", "")
+        for p in extra_paths:
+            if p not in current_path:
+                current_path = p + os.pathsep + current_path
+        env["PATH"] = current_path
+        if self.name == "qwen":
+            for key in ["TAVILY_API_KEY", "GOOGLE_API_KEY", "GOOGLE_SEARCH_ENGINE_ID"]:
+                val = os.environ.get(key, "")
+                if val:
+                    env[key] = val
+        return env
+
+    def call(self, prompt: str, progress_cb=None, timeout=None, progress_interval=120, **kwargs) -> str:
+        """
+        Run CLI AI with streaming output.
+        progress_cb(elapsed_seconds: int) — called every progress_interval seconds while running.
+        timeout — kill process after this many seconds (None = no limit).
+        """
+        import threading
+        import time as _time
+
         try:
-            env = os.environ.copy()
-            # 补充常见 CLI 工具安装路径，防止守护进程在精简 PATH 环境中找不到命令
-            extra_paths = [
-                os.path.expanduser("~/.local/bin"),
-                os.path.expanduser("~/bin"),
-                "/usr/local/bin",
-            ]
-            # 补充 nvm 管理的 node bin 目录
-            nvm_dir = os.path.expanduser("~/.nvm/versions/node")
-            if os.path.isdir(nvm_dir):
-                for ver in sorted(os.listdir(nvm_dir), reverse=True):
-                    extra_paths.append(os.path.join(nvm_dir, ver, "bin"))
-                    break  # 只取最新版本
-            current_path = env.get("PATH", "")
-            for p in extra_paths:
-                if p not in current_path:
-                    current_path = p + os.pathsep + current_path
-            env["PATH"] = current_path
-
-            if self.name == "qwen":
-                for key in ["TAVILY_API_KEY", "GOOGLE_API_KEY", "GOOGLE_SEARCH_ENGINE_ID"]:
-                    val = os.environ.get(key, "")
-                    if val: env[key] = val
-
-            return subprocess.run(
-                [self.backend["cmd"]] + self.backend["args"] + [prompt],
-                capture_output=True,
+            env = self._build_env()
+            cmd = [self.backend["cmd"]] + self.backend["args"] + [prompt]
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                env=env
-            ).stdout.strip()
+                env=env,
+            )
+
+            stdout_lines = []
+            stderr_lines = []
+
+            def _read_stdout():
+                for line in proc.stdout:
+                    stdout_lines.append(line)
+
+            def _read_stderr():
+                for line in proc.stderr:
+                    stderr_lines.append(line)
+
+            t_out = threading.Thread(target=_read_stdout, daemon=True)
+            t_err = threading.Thread(target=_read_stderr, daemon=True)
+            t_out.start()
+            t_err.start()
+
+            start = _time.time()
+            last_progress = start
+
+            while proc.poll() is None:
+                _time.sleep(3)
+                elapsed = _time.time() - start
+                if timeout and elapsed > timeout:
+                    proc.kill()
+                    proc.wait()
+                    t_out.join(timeout=2)
+                    t_err.join(timeout=2)
+                    log.error(f"CLI AI 超时（{timeout}秒），进程已终止")
+                    return f"AI 出错：执行超时（{int(timeout)} 秒），任务未完成"
+                if progress_cb and progress_interval > 0:
+                    now = _time.time()
+                    if (now - last_progress) >= progress_interval:
+                        try:
+                            progress_cb(int(elapsed))
+                        except Exception:
+                            pass
+                        last_progress = now
+
+            t_out.join()
+            t_err.join()
+            result = "".join(stdout_lines).strip()
+            if not result and stderr_lines:
+                log.warning(f"CLI AI stderr: {''.join(stderr_lines[:5])}")
+            return result
         except Exception as e:
             log.error(f"CLI AI 调用失败：{e}")
             return f"AI 出错：{e}"

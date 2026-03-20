@@ -11,11 +11,12 @@ import re
 import json
 import argparse
 import threading
+import subprocess
 from datetime import datetime
 from typing import Optional
 
 # 核心配置与模块
-from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE, PROMPT_TEMPLATES, AI_CONCURRENCY, AI_MODIFY_SUBJECT, PROMPT_LANG, MAX_EMAIL_CHARS
+from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE, PROMPT_TEMPLATES, AI_CONCURRENCY, AI_MODIFY_SUBJECT, PROMPT_LANG, MAX_EMAIL_CHARS, WORKSPACE_DIR, AI_CLI_TIMEOUT, AI_PROGRESS_INTERVAL
 from core.validator import validate_config
 from core.mail_client import fetch_unread_emails, imap_login, get_oauth_token, fetch_thread_context, push_templates_to_mailbox
 from core.mail_sender import send_reply, archive_output
@@ -277,7 +278,7 @@ def _get_prompt_template(lang: str) -> str:
     tmpl_raw = PROMPT_TEMPLATES.get(lang) or PROMPT_TEMPLATES.get(PROMPT_LANG) or PROMPT_TEMPLATES.get("zh", "")
     return tmpl_raw.replace("{{instruction}}", "{instruction}").replace("{{now}}", "{now}")
 
-def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None):
+def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None, progress_cb=None):
     now = datetime.now().strftime("%Y-%m-%d %H:%M (%Z)")
     tmpl = _get_prompt_template(lang or PROMPT_LANG)
     try:
@@ -296,12 +297,38 @@ def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None):
     # 安全格式化：转义非占位符的花括号（如 JSON 示例中的 {skill}）
     prompt = tmpl.replace("{", "{{").replace("}", "}}").replace("{{instruction}}", "{instruction}").replace("{{now}}", "{now}").format(instruction=instruction, now=now)
     ai = get_ai_provider(ai_name, backend)
+    is_cli = backend.get("type") == "cli"
     with _ai_semaphore:
-        raw = ai.call(prompt)
+        if is_cli:
+            raw = ai.call(prompt, progress_cb=progress_cb, timeout=AI_CLI_TIMEOUT, progress_interval=AI_PROGRESS_INTERVAL)
+        else:
+            raw = ai.call(prompt)
     # AI error prefix indicates a failure — return sentinel rather than parse garbage
     if isinstance(raw, str) and raw.startswith("AI 出错："):
         return None
     return parse_ai_response(raw)
+
+def _get_git_diff_summary(workspace_dir: str) -> str:
+    """Return git diff --stat output if workspace_dir is a git repo with changes."""
+    try:
+        if not os.path.exists(os.path.join(workspace_dir, ".git")):
+            return ""
+        result = subprocess.run(
+            ["git", "diff", "--stat", "HEAD"],
+            capture_output=True, text=True, cwd=workspace_dir, timeout=10
+        )
+        summary = result.stdout.strip()
+        if summary:
+            return summary
+        result2 = subprocess.run(
+            ["git", "status", "--short"],
+            capture_output=True, text=True, cwd=workspace_dir, timeout=10
+        )
+        return result2.stdout.strip()
+    except Exception as e:
+        log.warning(f"获取 git diff 失败: {e}")
+        return ""
+
 
 def process_email(mailbox_name, ai_name, backend, em):
     try:
@@ -349,7 +376,29 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
             thread_ctx = thread_ctx[:max_ctx] + "...(上下文已截断)"
         instr += f"\n\n--- 会话上下文（供参考） ---\n{thread_ctx}"
 
-    ai_result = call_ai(ai_name, backend, instr, lang=lang)
+    # CLI AI（Claude/Codex 等）は長時間実行になるため、受信確認メールを即時送信
+    is_cli = backend.get("type") == "cli"
+    if is_cli:
+        ack_body = {
+            "zh": "✅ 已收到您的请求，AI 正在处理中，请稍候……",
+            "ja": "✅ リクエストを受け付けました。AI が処理中です、しばらくお待ちください……",
+            "en": "✅ Request received. AI is working on it, please wait……",
+            "ko": "✅ 요청을 받았습니다. AI가 처리 중입니다, 잠시만 기다려 주세요……",
+        }.get(lang, "✅ 已收到您的请求，AI 正在处理中，请稍候……")
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], em["subject"], ack_body, em.get("message_id"), lang=lang)
+
+    # 进度回调：CLI AI 运行期间每隔 AI_PROGRESS_INTERVAL 秒发送进度邮件
+    def _progress_cb(elapsed_s: int):
+        mins, secs = divmod(elapsed_s, 60)
+        msg = {
+            "zh": f"⏳ AI 仍在处理中……已用时 {mins} 分 {secs} 秒",
+            "ja": f"⏳ AI はまだ処理中です……経過時間 {mins} 分 {secs} 秒",
+            "en": f"⏳ AI is still working…… elapsed {mins}m {secs}s",
+            "ko": f"⏳ AI가 아직 처리 중입니다…… 경과 시간 {mins}분 {secs}초",
+        }.get(lang, f"⏳ AI 仍在处理中……已用时 {mins} 分 {secs} 秒")
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], em["subject"], msg, em.get("message_id"), lang=lang)
+
+    ai_result = call_ai(ai_name, backend, instr, lang=lang, progress_cb=_progress_cb if is_cli else None)
     if ai_result is None:
         # AI call failed — notify user and stop processing
         err_msg = {
@@ -495,8 +544,20 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
         if out_conf.get("archive", False):
             archive_output(out_conf, t_sub, t_body, atts)
     else:
-        send_reply(MAILBOXES[mailbox_name], em["from_email"], sub, body, em.get("message_id"), atts, lang=lang)
-    
+        # CLI AI が WORKSPACE_DIR でファイルを変更した場合、git diff サマリを添付
+        reply_body = body
+        if is_cli and WORKSPACE_DIR:
+            diff_summary = _get_git_diff_summary(WORKSPACE_DIR)
+            if diff_summary:
+                diff_label = {
+                    "zh": "📁 文件变更摘要",
+                    "ja": "📁 ファイル変更サマリ",
+                    "en": "📁 File changes",
+                    "ko": "📁 파일 변경 사항",
+                }.get(lang, "📁 文件变更摘要")
+                reply_body = (reply_body or "") + f"\n\n---\n{diff_label}：\n```\n{diff_summary}\n```"
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], sub, reply_body, em.get("message_id"), atts, lang=lang)
+
     processed_ids.add(em["id"])
     save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
 

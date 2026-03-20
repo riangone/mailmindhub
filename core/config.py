@@ -245,6 +245,8 @@ AI_CONCURRENCY = int(os.environ.get("AI_CONCURRENCY", "3"))
 CONTEXT_MAX_DEPTH = int(os.environ.get("CONTEXT_MAX_DEPTH", "5"))
 AI_MODIFY_SUBJECT = os.environ.get("AI_MODIFY_SUBJECT", "false").lower() == "true"
 MAX_EMAIL_CHARS = int(os.environ.get("MAX_EMAIL_CHARS", "4000"))
+AI_CLI_TIMEOUT = int(os.environ.get("AI_CLI_TIMEOUT", "600"))          # CLI AI 超时秒数（默认10分钟）
+AI_PROGRESS_INTERVAL = int(os.environ.get("AI_PROGRESS_INTERVAL", "120"))  # 进度邮件间隔秒数（0=禁用）
 # ────────────────────────────────────────────────────────────────
 #  Workspace 配置（限制 AI 操作范围）
 # ────────────────────────────────────────────────────────────────
