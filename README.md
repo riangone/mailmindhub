@@ -153,6 +153,214 @@ bash manage.sh push-templates
 多任务识别：
 - 使用分号、中文分号或换行分隔，可自动拆分成多个任务并分别定时执行
 
+### 💻 编码开发指令模板
+
+以下模板适用于 **CLI AI + WORKSPACE_DIR** 配置（AI 可直接读写项目文件，无需粘贴代码）。
+
+> **通用结构**
+> ```
+> 【任务类型】简短标题
+>
+> 目标：具体要做什么
+> 文件：涉及哪些文件/目录
+> 要求：风格/约束/注意事项
+> ```
+
+---
+
+**🆕 新功能开发**
+
+```
+【新功能】实现用户登录限流
+
+目标：在 auth/login.py 的登录接口加入限流逻辑，
+      同一 IP 5分钟内失败超过5次则锁定10分钟。
+文件：auth/login.py，utils/cache.py
+要求：
+- 用现有的 Redis 客户端，不要引入新依赖
+- 锁定期间返回 429 状态码和剩余等待时间
+- 写对应的单元测试
+```
+
+**🐛 Bug 修复**
+
+```
+【Bug】用户头像上传偶发 500 错误
+
+现象：上传大于 2MB 的图片时概率报错，日志：
+  OSError: [Errno 28] No space left on device
+
+文件：api/upload.py，core/storage.py
+要求：
+- 找出根本原因
+- 上传前先检查临时目录空间
+- 失败时返回友好的错误信息而非 500
+```
+
+**🔍 代码审查**
+
+```
+【审查】检查 payment/ 模块的安全性
+
+文件：payment/
+重点检查：
+- SQL 注入风险
+- 敏感信息是否明文记录在日志
+- 金额计算是否存在浮点精度问题
+- 异常处理是否完整
+输出：列出问题清单（按严重程度排序），不要直接修改代码
+```
+
+**♻️ 重构**
+
+```
+【重构】拆分 god class UserManager
+
+文件：services/user_manager.py（当前约800行）
+目标：按职责拆分为独立模块：
+- UserAuthService    ← 认证相关
+- UserProfileService ← 资料相关
+- UserNotifyService  ← 通知相关
+要求：
+- 保持对外接口不变（向后兼容）
+- 原有测试必须全部通过
+- 不要修改数据库 Schema
+```
+
+**🧪 补充测试**
+
+```
+【测试】为 utils/parser.py 补充单元测试
+
+文件：utils/parser.py，tests/test_parser.py
+要求：
+- 覆盖所有 public 函数
+- 重点覆盖边界条件：空输入、超长输入、特殊字符
+- 使用现有的 pytest 框架和 fixture 风格
+- 目标覆盖率 90% 以上
+```
+
+**⚡ 性能优化**
+
+```
+【性能】优化首页接口响应时间
+
+文件：api/home.py
+背景：P99 约 800ms，瓶颈在 get_recommended_items()，每次都全量查询数据库。
+要求：
+- 加入内存缓存，TTL 5分钟
+- 缓存 key 包含用户 ID
+- 不改变接口返回格式
+- 注释中说明缓存策略
+```
+
+**🗄️ 数据库变更**
+
+```
+【数据库】为 orders 表添加软删除支持
+
+文件：models/order.py，migrations/（Alembic）
+目标：
+- 添加 deleted_at 字段（nullable timestamp）
+- 所有查询默认过滤已删除记录
+- 添加 soft_delete() 和 restore() 方法
+- 生成对应的 migration 文件
+注意：不影响现有的硬删除逻辑
+```
+
+**📡 API 设计**
+
+```
+【API】设计文件批量下载接口
+
+文件：api/files.py，core/zip_helper.py（不存在则新建）
+要求：
+- POST /api/files/batch-download，接受 file_ids 数组，打包成 zip 返回
+- 最多 50 个文件，总大小不超过 100MB
+- 超出限制返回 400 和明确的错误信息
+- 添加 OpenAPI 注释
+```
+
+**🔐 安全加固**
+
+```
+【安全】审查并修复 API 鉴权漏洞
+
+文件：middleware/auth.py，api/（全目录）
+任务：
+1. 找出所有未经鉴权即可访问的接口
+2. 检查 JWT 验证是否存在 alg=none 攻击风险
+3. 修复发现的问题
+4. 回复中附上修复清单
+```
+
+**📖 文档补全**
+
+```
+【文档】为 core/ 模块补充 docstring
+
+文件：core/（全目录）
+要求：
+- 为每个 public 函数补充 Google 风格 docstring
+- 包含参数类型、返回值、异常说明
+- 只补充缺失的，不修改已有的
+- 不改动任何业务逻辑
+```
+
+**🔗 依赖升级**
+
+```
+【升级】将 SQLAlchemy 从 1.4 升级到 2.0
+
+文件：requirements.txt，models/（全目录），database.py
+背景：2.0 的 Session 用法有 breaking change。
+要求：
+- 更新所有废弃的 API 用法
+- 保持现有测试全部通过
+- 回复中列出主要改动点
+```
+
+**🚨 紧急修复**
+
+```
+【紧急】生产报错，立即修复
+
+错误：TypeError: 'NoneType' object is not subscriptable
+位置：services/order.py，create_order() 函数
+请找出原因并修复，不要改动其他逻辑。
+```
+
+**🔄 多轮迭代（回复上一封继续对话）**
+
+```
+（直接回复上一封邮件）
+
+上面的实现有个问题：当 user_id 为空时会崩溃。
+请在 validate_input() 中加入空值检查，其他不变。
+```
+
+```
+（再次回复继续）
+
+测试跑了，有两个失败：
+  FAILED tests/test_order.py::test_create_with_null_user
+  FAILED tests/test_order.py::test_bulk_create
+
+请查看测试文件，修复这两个用例。
+```
+
+---
+
+**常用修饰词**（加在任意模板末尾）：
+
+| 需求 | 添加的语句 |
+|------|-----------|
+| 只分析不改代码 | `输出：只分析，不修改任何文件` |
+| 改完跑测试 | `改完后运行 pytest tests/ 确认通过` |
+| 保守修改 | `改动范围尽量小，不做额外优化` |
+| 解释改动 | `在回复正文中说明改了什么、为什么` |
+| 分步执行 | `先只做第1步，等我确认再继续` |
+
 #### 📮 126 / 163 / QQ 邮箱（授权码方式）
 
 1. 登录网页版邮箱 → **设置** → **POP3/IMAP/SMTP**
@@ -565,6 +773,204 @@ bash manage.sh uninstall         # systemd サービスを削除
 | `ernie` | Baidu 文心一言 | `ERNIE_API_KEY` |
 | `yi` | 零一万物 | `YI_API_KEY` |
 
+### 💻 コーディング開発 指示テンプレート
+
+**CLI AI + WORKSPACE_DIR** 構成向け（AI がプロジェクトファイルを直接読み書きできるため、コードの貼り付けは不要）。
+
+> **基本構造**
+> ```
+> 【タスク種別】短いタイトル
+>
+> 目標：何をすべきか
+> ファイル：対象ファイル/ディレクトリ
+> 要件：スタイル・制約・注意点
+> ```
+
+---
+
+**🆕 新機能開発**
+
+```
+【新機能】ログイン試行回数制限の実装
+
+目標：auth/login.py のログインエンドポイントにレート制限を追加。
+      同一 IP で5分以内に5回失敗したら10分ロック。
+ファイル：auth/login.py、utils/cache.py
+要件：
+- 既存の Redis クライアントを使用（新規依存禁止）
+- ロック中は 429 ステータスと残り待機時間を返す
+- 対応するユニットテストを追加
+```
+
+**🐛 バグ修正**
+
+```
+【バグ】アバター画像アップロードで間欠的に 500 エラー
+
+現象：2MB 超の画像アップロード時に確率でエラー発生、ログ：
+  OSError: [Errno 28] No space left on device
+
+ファイル：api/upload.py、core/storage.py
+要件：
+- 根本原因を特定
+- アップロード前に一時ディレクトリの空き容量を確認
+- 失敗時は 500 ではなく適切なエラーメッセージを返す
+```
+
+**🔍 コードレビュー**
+
+```
+【レビュー】payment/ モジュールのセキュリティ確認
+
+ファイル：payment/
+重点確認：
+- SQL インジェクションリスク
+- ログへの機密情報の平文出力
+- 金額計算の浮動小数点精度問題
+- 例外処理の網羅性
+出力：問題点一覧を重大度順に列挙（コードは修正しない）
+```
+
+**♻️ リファクタリング**
+
+```
+【リファクタ】UserManager の god class を分割
+
+ファイル：services/user_manager.py（約800行）
+目標：責務別に分割：
+- UserAuthService    ← 認証関連
+- UserProfileService ← プロフィール関連
+- UserNotifyService  ← 通知関連
+要件：
+- 外部インターフェースは変更しない（後方互換）
+- 既存テストをすべて通過させる
+- DB スキーマは変更しない
+```
+
+**🧪 テスト追加**
+
+```
+【テスト】utils/parser.py のユニットテスト補完
+
+ファイル：utils/parser.py、tests/test_parser.py
+要件：
+- すべての public 関数をカバー
+- 境界条件を重点的に：空入力・超長入力・特殊文字
+- 既存の pytest フレームワーク・fixture スタイルに準拠
+- カバレッジ目標 90% 以上
+```
+
+**⚡ パフォーマンス最適化**
+
+```
+【最適化】トップページ API のレスポンス改善
+
+ファイル：api/home.py
+背景：P99 約 800ms。get_recommended_items() で毎回全件 DB クエリが発生。
+要件：
+- メモリキャッシュ追加、TTL 5分
+- キャッシュキーにユーザー ID を含める
+- レスポンス形式は変更しない
+- キャッシュ戦略をコメントで説明
+```
+
+**🗄️ DB スキーマ変更**
+
+```
+【DB】orders テーブルに論理削除を追加
+
+ファイル：models/order.py、migrations/（Alembic）
+目標：
+- deleted_at カラム追加（nullable timestamp）
+- 全クエリのデフォルトフィルタで削除済みを除外
+- soft_delete() と restore() メソッドを追加
+- migration ファイルを生成
+注意：既存の物理削除ロジックに影響を与えない
+```
+
+**📡 API 設計**
+
+```
+【API】ファイル一括ダウンロードエンドポイント
+
+ファイル：api/files.py、core/zip_helper.py（なければ新規作成）
+要件：
+- POST /api/files/batch-download、file_ids 配列を受け取り zip で返す
+- 最大 50 ファイル、合計サイズ 100MB 以内
+- 制限超過時は 400 と明確なエラーメッセージを返す
+- OpenAPI コメントを追加
+```
+
+**🔐 セキュリティ強化**
+
+```
+【セキュリティ】API 認証の脆弱性を調査・修正
+
+ファイル：middleware/auth.py、api/（全ディレクトリ）
+タスク：
+1. 認証なしでアクセス可能なエンドポイントを洗い出す
+2. JWT 検証の alg=none 攻撃リスクを確認
+3. 発見した問題を修正
+4. 修正内容の一覧を返信に含める
+```
+
+**📖 ドキュメント補完**
+
+```
+【ドキュメント】core/ モジュールに docstring を追加
+
+ファイル：core/（全ディレクトリ）
+要件：
+- 全 public 関数に Google スタイル docstring を追加
+- 引数の型・戻り値・例外を含める
+- 既存のものは変更しない（欠けているものだけ追加）
+- ビジネスロジックには一切触れない
+```
+
+**🔗 依存ライブラリ更新**
+
+```
+【アップグレード】SQLAlchemy 1.4 → 2.0 対応
+
+ファイル：requirements.txt、models/（全体）、database.py
+背景：2.0 の Session API に破壊的変更あり。
+要件：
+- 非推奨 API をすべて更新
+- 既存テストを全通過させる
+- 主な変更点を返信に列挙
+```
+
+**🚨 緊急修正**
+
+```
+【緊急】本番エラー、即時修正
+
+エラー：TypeError: 'NoneType' object is not subscriptable
+場所：services/order.py、create_order() 関数
+原因を特定して修正。他のロジックには触れないこと。
+```
+
+**🔄 マルチターン（前のメールに返信して継続）**
+
+```
+（前のメールに返信）
+
+上の実装に問題があります：user_id が空のときクラッシュします。
+validate_input() に null チェックを追加してください。他は変更不要。
+```
+
+---
+
+**汎用修飾フレーズ**（任意のテンプレートの末尾に追加）：
+
+| 目的 | 追加フレーズ |
+|------|------------|
+| 分析のみ（変更なし） | `出力：分析のみ、ファイルは変更しないこと` |
+| 変更後にテスト実行 | `変更後に pytest tests/ を実行して通過を確認すること` |
+| 最小限の変更 | `変更範囲は最小限に、余計な最適化は不要` |
+| 変更理由を説明 | `返信本文に何をなぜ変更したかを記載すること` |
+| 段階的に実行 | `まず第1ステップだけ実行し、確認後に続行` |
+
 ### 💡 効果的な使い方
 
 長期利用すると、MailMindHub との交互メールが増えて受信ボックスが散らかりがちです。以下の方法で整理できます：
@@ -819,6 +1225,204 @@ Once running, send an email to your configured mailbox with your instruction as 
 | `ernie` | Baidu | `ERNIE_API_KEY` |
 | `yi` | 01.AI | `YI_API_KEY` |
 
+### 💻 Coding Development Templates
+
+For **CLI AI + WORKSPACE_DIR** setups where the AI can read and write project files directly — no need to paste code in the email.
+
+> **General structure**
+> ```
+> [Task Type] Short title
+>
+> Goal: What needs to be done
+> Files: Which files/directories are involved
+> Requirements: Style, constraints, and notes
+> ```
+
+---
+
+**🆕 New Feature**
+
+```
+[Feature] Implement login rate limiting
+
+Goal: Add rate limiting to the login endpoint in auth/login.py.
+      Lock the IP for 10 minutes after 5 failures within 5 minutes.
+Files: auth/login.py, utils/cache.py
+Requirements:
+- Use the existing Redis client, no new dependencies
+- Return 429 status with remaining wait time when locked
+- Add corresponding unit tests
+```
+
+**🐛 Bug Fix**
+
+```
+[Bug] Intermittent 500 error on avatar upload
+
+Symptom: Images larger than 2MB fail with this error in the logs:
+  OSError: [Errno 28] No space left on device
+
+Files: api/upload.py, core/storage.py
+Requirements:
+- Identify the root cause
+- Check temp directory space before uploading
+- Return a friendly error message instead of 500
+```
+
+**🔍 Code Review**
+
+```
+[Review] Security audit of the payment/ module
+
+Files: payment/
+Focus on:
+- SQL injection risks
+- Sensitive data logged in plaintext
+- Floating-point precision in monetary calculations
+- Completeness of exception handling
+Output: List issues sorted by severity. Do not modify code.
+```
+
+**♻️ Refactoring**
+
+```
+[Refactor] Split UserManager god class
+
+Files: services/user_manager.py (~800 lines)
+Goal: Split by responsibility:
+- UserAuthService    ← authentication
+- UserProfileService ← profile management
+- UserNotifyService  ← notifications
+Requirements:
+- Keep external interfaces unchanged (backward compatible)
+- All existing tests must still pass
+- Do not alter the DB schema
+```
+
+**🧪 Add Tests**
+
+```
+[Tests] Add unit tests for utils/parser.py
+
+Files: utils/parser.py, tests/test_parser.py
+Requirements:
+- Cover all public functions
+- Focus on edge cases: empty input, very long input, special characters
+- Follow existing pytest framework and fixture style
+- Target 90%+ coverage
+```
+
+**⚡ Performance**
+
+```
+[Performance] Improve homepage API response time
+
+Files: api/home.py
+Context: P99 ~800ms. Bottleneck is get_recommended_items() — full DB scan on every request.
+Requirements:
+- Add in-memory cache with 5-minute TTL
+- Include user ID in cache key
+- Do not change the response format
+- Comment the caching strategy
+```
+
+**🗄️ Database Change**
+
+```
+[DB] Add soft delete to the orders table
+
+Files: models/order.py, migrations/ (Alembic)
+Goal:
+- Add deleted_at column (nullable timestamp)
+- Default all queries to filter out deleted records
+- Add soft_delete() and restore() methods
+- Generate the migration file
+Note: Do not affect existing hard-delete logic
+```
+
+**📡 API Design**
+
+```
+[API] Batch file download endpoint
+
+Files: api/files.py, core/zip_helper.py (create if missing)
+Requirements:
+- POST /api/files/batch-download, accept file_ids array, return zip
+- Max 50 files, total size under 100MB
+- Return 400 with clear error message when limits are exceeded
+- Add OpenAPI annotations
+```
+
+**🔐 Security Hardening**
+
+```
+[Security] Audit and fix API authentication issues
+
+Files: middleware/auth.py, api/ (all)
+Tasks:
+1. Find all endpoints accessible without authentication
+2. Check JWT validation for alg=none attack vulnerability
+3. Fix discovered issues
+4. Include a fix summary in the reply
+```
+
+**📖 Documentation**
+
+```
+[Docs] Add docstrings to the core/ module
+
+Files: core/ (all)
+Requirements:
+- Add Google-style docstrings to all public functions
+- Include parameter types, return values, and exceptions
+- Only add missing ones, do not modify existing
+- Do not touch any business logic
+```
+
+**🔗 Dependency Upgrade**
+
+```
+[Upgrade] SQLAlchemy 1.4 → 2.0
+
+Files: requirements.txt, models/ (all), database.py
+Context: 2.0 has breaking changes to the Session API.
+Requirements:
+- Update all deprecated API usage
+- All existing tests must still pass
+- List main changes in the reply
+```
+
+**🚨 Urgent Fix**
+
+```
+[Urgent] Production error, fix immediately
+
+Error: TypeError: 'NoneType' object is not subscriptable
+Location: services/order.py, create_order() function
+Find the cause and fix it. Do not touch any other logic.
+```
+
+**🔄 Multi-turn (reply to continue conversation)**
+
+```
+(Reply to previous email)
+
+The implementation above has a problem: it crashes when user_id is empty.
+Please add a null check in validate_input(). No other changes.
+```
+
+---
+
+**Modifier phrases** (append to any template):
+
+| Purpose | Phrase to add |
+|---------|--------------|
+| Analyze only, no changes | `Output: analysis only, do not modify any files` |
+| Run tests after changes | `After changes, run pytest tests/ to confirm they pass` |
+| Minimal changes | `Keep changes minimal, no extra optimization` |
+| Explain changes | `Include what and why you changed in the reply body` |
+| Step by step | `Do only step 1 first; wait for my confirmation before continuing` |
+
 ### 🔒 Security Tips
 
 - Always set `ALLOWED` whitelist to your own email to prevent abuse
@@ -1068,6 +1672,152 @@ bash manage.sh uninstall         # systemd 서비스 제거
 | `spark` | iFLYTEK | `SPARK_API_KEY` |
 | `ernie` | 바이두 | `ERNIE_API_KEY` |
 | `yi` | 01.AI | `YI_API_KEY` |
+
+### 💻 코딩 개발 지시 템플릿
+
+**CLI AI + WORKSPACE_DIR** 구성용（AI가 프로젝트 파일을 직접 읽고 쓸 수 있으므로 코드 붙여넣기 불필요）。
+
+> **기본 구조**
+> ```
+> 【작업 유형】짧은 제목
+>
+> 목표：무엇을 해야 하는지
+> 파일：관련 파일/디렉토리
+> 요구사항：스타일·제약·주의사항
+> ```
+
+---
+
+**🆕 신규 기능 개발**
+
+```
+【신기능】로그인 횟수 제한 구현
+
+목표：auth/login.py 의 로그인 엔드포인트에 레이트 리밋 추가.
+      동일 IP에서 5분 내 5회 실패 시 10분 잠금.
+파일：auth/login.py、utils/cache.py
+요구사항：
+- 기존 Redis 클라이언트 사용（신규 의존성 금지）
+- 잠금 중에는 429 상태코드와 남은 대기 시간 반환
+- 대응 유닛 테스트 추가
+```
+
+**🐛 버그 수정**
+
+```
+【버그】아바타 업로드 시 간헐적 500 오류
+
+증상：2MB 초과 이미지 업로드 시 확률적으로 오류 발생, 로그：
+  OSError: [Errno 28] No space left on device
+
+파일：api/upload.py、core/storage.py
+요구사항：
+- 근본 원인 파악
+- 업로드 전 임시 디렉토리 용량 확인
+- 실패 시 500 대신 친절한 오류 메시지 반환
+```
+
+**🔍 코드 리뷰**
+
+```
+【리뷰】payment/ 모듈 보안 점검
+
+파일：payment/
+중점 확인：
+- SQL 인젝션 위험
+- 민감 정보 로그 평문 출력
+- 금액 계산 부동소수점 정밀도 문제
+- 예외 처리 완전성
+출력：문제 목록을 심각도 순으로 나열（코드 수정 금지）
+```
+
+**♻️ 리팩토링**
+
+```
+【리팩토링】UserManager god class 분리
+
+파일：services/user_manager.py（약 800줄）
+목표：책임별로 분리：
+- UserAuthService    ← 인증 관련
+- UserProfileService ← 프로필 관련
+- UserNotifyService  ← 알림 관련
+요구사항：
+- 외부 인터페이스 변경 없음（하위 호환 유지）
+- 기존 테스트 전부 통과
+- DB 스키마 변경 금지
+```
+
+**🧪 테스트 추가**
+
+```
+【테스트】utils/parser.py 유닛 테스트 보완
+
+파일：utils/parser.py、tests/test_parser.py
+요구사항：
+- 모든 public 함수 커버
+- 경계 조건 집중：빈 입력·초장문·특수문자
+- 기존 pytest 프레임워크·fixture 스타일 준수
+- 커버리지 목표 90% 이상
+```
+
+**⚡ 성능 최적화**
+
+```
+【성능】홈페이지 API 응답 시간 개선
+
+파일：api/home.py
+배경：P99 약 800ms. get_recommended_items() 에서 매번 전체 DB 쿼리 발생.
+요구사항：
+- 메모리 캐시 추가, TTL 5분
+- 캐시 키에 사용자 ID 포함
+- 응답 형식 변경 없음
+- 캐싱 전략을 주석으로 설명
+```
+
+**🗄️ DB 변경**
+
+```
+【DB】orders 테이블에 소프트 삭제 추가
+
+파일：models/order.py、migrations/（Alembic）
+목표：
+- deleted_at 컬럼 추가（nullable timestamp）
+- 모든 쿼리 기본적으로 삭제된 레코드 필터링
+- soft_delete()、restore() 메서드 추가
+- migration 파일 생성
+주의：기존 하드 삭제 로직에 영향 없을 것
+```
+
+**🚨 긴급 수정**
+
+```
+【긴급】운영 오류, 즉시 수정
+
+오류：TypeError: 'NoneType' object is not subscriptable
+위치：services/order.py、create_order() 함수
+원인을 파악하고 수정하세요. 다른 로직은 건드리지 마세요.
+```
+
+**🔄 멀티턴（이전 메일에 답장해서 계속）**
+
+```
+（이전 메일에 답장）
+
+위 구현에 문제가 있습니다：user_id가 비어 있을 때 크래시가 납니다.
+validate_input()에 null 체크를 추가해 주세요. 다른 변경은 없습니다.
+```
+
+---
+
+**공통 수식어**（임의 템플릿 끝에 추가）：
+
+| 목적 | 추가 문구 |
+|------|---------|
+| 분석만（변경 없음） | `출력：분석만, 어떤 파일도 수정하지 말 것` |
+| 변경 후 테스트 실행 | `변경 후 pytest tests/ 실행하여 통과 확인` |
+| 최소한의 변경 | `변경 범위는 최소한으로, 추가 최적화 불필요` |
+| 변경 이유 설명 | `답장 본문에 무엇을 왜 변경했는지 기재` |
+| 단계적 실행 | `1단계만 먼저 실행하고, 확인 후 계속` |
 
 ### 🔒 보안 권장 사항
 
