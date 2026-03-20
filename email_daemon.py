@@ -561,6 +561,104 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
     processed_ids.add(em["id"])
     save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
 
+def _channel_reply(em: dict, subject: str, body: str):
+    """Send reply via channel's _reply_fn."""
+    reply_fn = em.get("_reply_fn")
+    if callable(reply_fn):
+        try:
+            reply_fn(em["from_email"], subject, body)
+        except Exception as e:
+            log.warning(f"[Channel:{em.get('channel')}] 回复失败: {e}")
+
+
+def process_channel_message(channel_name: str, ai_name: str, backend: dict, em: dict):
+    """Process a single message from a non-email channel (Telegram/Discord)."""
+    try:
+        from skills.loader import get_skills_hint
+        email_text = f"{em.get('subject', '')} {em.get('body', '')}"
+        lang = detect_lang(email_text)
+        if lang not in ("zh", "ja", "en", "ko"):
+            lang = PROMPT_LANG
+
+        # Help request
+        if _is_help_request(em):
+            help_body = _HELP_BODY.get(lang, _HELP_BODY["zh"])
+            _channel_reply(em, "MailMindHub 使用模板", help_body)
+            return
+
+        instr = f"发件人：{em['from']}\n主题：{em['subject']}\n\n"
+        instr += trim_email_body(em.get("body", ""), max_chars=MAX_EMAIL_CHARS)
+
+        template = PROMPT_TEMPLATES.get(lang, PROMPT_TEMPLATE)
+        skills_hint = get_skills_hint(lang)
+        prompt = f"{template}\n\n{skills_hint}\n\n{instr}" if skills_hint else f"{template}\n\n{instr}"
+
+        ai_result = call_ai(ai_name, backend, prompt, lang=lang)
+        if ai_result is None:
+            err_msg = {"zh": "AI 处理失败，请稍后重试。", "ja": "AI の処理に失敗しました。",
+                       "en": "AI processing failed.", "ko": "AI 처리 실패."}.get(lang, "AI 处理失败。")
+            _channel_reply(em, em["subject"], err_msg)
+            return
+
+        sub, body, sch_at, sch_every, sch_until, sch_cron, atts, task_type, task_payload, output = ai_result
+
+        if sch_cron or sch_at or sch_every:
+            # For scheduled tasks from channels, use a virtual mailbox "channel:<name>"
+            # The scheduler will attempt email delivery; reply with confirmation only
+            def _tl(zh, ja, en, ko):
+                return {"zh": zh, "ja": ja, "en": en, "ko": ko}.get(lang, zh)
+            msg = _tl(
+                f"您的任务已安排，内容预览：\n{body}",
+                f"タスクが設定されました。\n{body}",
+                f"Task scheduled.\n{body}",
+                f"작업이 예약되었습니다.\n{body}",
+            )
+            _channel_reply(em, _tl(f"已安排任务：{sub}", f"タスク設定済み：{sub}", f"Scheduled: {sub}", f"예약됨: {sub}"), msg)
+        elif task_type and task_type not in ("email", "ai_job"):
+            log.info(f"[Channel:{channel_name}] 执行工具任务: {task_type}")
+            t_sub, t_body = execute_task_logic({"type": task_type, "payload": task_payload or {},
+                                                 "subject": sub, "body": body}, lang=lang)
+            _channel_reply(em, t_sub, t_body)
+        else:
+            _channel_reply(em, sub or em["subject"], body)
+
+    except Exception as e:
+        import traceback
+        log.error(f"[Channel:{channel_name}] 处理消息失败: {e}\n{traceback.format_exc()}")
+
+
+def run_channel_loop(channel, ai_name: str, backend: dict):
+    """Poll a channel adapter for new messages and process them."""
+    channel_ids_file = os.path.join(
+        os.path.dirname(__file__),
+        f"processed_ids_{channel.name}.json"
+    )
+    ch_processed: set = set()
+    if os.path.isfile(channel_ids_file):
+        try:
+            ch_processed = set(json.load(open(channel_ids_file)))
+        except Exception:
+            ch_processed = set()
+
+    log.info(f"✅ Channel [{channel.name}] 已就绪")
+    interval = int(os.environ.get("CHANNEL_POLL_INTERVAL", "5"))
+
+    while True:
+        try:
+            messages = channel.poll_messages(ch_processed)
+            for em in messages:
+                ch_processed.add(em["id"])
+                executor.submit(process_channel_message, channel.name, ai_name, backend, em)
+            # Persist processed IDs (keep last 2000)
+            if len(ch_processed) > 2000:
+                ch_processed = set(list(ch_processed)[-2000:])
+            with open(channel_ids_file, "w") as f:
+                json.dump(list(ch_processed), f)
+        except Exception as e:
+            log.warning(f"[Channel:{channel.name}] 轮询异常: {e}")
+        time.sleep(interval)
+
+
 def run_poll(mailbox_name, ai_name, backend):
     mailbox = MAILBOXES[mailbox_name]
     interval = POLL_INTERVAL
@@ -619,11 +717,105 @@ def run_idle(mailbox_name, ai_name, backend):
             log.error(f"IDLE 异常: {e}。{wait_time} 秒后重试 ({retries})...")
             time.sleep(wait_time)
 
+def run_gmail_push(mailbox_name: str, ai_name: str, backend: dict):
+    """
+    Gmail Push mode: receive Pub/Sub webhooks via webui/server.py,
+    fetch new messages via Gmail API, and process them.
+
+    Requires:
+      - GMAIL_PUBSUB_TOPIC env var set
+      - webui/server.py running (provides /webhook/gmail endpoint)
+      - google-api-python-client installed
+    """
+    try:
+        from core.gmail_pubsub import (
+            gmail_watch, gmail_fetch_history, gmail_get_message,
+            store_history_id, load_history_id,
+        )
+        from webui.server import gmail_push_queue
+    except ImportError as e:
+        log.error(f"[GmailPush] 依赖缺失，切换到 IDLE 模式: {e}")
+        run_idle(mailbox_name, ai_name, backend)
+        return
+
+    mailbox = MAILBOXES[mailbox_name]
+
+    # Register watch and get initial historyId
+    try:
+        watch_result = gmail_watch(mailbox)
+        history_id   = str(watch_result.get("historyId", ""))
+        if history_id:
+            store_history_id(mailbox_name, history_id)
+    except Exception as e:
+        log.error(f"[GmailPush] 注册 watch 失败: {e}")
+        log.info("[GmailPush] 回退到 IMAP IDLE 模式")
+        run_idle(mailbox_name, ai_name, backend)
+        return
+
+    # Track when to renew the watch (expires after 7 days)
+    import queue as _q
+    watch_renewed_at = time.time()
+    WATCH_RENEW_INTERVAL = 6 * 24 * 3600  # 6 days
+
+    log.info(f"✅ [GmailPush] {mailbox_name} Gmail Push 就绪，等待 Pub/Sub 通知...")
+
+    while True:
+        # Renew watch before it expires
+        if time.time() - watch_renewed_at > WATCH_RENEW_INTERVAL:
+            try:
+                watch_result = gmail_watch(mailbox)
+                history_id   = str(watch_result.get("historyId", history_id))
+                store_history_id(mailbox_name, history_id)
+                watch_renewed_at = time.time()
+                log.info("[GmailPush] Watch 已续期")
+            except Exception as e:
+                log.warning(f"[GmailPush] Watch 续期失败: {e}")
+
+        # Wait for push event (block up to 10 seconds)
+        try:
+            event = gmail_push_queue.get(timeout=10)
+        except _q.Empty:
+            continue
+
+        new_history_id = event.get("history_id", "")
+        if not new_history_id:
+            continue
+
+        log.info(f"[GmailPush] 收到推送通知 historyId={new_history_id}")
+
+        # Fetch new message IDs since last known historyId
+        try:
+            start_id = load_history_id(mailbox_name) or history_id
+            new_msg_ids = gmail_fetch_history(mailbox, start_id)
+            store_history_id(mailbox_name, new_history_id)
+            history_id = new_history_id
+        except Exception as e:
+            log.error(f"[GmailPush] history.list 失败: {e}")
+            continue
+
+        for msg_id in new_msg_ids:
+            uid = f"gmail_api:{msg_id}"
+            if uid in processed_ids:
+                continue
+            em = gmail_get_message(mailbox, msg_id)
+            if em is None:
+                continue
+            # Check allowed senders
+            allowed = mailbox.get("allowed_senders", [])
+            if allowed and em["from_email"] not in allowed:
+                log.debug(f"[GmailPush] 忽略非白名单发件人: {em['from_email']}")
+                processed_ids.add(uid)
+                continue
+            executor.submit(process_email, mailbox_name, ai_name, backend, em)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mailbox", default="126")
     parser.add_argument("--ai", default="claude")
     parser.add_argument("--poll", action="store_true", help="轮询模式")
+    parser.add_argument("--gmail-push", dest="gmail_push", action="store_true",
+                        help="Gmail Push 模式（通过 Google Pub/Sub 推送通知，需配置 GMAIL_PUBSUB_TOPIC）")
     parser.add_argument("--list", action="store_true", help="显示配置状态")
     parser.add_argument("--push-templates", action="store_true", help="将指令模板写入守护进程邮箱文件夹后退出")
     parser.add_argument("--push-templates-to", metavar="EMAIL", help="通过 SMTP 将模板发送到指定邮箱后退出")
@@ -663,13 +855,27 @@ def main():
 
     threading.Thread(target=scheduler.run_forever, daemon=True).start()
 
-    use_poll = args.poll or os.environ.get("MODE", "idle").lower() == "poll"
-    log.info(f"🚀 MailMindHub 启动 | 邮箱: {args.mailbox} | AI: {args.ai} | 模式: {'轮询' if use_poll else 'IDLE'}")
-    
+    # Start enabled messaging channel adapters
+    try:
+        from channels.loader import get_enabled_channels
+        backend_cfg = AI_BACKENDS[args.ai]
+        for ch in get_enabled_channels():
+            threading.Thread(target=run_channel_loop, args=(ch, args.ai, backend_cfg), daemon=True).start()
+    except Exception as e:
+        log.warning(f"Channel 加载失败（不影响邮件功能）: {e}")
+
     backend = AI_BACKENDS[args.ai]
-    if use_poll:
+    use_poll = args.poll or os.environ.get("MODE", "idle").lower() == "poll"
+    use_gmail_push = getattr(args, "gmail_push", False) or os.environ.get("MODE", "").lower() == "gmail_push"
+
+    if use_gmail_push:
+        log.info(f"🚀 MailMindHub 启动 | 邮箱: {args.mailbox} | AI: {args.ai} | 模式: Gmail Push")
+        run_gmail_push(args.mailbox, args.ai, backend)
+    elif use_poll:
+        log.info(f"🚀 MailMindHub 启动 | 邮箱: {args.mailbox} | AI: {args.ai} | 模式: 轮询")
         run_poll(args.mailbox, args.ai, backend)
     else:
+        log.info(f"🚀 MailMindHub 启动 | 邮箱: {args.mailbox} | AI: {args.ai} | 模式: IDLE")
         run_idle(args.mailbox, args.ai, backend)
 
 if __name__ == "__main__":

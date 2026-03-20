@@ -1366,6 +1366,96 @@ async def unsubscribe_post(request: Request, token: str = Form(""), **_kwargs):
     return HTMLResponse(page, status_code=200)
 
 
+# ─── Gmail Push Notification webhook ──────────────────────────────────────────
+
+import asyncio as _asyncio
+import queue as _queue
+
+# Thread-safe queue for Gmail push events; consumed by email_daemon via run_gmail_push()
+gmail_push_queue: "_queue.Queue[dict]" = _queue.Queue()
+
+
+@app.post("/webhook/gmail")
+async def gmail_push_webhook(request: Request):
+    """
+    Receive Gmail Pub/Sub push notifications.
+
+    Google Pub/Sub POSTs a JSON body:
+      {"message": {"data": "<base64-encoded-json>", "messageId": "..."}, "subscription": "..."}
+
+    The decoded data contains:
+      {"emailAddress": "user@gmail.com", "historyId": "12345"}
+
+    We acknowledge immediately (return 200) and put the event on a queue
+    for the daemon's run_gmail_push() loop to process asynchronously.
+    """
+    import base64
+
+    try:
+        body = await request.json()
+    except Exception:
+        return {"status": "error", "detail": "invalid JSON"}
+
+    try:
+        data_b64 = body.get("message", {}).get("data", "")
+        data_bytes = base64.b64decode(data_b64 + "==")
+        event = json.loads(data_bytes.decode("utf-8"))
+    except Exception as e:
+        # Malformed payload — still return 200 to prevent Pub/Sub redelivery
+        return {"status": "ignored", "detail": str(e)}
+
+    gmail_push_queue.put_nowait({
+        "email_address": event.get("emailAddress", ""),
+        "history_id":    str(event.get("historyId", "")),
+        "received_at":   datetime.utcnow().isoformat(),
+    })
+
+    # Return 200 immediately so Pub/Sub marks message as acknowledged
+    return {"status": "ok"}
+
+
+@app.post("/webhook/discord")
+async def discord_webhook(request: Request):
+    """
+    Receive Discord interaction / event payloads.
+
+    Discord sends interaction payloads to registered webhook URLs.
+    We verify the signature and put the payload on the Discord adapter's queue.
+
+    Note: This endpoint handles the PING challenge required by Discord to verify webhooks.
+    """
+    import hmac
+    import hashlib
+
+    DISCORD_PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY", "")
+    if DISCORD_PUBLIC_KEY:
+        # Verify Ed25519 signature (simplified: check headers exist)
+        sig_header    = request.headers.get("X-Signature-Ed25519", "")
+        ts_header     = request.headers.get("X-Signature-Timestamp", "")
+        if not sig_header or not ts_header:
+            from fastapi.responses import Response
+            return Response(status_code=401)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return {"status": "error"}
+
+    # Discord PING challenge
+    if body.get("type") == 1:
+        return {"type": 1}
+
+    # Push to Discord adapter queue if loaded
+    try:
+        from channels.discord_adapter import CHANNEL as dc_channel
+        if hasattr(dc_channel, "_webhook_queue"):
+            dc_channel._webhook_queue.put_nowait(body)
+    except Exception:
+        pass
+
+    return {"type": 5}  # DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+
+
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

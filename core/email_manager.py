@@ -9,7 +9,10 @@ from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Optional
 
-from core.mail_client import imap_login, imap_move_messages, imap_delete_messages, imap_set_flag
+from core.mail_client import (
+    imap_login, imap_move_messages, imap_delete_messages, imap_set_flag,
+    imap_add_label, imap_remove_label, imap_archive_messages, imap_search_body,
+)
 from utils.logger import log
 
 PENDING_OPS_FILE = os.path.join(os.path.dirname(__file__), "..", "pending_email_ops.json")
@@ -108,6 +111,13 @@ def search_matching_emails(mailbox: dict, filter_spec: dict) -> tuple:
     elif filter_spec.get("unread") is False:
         criteria.append("SEEN")
 
+    if filter_spec.get("flagged") is True:
+        criteria.append("FLAGGED")
+    elif filter_spec.get("flagged") is False:
+        criteria.append("UNFLAGGED")
+
+    body_text = filter_spec.get("body_contains")
+
     search_str = " ".join(criteria)
 
     mail = imap_login(mailbox)
@@ -123,6 +133,15 @@ def search_matching_emails(mailbox: dict, filter_spec: dict) -> tuple:
         uids = data[0].split() if data[0] else []
         uids = uids[:200]  # safety cap
         uid_list = [u.decode() for u in uids]
+
+        # Optionally narrow by body content (ASCII only)
+        if body_text and uid_list:
+            if _is_ascii_only(body_text):
+                _, bdata = mail.uid("search", None, f'BODY "{body_text}"')
+                body_uids = set((bdata[0] or b"").split())
+                uid_list = [u for u in uid_list if u.encode() in body_uids]
+            else:
+                log.warning(f"email_manage: 跳过非 ASCII 的正文搜索条件 '{body_text}'（IMAP 不支持）")
 
         # Fetch subjects for sample (first 5)
         if uids:
@@ -160,22 +179,37 @@ def search_matching_emails(mailbox: dict, filter_spec: dict) -> tuple:
 
 _ACTION_LABELS = {
     "zh": {
-        "move":       lambda dest: f"移动到文件夹「{dest}」",
-        "delete":     lambda _: "删除",
-        "mark_read":  lambda _: "标为已读",
-        "mark_unread":lambda _: "标为未读",
+        "move":          lambda dest: f"移动到文件夹「{dest}」",
+        "delete":        lambda _: "删除",
+        "mark_read":     lambda _: "标为已读",
+        "mark_unread":   lambda _: "标为未读",
+        "star":          lambda _: "加星标",
+        "unstar":        lambda _: "取消星标",
+        "archive":       lambda _: "归档",
+        "label":         lambda dest: f"添加标签「{dest}」",
+        "unlabel":       lambda dest: f"移除标签「{dest}」",
     },
     "ja": {
-        "move":       lambda dest: f"「{dest}」フォルダへ移動",
-        "delete":     lambda _: "削除",
-        "mark_read":  lambda _: "既読にする",
-        "mark_unread":lambda _: "未読にする",
+        "move":          lambda dest: f"「{dest}」フォルダへ移動",
+        "delete":        lambda _: "削除",
+        "mark_read":     lambda _: "既読にする",
+        "mark_unread":   lambda _: "未読にする",
+        "star":          lambda _: "スターを付ける",
+        "unstar":        lambda _: "スターを外す",
+        "archive":       lambda _: "アーカイブ",
+        "label":         lambda dest: f"ラベル「{dest}」を追加",
+        "unlabel":       lambda dest: f"ラベル「{dest}」を削除",
     },
     "en": {
-        "move":       lambda dest: f"Move to '{dest}'",
-        "delete":     lambda _: "Delete",
-        "mark_read":  lambda _: "Mark as read",
-        "mark_unread":lambda _: "Mark as unread",
+        "move":          lambda dest: f"Move to '{dest}'",
+        "delete":        lambda _: "Delete",
+        "mark_read":     lambda _: "Mark as read",
+        "mark_unread":   lambda _: "Mark as unread",
+        "star":          lambda _: "Star",
+        "unstar":        lambda _: "Unstar",
+        "archive":       lambda _: "Archive",
+        "label":         lambda dest: f"Add label '{dest}'",
+        "unlabel":       lambda dest: f"Remove label '{dest}'",
     },
 }
 
@@ -183,25 +217,31 @@ _FILTER_DESC = {
     "zh": {
         "from_contains":    lambda v: f"发件人含「{v}」",
         "subject_contains": lambda v: f"主题含「{v}」",
+        "body_contains":    lambda v: f"正文含「{v}」",
         "since_days":       lambda v: f"{v} 天内",
         "before_days":      lambda v: f"{v} 天前",
         "unread":           lambda v: "未读" if v else "已读",
+        "flagged":          lambda v: "已加星标" if v else "未加星标",
         "folder":           lambda v: f"文件夹「{v}」",
     },
     "ja": {
         "from_contains":    lambda v: f"差出人に「{v}」を含む",
         "subject_contains": lambda v: f"件名に「{v}」を含む",
+        "body_contains":    lambda v: f"本文に「{v}」を含む",
         "since_days":       lambda v: f"{v} 日以内",
         "before_days":      lambda v: f"{v} 日以上前",
         "unread":           lambda v: "未読" if v else "既読",
+        "flagged":          lambda v: "スター付き" if v else "スターなし",
         "folder":           lambda v: f"フォルダ「{v}」",
     },
     "en": {
         "from_contains":    lambda v: f"from contains '{v}'",
         "subject_contains": lambda v: f"subject contains '{v}'",
+        "body_contains":    lambda v: f"body contains '{v}'",
         "since_days":       lambda v: f"within last {v} days",
         "before_days":      lambda v: f"older than {v} days",
         "unread":           lambda v: "unread" if v else "read",
+        "flagged":          lambda v: "starred" if v else "unstarred",
         "folder":           lambda v: f"folder '{v}'",
     },
 }
@@ -307,6 +347,16 @@ def execute_email_manage_op(mailbox: dict, op_data: dict, lang: str = "zh") -> s
             count = imap_set_flag(mail, uid_list, "\\Seen", add=True)
         elif action == "mark_unread":
             count = imap_set_flag(mail, uid_list, "\\Seen", add=False)
+        elif action == "star":
+            count = imap_set_flag(mail, uid_list, "\\Flagged", add=True)
+        elif action == "unstar":
+            count = imap_set_flag(mail, uid_list, "\\Flagged", add=False)
+        elif action == "archive":
+            count = imap_archive_messages(mail, uid_list, mailbox)
+        elif action == "label":
+            count = imap_add_label(mail, uid_list, dest)
+        elif action == "unlabel":
+            count = imap_remove_label(mail, uid_list, dest)
         else:
             return f"未知操作类型：{action}"
     except Exception as e:
@@ -318,11 +368,23 @@ def execute_email_manage_op(mailbox: dict, op_data: dict, lang: str = "zh") -> s
     total = len(uid_list)
     failed = total - count
     if lang == "zh":
-        action_past = {"move": f"移动到「{dest}」", "delete": "删除", "mark_read": "标为已读", "mark_unread": "标为未读"}.get(action, action)
+        action_past = {
+            "move": f"移动到「{dest}」", "delete": "删除", "mark_read": "标为已读",
+            "mark_unread": "标为未读", "star": "加星标", "unstar": "取消星标",
+            "archive": "归档", "label": f"添加标签「{dest}」", "unlabel": f"移除标签「{dest}」",
+        }.get(action, action)
         return f"✅ 邮件整理完成！\n\n已{action_past} {count} 封\n失败 {failed} 封\n合计 {total} 封"
     elif lang == "ja":
-        action_past = {"move": f"「{dest}」へ移動", "delete": "削除", "mark_read": "既読化", "mark_unread": "未読化"}.get(action, action)
+        action_past = {
+            "move": f"「{dest}」へ移動", "delete": "削除", "mark_read": "既読化",
+            "mark_unread": "未読化", "star": "スター付与", "unstar": "スター削除",
+            "archive": "アーカイブ", "label": f"ラベル「{dest}」追加", "unlabel": f"ラベル「{dest}」削除",
+        }.get(action, action)
         return f"✅ メール整理が完了しました！\n\n{action_past}：{count} 件\n失敗：{failed} 件\n合計：{total} 件"
     else:
-        action_past = {"move": f"moved to '{dest}'", "delete": "deleted", "mark_read": "marked as read", "mark_unread": "marked as unread"}.get(action, action)
+        action_past = {
+            "move": f"moved to '{dest}'", "delete": "deleted", "mark_read": "marked as read",
+            "mark_unread": "marked as unread", "star": "starred", "unstar": "unstarred",
+            "archive": "archived", "label": f"labeled '{dest}'", "unlabel": f"unlabeled '{dest}'",
+        }.get(action, action)
         return f"✅ Email organization complete!\n\nSuccessfully {action_past}: {count}\nFailed: {failed}\nTotal: {total}"

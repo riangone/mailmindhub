@@ -565,6 +565,96 @@ def imap_set_flag(mail, uid_list: list, flag: str, add: bool = True) -> int:
     return success
 
 
+def imap_add_label(mail, uid_list: list, label: str) -> int:
+    """Gmail-only: add a label via X-GM-LABELS extension. Returns count affected."""
+    if not uid_list:
+        return 0
+    success = 0
+    for uid in uid_list:
+        try:
+            mail.uid("store", uid, "+X-GM-LABELS", f'"{label}"')
+            success += 1
+        except Exception as e:
+            log.warning(f"添加标签 '{label}' uid={uid} 失败：{e}")
+    return success
+
+
+def imap_remove_label(mail, uid_list: list, label: str) -> int:
+    """Gmail-only: remove a label via X-GM-LABELS extension. Returns count affected."""
+    if not uid_list:
+        return 0
+    success = 0
+    for uid in uid_list:
+        try:
+            mail.uid("store", uid, "-X-GM-LABELS", f'"{label}"')
+            success += 1
+        except Exception as e:
+            log.warning(f"移除标签 '{label}' uid={uid} 失败：{e}")
+    return success
+
+
+def imap_create_folder(mail, folder_name: str) -> bool:
+    """Create an IMAP folder. Returns True on success (including already exists)."""
+    try:
+        rv, _ = mail.create(folder_name)
+        return rv == "OK"
+    except Exception as e:
+        if "ALREADYEXISTS" in str(e).upper() or "exists" in str(e).lower():
+            return True
+        log.warning(f"创建文件夹 '{folder_name}' 失败：{e}")
+        return False
+
+
+def imap_rename_folder(mail, old_name: str, new_name: str) -> bool:
+    """Rename an IMAP folder. Returns True on success."""
+    try:
+        rv, _ = mail.rename(old_name, new_name)
+        return rv == "OK"
+    except Exception as e:
+        log.warning(f"重命名文件夹 '{old_name}' → '{new_name}' 失败：{e}")
+        return False
+
+
+def imap_delete_folder(mail, folder_name: str) -> bool:
+    """Delete an IMAP folder. Returns True on success."""
+    try:
+        rv, _ = mail.delete(folder_name)
+        return rv == "OK"
+    except Exception as e:
+        log.warning(f"删除文件夹 '{folder_name}' 失败：{e}")
+        return False
+
+
+def imap_archive_messages(mail, uid_list: list, mailbox: dict) -> int:
+    """Move messages to the provider's archive folder. Returns count moved."""
+    # Detect archive folder by provider (fallback: "Archive")
+    imap_server = mailbox.get("imap_server", "")
+    if "gmail" in imap_server:
+        archive_folder = mailbox.get("archive_folder", "[Gmail]/All Mail")
+    elif "outlook" in imap_server or "office365" in imap_server:
+        archive_folder = mailbox.get("archive_folder", "Archive")
+    elif "icloud" in imap_server or "me.com" in imap_server:
+        archive_folder = mailbox.get("archive_folder", "Archive")
+    else:
+        archive_folder = mailbox.get("archive_folder", "Archive")
+    return imap_move_messages(mail, uid_list, archive_folder)
+
+
+def imap_search_body(mail, text: str, folder: str = "INBOX") -> list:
+    """Search for messages containing text in body. Returns list of UID strings.
+    Note: IMAP BODY search requires ASCII text."""
+    if not text:
+        return []
+    try:
+        mail.select(folder, readonly=True)
+        _, data = mail.uid("search", None, f'BODY "{text}"')
+        uids = data[0].split() if data[0] else []
+        return [u.decode() for u in uids[:200]]
+    except Exception as e:
+        log.warning(f"BODY 搜索失败：{e}")
+        return []
+
+
 def push_templates_to_mailbox(mailbox: dict, lang: str = "zh") -> int:
     """通过 IMAP APPEND 将模板邮件写入邮箱专属文件夹，返回成功写入数量。"""
     templates = _TEMPLATES.get(lang, _TEMPLATES["zh"])
