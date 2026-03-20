@@ -19,3 +19,4 @@ reports/
 
 # 一键退订签名密钥（自动生成，不提交）
 .unsubscribe_secret
+.claude/worktrees/
