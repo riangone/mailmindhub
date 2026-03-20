@@ -45,6 +45,143 @@ _TEMPLATES = {
             "【模板7】系统状态报告",
             "每天下午6点发送一次服务器运行状态报告",
         ),
+        (
+            "【编码1】新功能开发",
+            """【新功能】<功能名称>
+
+目标：<具体要做什么>
+文件：<涉及的文件或目录，如 api/login.py、utils/cache.py>
+要求：
+- <约束1，如：用现有的 Redis 客户端，不引入新依赖>
+- <约束2，如：写对应的单元测试>
+- <约束3>""",
+        ),
+        (
+            "【编码2】Bug 修复",
+            """【Bug】<简短描述>
+
+现象：<错误表现或日志>
+
+文件：<涉及文件>
+要求：
+- 找出根本原因
+- <修复要求>
+- 失败时返回友好错误信息""",
+        ),
+        (
+            "【编码3】代码审查",
+            """【审查】<模块名称>
+
+文件：<目录或文件>
+重点检查：
+- <检查项1，如：SQL 注入风险>
+- <检查项2，如：敏感信息日志明文>
+- <检查项3，如：异常处理完整性>
+输出：列出问题清单（按严重程度排序），不要修改代码""",
+        ),
+        (
+            "【编码4】重构",
+            """【重构】<描述>
+
+文件：<目标文件>
+目标：<重构方向，如：按职责拆分为独立模块>
+要求：
+- 保持对外接口不变（向后兼容）
+- 原有测试必须全部通过
+- 不要修改数据库 Schema""",
+        ),
+        (
+            "【编码5】补充测试",
+            """【测试】为 <模块> 补充单元测试
+
+文件：<源文件>，<测试文件>
+要求：
+- 覆盖所有 public 函数
+- 重点覆盖边界条件：空输入、超长输入、特殊字符
+- 使用现有的 pytest 框架和 fixture 风格
+- 目标覆盖率 90% 以上""",
+        ),
+        (
+            "【编码6】性能优化",
+            """【性能】优化 <接口或函数> 响应时间
+
+文件：<目标文件>
+背景：<瓶颈描述，如：P99 约 800ms，每次全量查询数据库>
+要求：
+- <优化手段，如：加入内存缓存，TTL 5分钟>
+- 不改变接口返回格式
+- 在注释中说明优化策略""",
+        ),
+        (
+            "【编码7】数据库变更",
+            """【数据库】<变更描述>
+
+文件：<模型文件>，migrations/（Alembic）
+目标：
+- <变更内容1>
+- <变更内容2>
+- 生成对应的 migration 文件
+注意：不影响现有业务逻辑""",
+        ),
+        (
+            "【编码8】API 设计",
+            """【API】<接口描述>
+
+文件：<目标文件>（不存在则新建）
+要求：
+- <端点和请求格式>
+- <输入限制和校验>
+- 超出限制返回 400 和明确的错误信息
+- 添加 OpenAPI 注释""",
+        ),
+        (
+            "【编码9】安全加固",
+            """【安全】<审查范围>
+
+文件：<目标目录或文件>
+任务：
+1. <检查项1，如：找出所有未经鉴权即可访问的接口>
+2. <检查项2>
+3. 修复发现的问题
+4. 回复中附上修复清单""",
+        ),
+        (
+            "【编码10】文档补全",
+            """【文档】为 <模块> 补充 docstring
+
+文件：<目标目录>
+要求：
+- 为每个 public 函数补充 Google 风格 docstring
+- 包含参数类型、返回值、异常说明
+- 只补充缺失的，不修改已有的
+- 不改动任何业务逻辑""",
+        ),
+        (
+            "【编码11】依赖升级",
+            """【升级】将 <库名> 从 <旧版本> 升级到 <新版本>
+
+文件：requirements.txt，<相关文件>
+背景：<升级原因或 breaking change 说明>
+要求：
+- 更新所有废弃的 API 用法
+- 保持现有测试全部通过
+- 回复中列出主要改动点""",
+        ),
+        (
+            "【编码12】紧急修复",
+            """【紧急】生产报错，立即修复
+
+错误：<错误类型和信息>
+位置：<文件名>，<函数名>
+请找出原因并修复，不要改动其他逻辑。""",
+        ),
+        (
+            "【编码13】继续上次任务",
+            """（回复上一封邮件，继续迭代）
+
+上面的实现有个问题：<描述问题>
+请在 <函数或文件> 中修正，其他不变。""",
+        ),
     ],
     "ja": [
         (
@@ -75,6 +212,99 @@ _TEMPLATES = {
             "【テンプレート7】サーバー状態レポート",
             "毎日18時にサーバーの稼働状況レポートを送ってください",
         ),
+        (
+            "【コーディング1】新機能開発",
+            """【新機能】<機能名>
+
+目標：<何をすべきか>
+ファイル：<対象ファイル/ディレクトリ>
+要件：
+- <制約1、例：既存の Redis クライアントを使用、新規依存禁止>
+- <制約2、例：対応するユニットテストを追加>
+- <制約3>""",
+        ),
+        (
+            "【コーディング2】バグ修正",
+            """【バグ】<短い説明>
+
+現象：<エラー内容やログ>
+
+ファイル：<対象ファイル>
+要件：
+- 根本原因を特定
+- <修正要件>
+- 失敗時は適切なエラーメッセージを返す""",
+        ),
+        (
+            "【コーディング3】コードレビュー",
+            """【レビュー】<モジュール名>
+
+ファイル：<ディレクトリまたはファイル>
+重点確認：
+- <確認項目1、例：SQL インジェクションリスク>
+- <確認項目2、例：ログへの機密情報の平文出力>
+- <確認項目3、例：例外処理の網羅性>
+出力：問題点を重大度順に列挙（コードは修正しない）""",
+        ),
+        (
+            "【コーディング4】リファクタリング",
+            """【リファクタ】<説明>
+
+ファイル：<対象ファイル>
+目標：<リファクタ方向、例：責務別に分割>
+要件：
+- 外部インターフェースは変更しない（後方互換）
+- 既存テストをすべて通過させる
+- DB スキーマは変更しない""",
+        ),
+        (
+            "【コーディング5】テスト追加",
+            """【テスト】<モジュール> のユニットテスト補完
+
+ファイル：<ソースファイル>、<テストファイル>
+要件：
+- すべての public 関数をカバー
+- 境界条件を重点的に：空入力・超長入力・特殊文字
+- 既存の pytest フレームワーク・fixture スタイルに準拠
+- カバレッジ目標 90% 以上""",
+        ),
+        (
+            "【コーディング6】パフォーマンス最適化",
+            """【最適化】<エンドポイントまたは関数> のレスポンス改善
+
+ファイル：<対象ファイル>
+背景：<ボトルネックの説明>
+要件：
+- <最適化手段、例：メモリキャッシュ追加、TTL 5分>
+- レスポンス形式は変更しない
+- キャッシュ戦略をコメントで説明""",
+        ),
+        (
+            "【コーディング7】DB スキーマ変更",
+            """【DB】<変更の説明>
+
+ファイル：<モデルファイル>、migrations/（Alembic）
+目標：
+- <変更内容1>
+- <変更内容2>
+- migration ファイルを生成
+注意：既存のビジネスロジックに影響を与えない""",
+        ),
+        (
+            "【コーディング8】緊急修正",
+            """【緊急】本番エラー、即時修正
+
+エラー：<エラー種別とメッセージ>
+場所：<ファイル名>、<関数名>
+原因を特定して修正。他のロジックには触れないこと。""",
+        ),
+        (
+            "【コーディング9】前の作業を継続",
+            """（前のメールに返信して継続）
+
+上の実装に問題があります：<問題の説明>
+<関数またはファイル> を修正してください。他は変更不要。""",
+        ),
     ],
     "en": [
         (
@@ -104,6 +334,99 @@ _TEMPLATES = {
         (
             "[Template 7] Server Status Report",
             "Send me a server status report every day at 6pm",
+        ),
+        (
+            "[Coding 1] New Feature",
+            """[Feature] <Feature name>
+
+Goal: <What needs to be done>
+Files: <Target files/directories>
+Requirements:
+- <Constraint 1, e.g.: use existing Redis client, no new dependencies>
+- <Constraint 2, e.g.: add corresponding unit tests>
+- <Constraint 3>""",
+        ),
+        (
+            "[Coding 2] Bug Fix",
+            """[Bug] <Short description>
+
+Symptom: <Error message or log output>
+
+Files: <Target files>
+Requirements:
+- Identify the root cause
+- <Fix requirement>
+- Return a friendly error message on failure""",
+        ),
+        (
+            "[Coding 3] Code Review",
+            """[Review] <Module name>
+
+Files: <Directory or files>
+Focus on:
+- <Check 1, e.g.: SQL injection risks>
+- <Check 2, e.g.: sensitive data logged in plaintext>
+- <Check 3, e.g.: completeness of exception handling>
+Output: List issues sorted by severity. Do not modify code.""",
+        ),
+        (
+            "[Coding 4] Refactoring",
+            """[Refactor] <Description>
+
+Files: <Target files>
+Goal: <Refactor direction, e.g.: split by responsibility>
+Requirements:
+- Keep external interfaces unchanged (backward compatible)
+- All existing tests must still pass
+- Do not alter the DB schema""",
+        ),
+        (
+            "[Coding 5] Add Tests",
+            """[Tests] Add unit tests for <module>
+
+Files: <Source file>, <Test file>
+Requirements:
+- Cover all public functions
+- Focus on edge cases: empty input, very long input, special characters
+- Follow existing pytest framework and fixture style
+- Target 90%+ coverage""",
+        ),
+        (
+            "[Coding 6] Performance",
+            """[Performance] Improve <endpoint or function> response time
+
+Files: <Target files>
+Context: <Bottleneck description>
+Requirements:
+- <Optimization, e.g.: add in-memory cache with 5-minute TTL>
+- Do not change the response format
+- Comment the optimization strategy""",
+        ),
+        (
+            "[Coding 7] DB Change",
+            """[DB] <Change description>
+
+Files: <Model file>, migrations/ (Alembic)
+Goal:
+- <Change 1>
+- <Change 2>
+- Generate the migration file
+Note: Do not affect existing business logic""",
+        ),
+        (
+            "[Coding 8] Urgent Fix",
+            """[Urgent] Production error, fix immediately
+
+Error: <Error type and message>
+Location: <File>, <Function>
+Find the cause and fix it. Do not touch any other logic.""",
+        ),
+        (
+            "[Coding 9] Continue Previous Task",
+            """(Reply to previous email to continue)
+
+The implementation above has a problem: <describe the issue>
+Please fix <function or file>. No other changes.""",
         ),
     ],
 }
