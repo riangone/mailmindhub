@@ -6,7 +6,7 @@ import json
 import logging
 import base64
 import time
-from email.header import decode_header as _decode_header
+from email.header import decode_header as _decode_header, Header
 from email.utils import parseaddr, formatdate
 from email.mime.text import MIMEText
 from core.config import MAILBOXES, ATTACHMENT_MAX_SIZE_MB, CONTEXT_MAX_DEPTH
@@ -432,9 +432,10 @@ Please fix <function or file>. No other changes.""",
 }
 
 _FOLDER_NAMES = {
-    "zh": "MailMindHub模板",
-    "ja": "MailMindHubテンプレート",
-    "en": "MailMindHub Templates",
+    "zh": "MailMindHub_Templates",
+    "ja": "MailMindHub_Templates",
+    "en": "MailMindHub_Templates",
+    "ko": "MailMindHub_Templates",
 }
 
 def list_imap_folders(mailbox: dict) -> list:
@@ -593,11 +594,11 @@ def push_templates_to_mailbox(mailbox: dict, lang: str = "zh") -> int:
         msg = MIMEText(body, "plain", "utf-8")
         msg["From"] = address
         msg["To"] = address
-        msg["Subject"] = subject
+        msg["Subject"] = Header(subject, "utf-8")
         msg["Date"] = formatdate(localtime=True)
         raw = msg.as_bytes()
         try:
-            result = mail.append(folder, "", imaplib.Time2Internaldate(time.time()), raw)
+            result = mail.append(folder, "(\\Seen)", imaplib.Time2Internaldate(time.time()), raw)
             if result[0] == "OK":
                 count += 1
             else:
