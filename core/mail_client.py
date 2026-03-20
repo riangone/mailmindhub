@@ -610,6 +610,37 @@ def push_templates_to_mailbox(mailbox: dict, lang: str = "zh") -> int:
     log.info(f"📋 已写入 {count}/{len(templates)} 个模板到文件夹「{folder}」")
     return count
 
+
+def send_templates_to_address(mailbox: dict, target: str, lang: str = "zh") -> int:
+    """通过 SMTP 将模板逐封发送到指定邮箱，用户可直接转发给守护进程使用。"""
+    from core.mail_sender import smtp_login
+    templates = _TEMPLATES.get(lang, _TEMPLATES["zh"])
+    daemon_address = mailbox["address"]
+    hint = {
+        "zh": f"👉 转发此邮件到 {daemon_address} 即可执行指令",
+        "ja": f"👉 このメールを {daemon_address} に転送して指示を実行",
+        "en": f"👉 Forward this email to {daemon_address} to execute the instruction",
+        "ko": f"👉 이 이메일을 {daemon_address} 로 전달하여 지시 실행",
+    }.get(lang, f"👉 转发此邮件到 {daemon_address} 即可执行指令")
+
+    server = smtp_login(mailbox)
+    count = 0
+    for subject, body in templates:
+        msg = MIMEText(body + f"\n\n---\n{hint}", "plain", "utf-8")
+        msg["From"] = daemon_address
+        msg["To"] = target
+        msg["Subject"] = Header(subject, "utf-8")
+        msg["Date"] = formatdate(localtime=True)
+        try:
+            server.sendmail(daemon_address, [target], msg.as_bytes())
+            count += 1
+            log.debug(f"模板已发送：{subject}")
+        except Exception as e:
+            log.warning(f"模板发送失败：{subject} → {e}")
+    server.quit()
+    log.info(f"📨 已发送 {count}/{len(templates)} 个模板到 {target}")
+    return count
+
 def _oauth_google(mailbox: dict) -> str:
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials

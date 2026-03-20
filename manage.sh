@@ -800,9 +800,14 @@ case "$1" in
     uninstall)      do_uninstall ;;
     push-templates)
         load_env
-        heading "写入邮件模板"
         if [ -z "$MAILBOX" ]; then error "未配置邮箱（MAILBOX 为空）"; fi
-        "$VENV_PYTHON" "$SCRIPT" --mailbox "$MAILBOX" --push-templates
+        if [ -n "$2" ]; then
+            heading "发送邮件模板到 $2"
+            "$VENV_PYTHON" "$SCRIPT" --mailbox "$MAILBOX" --push-templates-to "$2"
+        else
+            heading "写入邮件模板"
+            "$VENV_PYTHON" "$SCRIPT" --mailbox "$MAILBOX" --push-templates
+        fi
         ;;
     # 多实例管理命令
     instances)      do_instances ;;

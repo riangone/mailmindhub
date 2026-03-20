@@ -18,7 +18,7 @@ from typing import Optional
 # 核心配置与模块
 from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE, PROMPT_TEMPLATES, AI_CONCURRENCY, AI_MODIFY_SUBJECT, PROMPT_LANG, MAX_EMAIL_CHARS, WORKSPACE_DIR, AI_CLI_TIMEOUT, AI_PROGRESS_INTERVAL
 from core.validator import validate_config
-from core.mail_client import fetch_unread_emails, imap_login, get_oauth_token, fetch_thread_context, push_templates_to_mailbox
+from core.mail_client import fetch_unread_emails, imap_login, get_oauth_token, fetch_thread_context, push_templates_to_mailbox, send_templates_to_address
 from core.mail_sender import send_reply, archive_output
 from ai.providers import get_ai_provider
 from utils.parser import parse_ai_response, trim_email_body, detect_lang
@@ -625,7 +625,8 @@ def main():
     parser.add_argument("--ai", default="claude")
     parser.add_argument("--poll", action="store_true", help="轮询模式")
     parser.add_argument("--list", action="store_true", help="显示配置状态")
-    parser.add_argument("--push-templates", action="store_true", help="将指令模板写入邮箱文件夹后退出")
+    parser.add_argument("--push-templates", action="store_true", help="将指令模板写入守护进程邮箱文件夹后退出")
+    parser.add_argument("--push-templates-to", metavar="EMAIL", help="通过 SMTP 将模板发送到指定邮箱后退出")
     args = parser.parse_args()
 
     if args.list:
@@ -640,6 +641,15 @@ def main():
             sys.exit(1)
         count = push_templates_to_mailbox(mailbox, PROMPT_LANG)
         print(f"✅ 已写入 {count} 个模板到邮箱「{args.mailbox}」")
+        return
+
+    if args.push_templates_to:
+        mailbox = MAILBOXES.get(args.mailbox)
+        if not mailbox:
+            print(f"错误：未找到邮箱配置 '{args.mailbox}'")
+            sys.exit(1)
+        count = send_templates_to_address(mailbox, args.push_templates_to, PROMPT_LANG)
+        print(f"✅ 已发送 {count} 个模板到 {args.push_templates_to}")
         return
 
     # 验证配置
