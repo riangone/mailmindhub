@@ -2,18 +2,18 @@
      hx-get="/partials/header_status"
      hx-trigger="every 5s"
      hx-swap="outerHTML">
-  <div class="hs-info">
-    <span class="dot {{ 'on' if status.running else 'off' }}"></span>
-    <span class="hs-text">
+  <div class="header-status">
+    <span class="status-dot {{ 'on' if status.running else 'off' }}"></span>
+    <span class="status-info">
       {% if status.running %}
-        PID:{{ status.pid }}&nbsp;·&nbsp;{{ status.mailbox }}&nbsp;·&nbsp;{{ status.ai }}&nbsp;·&nbsp;{{ status.mode.upper() }}
+        PID:{{ status.pid }} · {{ status.mailbox }} · {{ status.ai }} · {{ status.mode.upper() }}
       {% else %}{{ t.status_stopped }}{% endif %}
     </span>
   </div>
-  <div class="hs-actions">
-    <button class="ab run" title="{{ t.btn_start }}" hx-post="/daemon/start" hx-target="#header-status" hx-swap="outerHTML" {% if status.running %}disabled{% endif %}>▶</button>
-    <button class="ab stop" title="{{ t.btn_stop }}" hx-post="/daemon/stop" hx-target="#header-status" hx-swap="outerHTML" {% if not status.running %}disabled{% endif %}>■</button>
-    <button class="ab" title="{{ t.btn_restart }}" hx-post="/daemon/restart" hx-target="#header-status" hx-swap="outerHTML" {% if not status.running %}disabled{% endif %}>↺</button>
+  <div class="header-actions">
+    <button class="header-btn run" title="{{ t.btn_start }}" hx-post="/daemon/start" hx-target="#header-status" hx-swap="outerHTML" {% if status.running %}disabled{% endif %}>Run</button>
+    <button class="header-btn stop" title="{{ t.btn_stop }}" hx-post="/daemon/stop" hx-target="#header-status" hx-swap="outerHTML" {% if not status.running %}disabled{% endif %}>Stop</button>
+    <button class="header-btn" title="{{ t.btn_restart }}" hx-post="/daemon/restart" hx-target="#header-status" hx-swap="outerHTML" {% if not status.running %}disabled{% endif %}>Restart</button>
   </div>
   {% if message %}
   <div class="hs-msg {{ 'ok' if success else 'er' }}">{{ message }}</div>

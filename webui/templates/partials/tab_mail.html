@@ -7,7 +7,7 @@
   {% endif %}
 
   <!-- 主邮箱配置 -->
-  <h3>{{ t.main_mailbox_config }}</h3>
+  <div class="section-title">{{ t.main_mailbox_config }}</div>
   <form hx-post="/config/mail" hx-target="#content" hx-swap="innerHTML">
 
     <div class="form-group">
@@ -106,22 +106,23 @@
   </form>
 
   <!-- 多管理邮箱配置 -->
-  <h3>{{ t.manage_mailboxes_title }}</h3>
+  <div class="section-title">{{ t.manage_mailboxes_title }}</div>
   <div class="hint" style="margin-bottom: 1rem;">{{ t.manage_mailboxes_hint }}</div>
 
   <div class="manage-mailboxes">
     {% for instance in manage_instances %}
-    <div class="manage-mailbox-card">
-      <div class="mailbox-card-header">
-        <span class="mailbox-name">{{ instance.name }}</span>
-        <span class="mailbox-status {{ 'running' if instance.running else 'stopped' }}">
+    <div class="manage-mailbox-card" style="background: var(--bg2); border: 1px solid var(--border); border-left: 3px solid var(--green); padding: 16px; margin-bottom: 16px;">
+      <div class="mailbox-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span class="mailbox-name" style="font-size: 13px; font-weight: 700; color: var(--fg);">{{ instance.name }}</span>
+        <span class="mailbox-status {{ 'running' if instance.running else 'stopped' }}"
+              style="font-size: 10px; padding: 2px 8px; border-radius: 3px; {{ 'background: var(--green-dim); color: var(--green);' if instance.running else 'background: #333; color: #666;' }}">
           {{ t.status_running if instance.running else t.status_stopped }}
         </span>
       </div>
-      
+
       <form hx-post="/config/manage-mailbox/{{ instance.name }}" hx-target="#content" hx-swap="innerHTML">
         <input type="hidden" name="INSTANCE_NAME" value="{{ instance.name }}">
-        
+
         <div class="form-group">
           <label>{{ t.mail_address }}</label>
           <input type="email"
@@ -157,7 +158,7 @@
           <div class="hint">{{ t.mail_allowed_hint }}</div>
         </div>
 
-        <details class="server-details">
+        <details class="override">
           <summary>{{ t.mail_server_manual }}</summary>
           <div class="form-group">
             <label>{{ t.mail_imap_server }}</label>
@@ -184,19 +185,19 @@
           </div>
         </details>
 
-        <div class="mailbox-actions">
-          <button type="submit" class="btn btn-save">{{ t.btn_save_mail }}</button>
+        <div class="mailbox-actions" style="display: flex; gap: 8px; margin-top: 12px;">
+          <button type="submit" class="btn btn-sm" style="padding: 5px 12px;">{{ t.btn_save_mail }}</button>
           {% if instance.running %}
-            <button type="button" class="btn btn-stop" 
+            <button type="button" class="btn btn-sm" style="padding: 5px 12px; background: var(--red); color: #fff; border: none;"
                     hx-post="/daemon/manage/{{ instance.name }}/stop"
                     hx-target="#content"
                     hx-confirm="{{ t.confirm_stop_instance }}">{{ t.btn_stop }}</button>
-            <button type="button" class="btn btn-restart"
+            <button type="button" class="btn btn-sm" style="padding: 5px 12px;"
                     hx-post="/daemon/manage/{{ instance.name }}/restart"
                     hx-target="#content"
                     hx-confirm="{{ t.confirm_restart_instance }}">{{ t.btn_restart }}</button>
           {% else %}
-            <button type="button" class="btn btn-start"
+            <button type="button" class="btn btn-sm" style="padding: 5px 12px; background: var(--green); color: #000; border: none;"
                     hx-post="/daemon/manage/{{ instance.name }}/start"
                     hx-target="#content">{{ t.btn_start }}</button>
           {% endif %}
@@ -208,16 +209,18 @@
 
   <!-- 批量操作 -->
   {% if has_manage_instances %}
-  <div class="bulk-actions">
-    <button type="button" class="btn btn-start-all"
+  <div class="bulk-actions" style="display: flex; gap: 8px; margin-top: 16px;">
+    <button type="button" class="btn btn-sm"
             hx-post="/daemon/manage/start-all"
             hx-target="#content"
-            hx-confirm="{{ t.confirm_start_all }}">{{ t.btn_start_all }}</button>
-    <button type="button" class="btn btn-stop-all"
+            hx-confirm="{{ t.confirm_start_all }}"
+            style="background: var(--green); color: #000; border: none;">{{ t.btn_start_all }}</button>
+    <button type="button" class="btn btn-sm"
             hx-post="/daemon/manage/stop-all"
             hx-target="#content"
-            hx-confirm="{{ t.confirm_stop_all }}">{{ t.btn_stop_all }}</button>
-    <button type="button" class="btn btn-restart-all"
+            hx-confirm="{{ t.confirm_stop_all }}"
+            style="background: var(--red); color: #fff; border: none;">{{ t.btn_stop_all }}</button>
+    <button type="button" class="btn btn-sm"
             hx-post="/daemon/manage/restart-all"
             hx-target="#content"
             hx-confirm="{{ t.confirm_restart_all }}">{{ t.btn_restart_all }}</button>

@@ -6,70 +6,30 @@
   <title>MailMindHub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
-  <style>
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .login-box {
-      background: var(--bg, #fafafa);
-      border: 1px solid var(--border, #ddd);
-      border-radius: 8px;
-      padding: 2.5rem 2rem;
-      width: 100%;
-      max-width: 360px;
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-    }
-    .login-box h1 { font-size: 1.4rem; margin: 0; letter-spacing: .05em; color: var(--fg, #0f0f0f); }
-    .login-box input[type=password] {
-      width: 100%;
-      box-sizing: border-box;
-      padding: .6rem .8rem;
-      font-family: inherit;
-      font-size: .95rem;
-      background: var(--bg, #0d0d1a);
-      border: 1px solid var(--border, #333);
-      border-radius: 4px;
-      color: inherit;
-    }
-    .login-box button {
-      width: 100%;
-      padding: .65rem;
-      font-family: inherit;
-      font-size: .95rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      border-radius: 4px;
-      background: var(--accent, #6c63ff);
-      color: #fff;
-    }
-    .login-box button:hover { opacity: .88; }
-    .error-msg {
-      color: #ff6b6b;
-      font-size: .85rem;
-      margin: 0;
-    }
-    .login-lang { text-align: center; font-size: .8rem; }
-    .login-lang a { color: var(--muted, #888); text-decoration: none; margin: 0 .3rem; }
-    .login-lang a:hover { color: var(--accent, #6c63ff); }
-  </style>
 </head>
 <body>
-  <div class="login-box">
-    <h1>MAILMIND</h1>
-    <form method="post" action="/login">
-      <div style="display:flex;flex-direction:column;gap:.8rem;">
-        <input type="password" name="password" placeholder="{{ t.login_placeholder }}" autofocus autocomplete="current-password">
+  <div class="login-container">
+    <div class="login-box">
+      <div class="logo"><span class="logo-brand">Mail</span>Mind<span class="logo-brand">Hub</span></div>
+      <h1 class="login-title">Login</h1>
+      <form method="post" action="/login">
+        <div class="form-group">
+          <label for="password">{{ t.login_placeholder }}</label>
+          <input type="password" id="password" name="password" placeholder="••••••••" autofocus autocomplete="current-password">
+        </div>
         {% if error %}
-        <p class="error-msg">{{ error }}</p>
+        <div class="feedback err">{{ error }}</div>
         {% endif %}
-        <button type="submit">{{ t.login_btn }}</button>
+        <button type="submit" class="btn" style="width: 100%;">{{ t.login_btn }}</button>
+      </form>
+      <div class="login-lang" style="text-align: center; font-size: 10px; margin-top: 16px;">
+        <a href="/lang/zh" style="color: var(--muted); text-decoration: none; margin: 0 6px;">中文</a>
+        <a href="/lang/ja" style="color: var(--muted); text-decoration: none; margin: 0 6px;">日本語</a>
+        <a href="/lang/ko" style="color: var(--muted); text-decoration: none; margin: 0 6px;">한국어</a>
+        <a href="/lang/en" style="color: var(--muted); text-decoration: none; margin: 0 6px;">English</a>
       </div>
-    </form>
-    <div class="login-lang">
-      <a href="/lang/zh">中文</a>·<a href="/lang/ja">日本語</a>·<a href="/lang/ko">한국어</a>·<a href="/lang/en">English</a>
     </div>
   </div>
 </body>

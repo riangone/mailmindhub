@@ -12,13 +12,13 @@
             hx-post="/api/skills/reload"
             hx-target="#content"
             hx-swap="innerHTML">{{ t.skills_reload }}</button>
-    <span style="margin-left: auto; color: var(--muted); font-size: 0.85em;">
+    <span style="margin-left: auto; color: var(--muted); font-size: 10px;">
       {{ t.skills_count_prefix }}{{ skills | length }}{{ t.skills_count_suffix }}
     </span>
   </div>
 
   <!-- ── Hint ─────────────────────────────────────────────────── -->
-  <div style="margin: 0.75rem 0; padding: 0.75rem 1rem; background: var(--card); border-radius: 6px; border-left: 3px solid var(--accent); font-size: 0.88em; color: var(--muted);">
+  <div style="margin: 12px 0; padding: 12px; background: var(--bg2); border-left: 3px solid var(--green); font-size: 11px; color: var(--muted);">
     {{ t.skills_hint }}
   </div>
 
@@ -40,7 +40,7 @@
             <span class="badge badge-ai_job">{{ skill.name }}</span>
           </td>
           <td>{{ skill.description }}</td>
-          <td style="color: var(--muted); font-size: 0.85em;">
+          <td style="color: var(--muted); font-size: 10px;">
             {{ skill.keywords | join(", ") }}
           </td>
         </tr>
