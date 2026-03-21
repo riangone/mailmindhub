@@ -381,6 +381,9 @@
     .webui-feat-content h4 { font-size: 0.93rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
     .webui-feat-content p { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 300; color: var(--muted); line-height: 1.75; }
 
+    /* ── CODING WORKFLOWS ── */
+    #coding { padding: 90px 48px; }
+
     /* Browser mockup */
     .browser-mock { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
     [data-theme="light"] .browser-mock { box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
@@ -574,7 +577,7 @@
       .nav-controls { gap: 8px; }
       .hamburger { display: flex; }
       .lang-btn { padding: 4px 6px; font-size: 0.6rem; }
-      #features, #ai, #start, #cta, #tasks, #webui { padding: 60px 20px; }
+      #features, #ai, #start, #cta, #tasks, #webui, #coding { padding: 60px 20px; }
       #how, #mailboxes { padding: 60px 20px; }
       .usp-strip { padding: 40px 20px 0; gap: 8px; }
       .usp-pill { font-size: 0.72rem; padding: 7px 14px; }
@@ -950,8 +953,8 @@
     </div>
 
     <div class="ai-tabs-header">
-      <button class="ai-tab-btn active" data-target="cli">CLI <span class="tab-count">3</span></button>
-      <button class="ai-tab-btn" data-target="api">API <span class="tab-count">5</span></button>
+      <button class="ai-tab-btn active" data-target="cli">CLI <span class="tab-count">5</span></button>
+      <button class="ai-tab-btn" data-target="api">API <span class="tab-count">15</span></button>
     </div>
     <div class="ai-pane active" id="ai-pane-cli">
       <div class="ai-grid">
@@ -959,6 +962,7 @@
         <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">Gemini CLI</div><div class="ai-desc" data-i18n="ai_gemini_cli_desc"></div><div class="ai-req" data-i18n="ai_cli_req"></div></div>
         <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">Codex CLI</div><div class="ai-desc" data-i18n="ai_codex_desc"></div><div class="ai-req" data-i18n="ai_cli_req"></div></div>
         <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">Qwen Code</div><div class="ai-desc" data-i18n="ai_qwen_code_desc"></div><div class="ai-req" data-i18n="ai_cli_req"></div></div>
+        <div class="ai-card reveal"><span class="ai-type cli">CLI</span><div class="ai-name">Copilot</div><div class="ai-desc" data-i18n="ai_copilot_desc"></div><div class="ai-req" data-i18n="ai_cli_req"></div></div>
       </div>
     </div>
     <div class="ai-pane" id="ai-pane-api">
@@ -968,6 +972,16 @@
         <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Gemini</div><div class="ai-desc" data-i18n="ai_gemini_desc"></div><div class="ai-req">GEMINI_API_KEY</div></div>
         <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">DeepSeek</div><div class="ai-desc" data-i18n="ai_deepseek_desc"></div><div class="ai-req">DEEPSEEK_API_KEY</div></div>
         <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Groq</div><div class="ai-desc" data-i18n="ai_groq_desc"></div><div class="ai-req">GROQ_API_KEY</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Perplexity</div><div class="ai-desc" data-i18n="ai_perplexity_desc"></div><div class="ai-req">PERPLEXITY_API_KEY</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Cohere</div><div class="ai-desc" data-i18n="ai_cohere_desc"></div><div class="ai-req">COHERE_API_KEY</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Qwen</div><div class="ai-desc" data-i18n="ai_qwen_desc"></div><div class="ai-req">QWEN_API_KEY</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Moonshot</div><div class="ai-desc" data-i18n="ai_moonshot_desc"></div><div class="ai-req">MOONSHOT_API_KEY</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">GLM</div><div class="ai-desc" data-i18n="ai_glm_desc"></div><div class="ai-req">GLM_API_KEY</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Spark</div><div class="ai-desc" data-i18n="ai_spark_desc"></div><div class="ai-req">SPARK_API_KEY</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Ernie</div><div class="ai-desc" data-i18n="ai_ernie_desc"></div><div class="ai-req">ERNIE_API_KEY</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Yi</div><div class="ai-desc" data-i18n="ai_yi_desc"></div><div class="ai-req">YI_API_KEY</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">Ollama</div><div class="ai-desc" data-i18n="ai_ollama_desc"></div><div class="ai-req">OLLAMA_BASE_URL</div></div>
+        <div class="ai-card reveal"><span class="ai-type api">API</span><div class="ai-name">vLLM</div><div class="ai-desc" data-i18n="ai_vllm_desc"></div><div class="ai-req">VLLM_BASE_URL</div></div>
       </div>
     </div>
   </div>
@@ -1198,6 +1212,7 @@ const T = {
     ai_cli_req: 'Requires CLI install + auth',
     ai_anthropic_desc: 'Claude via API key', ai_openai_desc: 'GPT-4o via API key', ai_gemini_desc: 'Gemini via API key', ai_qwen_desc: 'Qwen via API key', ai_deepseek_desc: 'DeepSeek via API key', ai_copilot_desc: 'GitHub Copilot token',
     ai_groq_desc: 'Llama via Groq ultra-fast inference', ai_perplexity_desc: 'Perplexity search-augmented AI', ai_cohere_desc: 'Cohere enterprise API', ai_moonshot_desc: 'Moonshot Kimi API', ai_glm_desc: 'Zhipu GLM API', ai_spark_desc: 'iFlytek Spark API', ai_ernie_desc: 'Baidu Ernie API', ai_yi_desc: '01.AI Yi API',
+    ai_ollama_desc: 'Ollama local model server', ai_vllm_desc: 'vLLM local model server',
     task_label: 'Scheduled Tasks', task_title: 'Automate your information diet',
     task_p1: 'Write natural-language schedules in your email. MailMindHub parses time expressions in Chinese, Japanese, Korean, and English — and executes tasks automatically.',
     task_p2: 'Results are emailed to you and/or archived to reports/ as timestamped files. SQLite ensures tasks are never missed.',
@@ -1294,6 +1309,7 @@ const T = {
     ai_cli_req: '需安装 CLI 并完成认证',
     ai_anthropic_desc: 'Claude API 调用', ai_openai_desc: 'GPT-4o API 调用', ai_gemini_desc: 'Gemini API 调用', ai_qwen_desc: '通义千问 API 调用', ai_deepseek_desc: 'DeepSeek API 调用', ai_copilot_desc: 'GitHub Copilot Token',
     ai_groq_desc: 'Groq 高速推理（Llama）', ai_perplexity_desc: 'Perplexity 搜索增强 AI', ai_cohere_desc: 'Cohere 企业级 API', ai_moonshot_desc: '月之暗面 Kimi API', ai_glm_desc: '智谱 GLM API', ai_spark_desc: '讯飞星火 API', ai_ernie_desc: '百度文心一言 API', ai_yi_desc: '零一万物 Yi API',
+    ai_ollama_desc: 'Ollama 本地模型服务', ai_vllm_desc: 'vLLM 本地模型服务',
     task_label: '定时任务', task_title: '自动化你的信息获取',
     task_p1: '在邮件中用自然语言写下定时计划，MailMindHub 解析中、日、韩、英四种语言的时间表达，自动执行任务。',
     task_p2: '结果可通过邮件发送给你，也可归档到 reports/ 目录，以时间戳命名保存。',
@@ -1390,6 +1406,7 @@ const T = {
     ai_cli_req: 'CLIインストール・認証が必要',
     ai_anthropic_desc: 'Claude APIキー', ai_openai_desc: 'GPT-4o APIキー', ai_gemini_desc: 'Gemini APIキー', ai_qwen_desc: 'Qwen APIキー', ai_deepseek_desc: 'DeepSeek APIキー', ai_copilot_desc: 'GitHub Copilotトークン',
     ai_groq_desc: 'Groq 高速推論（Llama）', ai_perplexity_desc: 'Perplexity 検索拡張 AI', ai_cohere_desc: 'Cohere エンタープライズ API', ai_moonshot_desc: '月之暗面 Kimi API', ai_glm_desc: '智谱 GLM API', ai_spark_desc: '讯飞 Spark API', ai_ernie_desc: '百度 Ernie API', ai_yi_desc: '零一万物 Yi API',
+    ai_ollama_desc: 'Ollama ローカルモデルサーバー', ai_vllm_desc: 'vLLM ローカルモデルサーバー',
     task_label: '定期タスク', task_title: '情報収集を自動化',
     task_p1: 'メールに自然言語でスケジュールを記述。中国語・日本語・韓国語・英語の時間表現を解析し、タスクを自動実行。',
     task_p2: '結果はメール送信またはreports/にアーカイブ保存できます。',
@@ -1486,6 +1503,7 @@ const T = {
     ai_cli_req: 'CLI 설치 및 인증 필요',
     ai_anthropic_desc: 'Claude API 키', ai_openai_desc: 'GPT-4o API 키', ai_gemini_desc: 'Gemini API 키', ai_qwen_desc: 'Qwen API 키', ai_deepseek_desc: 'DeepSeek API 키', ai_copilot_desc: 'GitHub Copilot 토큰',
     ai_groq_desc: 'Groq 고속 추론（Llama）', ai_perplexity_desc: 'Perplexity 검색 증강 AI', ai_cohere_desc: 'Cohere 엔터프라이즈 API', ai_moonshot_desc: '월지암면 Kimi API', ai_glm_desc: '智谱 GLM API', ai_spark_desc: '讯飞 Spark API', ai_ernie_desc: '바이두 Ernie API', ai_yi_desc: '零一万物 Yi API',
+    ai_ollama_desc: 'Ollama 로컬 모델 서버', ai_vllm_desc: 'vLLM 로컬 모델 서버',
     task_label: '예약 작업', task_title: '정보 수집을 자동화하세요',
     task_p1: '이메일에 자연어로 스케줄을 작성하세요. MailMindHub가 한국어, 중국어, 일본어, 영어의 시간 표현을 파싱해 자동 실행합니다.',
     task_p2: '결과는 이메일 발송 및/또는 reports/에 타임스탬프로 아카이브됩니다.',
