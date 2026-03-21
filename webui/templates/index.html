@@ -24,7 +24,6 @@
 <header>
   <div class="header-left">
     <div class="logo"><span class="logo-brand">Mail</span>Mind<span class="logo-brand">Hub</span></div>
-    {% include "partials/header_status.html" %}
   </div>
   <div class="header-right" style="display:flex;align-items:center;height:100%;">
     <!-- テーマ切替 -->
@@ -60,6 +59,10 @@
     </div>
   </div>
 </header>
+
+<div class="control-bar">
+  {% include "partials/header_status.html" %}
+</div>
 
 <nav>
   <button class="tab active"

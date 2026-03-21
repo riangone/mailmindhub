@@ -91,7 +91,21 @@ header {
   font-weight: 700;
 }
 
-/* Status bar in header */
+/* ─── Control Bar (above nav tabs) ─────────────────────────────────────────── */
+.control-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+#header-status {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 .header-status {
   display: flex;
   align-items: center;
