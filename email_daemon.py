@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Optional
 
 # 核心配置与模块
-from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE, PROMPT_TEMPLATES, AI_CONCURRENCY, AI_MODIFY_SUBJECT, PROMPT_LANG, MAX_EMAIL_CHARS, WORKSPACE_DIR, AI_CLI_TIMEOUT, AI_PROGRESS_INTERVAL
+from core.config import MAILBOXES, AI_BACKENDS, POLL_INTERVAL, DEFAULT_TASK_AI, PROMPT_TEMPLATE, PROMPT_TEMPLATES, AI_CONCURRENCY, AI_MODIFY_SUBJECT, PROMPT_LANG, MAX_EMAIL_CHARS, WORKSPACE_DIR, SHOW_FILE_CHANGES, AI_CLI_TIMEOUT, AI_PROGRESS_INTERVAL
 from core.validator import validate_config
 from core.mail_client import fetch_unread_emails, imap_login, get_oauth_token, fetch_thread_context, push_templates_to_mailbox, send_templates_to_address
 from core.mail_sender import send_reply, archive_output
@@ -546,7 +546,7 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
     else:
         # CLI AI が WORKSPACE_DIR でファイルを変更した場合、git diff サマリを添付
         reply_body = body
-        if is_cli and WORKSPACE_DIR:
+        if is_cli and WORKSPACE_DIR and SHOW_FILE_CHANGES:
             diff_summary = _get_git_diff_summary(WORKSPACE_DIR)
             if diff_summary:
                 diff_label = {
