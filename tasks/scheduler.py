@@ -268,6 +268,30 @@ class TaskScheduler:
         log.info(f"🔔 执行任务：[{t['subject']}] -> {t['to']}")
         lang = t.get("lang", "zh")
 
+        # 進捗コールバック：CLI AI 実行中に AI_PROGRESS_INTERVAL 秒ごとに中間メール送信
+        def _progress_cb(elapsed_s: int):
+            try:
+                from core.config import AI_PROGRESS_INTERVAL
+                if not AI_PROGRESS_INTERVAL:
+                    return
+                mins, secs = divmod(elapsed_s, 60)
+                msg = {
+                    "zh": f"⏳ 定时任务处理中……已用时 {mins} 分 {secs} 秒\n\n任务：{t['subject']}",
+                    "ja": f"⏳ 定期タスク実行中……経過時間 {mins} 分 {secs} 秒\n\nタスク：{t['subject']}",
+                    "en": f"⏳ Scheduled task running…… elapsed {mins}m {secs}s\n\nTask: {t['subject']}",
+                    "ko": f"⏳ 예약 작업 실행 중…… 경과 시간 {mins}분 {secs}초\n\n작업: {t['subject']}",
+                }.get(lang, f"⏳ 定时任务处理中……已用时 {mins} 分 {secs} 秒")
+                send_reply(
+                    MAILBOXES[t["mailbox_name"]],
+                    t["to"],
+                    t["subject"],
+                    msg,
+                    in_reply_to=t.get("in_reply_to", ""),
+                    lang=lang,
+                )
+            except Exception as e:
+                log.warning(f"进度邮件发送失败 (task {t['id']}): {e}")
+
         # Prepare task dict for registry
         task_for_logic = {
             "type": t["type"],
@@ -276,7 +300,7 @@ class TaskScheduler:
             "body": t["body"],
         }
 
-        subject, body = execute_task_logic(task_for_logic, lang=lang)
+        subject, body = execute_task_logic(task_for_logic, lang=lang, progress_cb=_progress_cb)
 
         output = json.loads(t["output"])
         attachments = json.loads(t["attachments"])
@@ -305,6 +329,49 @@ class TaskScheduler:
 
         if output.get("archive", False):
             archive_output(output, subject, body, attachments)
+
+    def run_task_now(self, task_id: int):
+        """Immediately execute a task in a background thread.
+        Marks it 'processing' right away (prevents double execution by the scheduler),
+        then updates status / next trigger_time after the task finishes.
+        Works for any status (pending, paused, failed, completed).
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
+            if not row:
+                raise ValueError(f"Task #{task_id} not found")
+            task = dict(row)
+            conn.execute("UPDATE tasks SET status='processing' WHERE id=?", (task_id,))
+
+        def _run():
+            try:
+                self._execute_single_task(task)
+                with sqlite3.connect(self.db_path) as conn:
+                    cron_expr = task.get("cron_expr")
+                    interval = task.get("interval_seconds")
+                    until_time = task.get("until_time")
+                    if cron_expr:
+                        next_time = self._cron_next(cron_expr, after=time.time())
+                        if next_time and (not until_time or next_time <= until_time):
+                            conn.execute("UPDATE tasks SET trigger_time=?, status='pending' WHERE id=?", (next_time, task_id))
+                        else:
+                            conn.execute("UPDATE tasks SET status='completed' WHERE id=?", (task_id,))
+                    elif interval:
+                        next_time = time.time() + interval
+                        if not until_time or next_time <= until_time:
+                            conn.execute("UPDATE tasks SET trigger_time=?, status='pending' WHERE id=?", (next_time, task_id))
+                        else:
+                            conn.execute("UPDATE tasks SET status='completed' WHERE id=?", (task_id,))
+                    else:
+                        conn.execute("UPDATE tasks SET status='completed' WHERE id=?", (task_id,))
+            except Exception as e:
+                log.error(f"手動実行タスク #{task_id} 失敗: {e}")
+                with sqlite3.connect(self.db_path) as conn:
+                    conn.execute("UPDATE tasks SET status='failed' WHERE id=?", (task_id,))
+
+        threading.Thread(target=_run, daemon=True, name=f"webui-task-{task_id}").start()
+
 
 # Singleton instance
 scheduler = TaskScheduler()

@@ -613,6 +613,35 @@ select {
   font-size: 11px;
 }
 
+/* ─── Cache Stats Bar ───────────────────────────────────────────────────────── */
+.cache-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 10px;
+}
+.cache-stats .cache-label {
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-right: 2px;
+}
+.cache-stats .cache-chip {
+  padding: 2px 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--fg);
+}
+.cache-stats .cache-chip.muted { color: var(--muted); }
+.cache-stats .cache-chip.disabled { color: var(--muted); font-style: italic; }
+
 /* ─── Details / Override ────────────────────────────────────────────────────── */
 details.override {
   margin-bottom: 16px;

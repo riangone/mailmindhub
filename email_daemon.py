@@ -537,7 +537,7 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
             "payload": task_payload or {},
             "subject": sub,
             "body": body
-        }, lang=lang)
+        }, lang=lang, progress_cb=_progress_cb if is_cli else None)
         out_conf = output or {"email": True}
         if out_conf.get("email", True):
             send_reply(MAILBOXES[mailbox_name], em["from_email"], t_sub, t_body, em.get("message_id"), atts, lang=lang)

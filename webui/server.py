@@ -843,10 +843,12 @@ async def health():
         db_ok = True
     except Exception:
         pass
+    from utils.cache import query_cache
     return {
         "status": "ok" if status.get("running") else "degraded",
         "daemon_running": status.get("running", False),
         "db_ok": db_ok,
+        "cache": query_cache.stats(),
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
@@ -885,20 +887,21 @@ async def tab_ai(request: Request, _auth=Depends(require_auth)):
 
 @app.get("/tabs/tasks", response_class=HTMLResponse)
 async def tab_tasks(request: Request, _auth=Depends(require_auth), status: str = "all"):
+    from utils.cache import query_cache
     return templates.TemplateResponse("partials/tab_tasks.html", _ctx(
-        request, tasks=get_tasks(status_filter=status), status_filter=status, feedback=None,
+        request, tasks=get_tasks(status_filter=status), status_filter=status,
+        feedback=None, cache_stats=query_cache.stats(),
     ))
 
 
 @app.post("/tasks/{task_id}/trigger", response_class=HTMLResponse)
 async def task_trigger(request: Request, task_id: int, _auth=Depends(require_auth)):
     try:
-        with sqlite3.connect(str(DB_FILE)) as conn:
-            conn.execute(
-                "UPDATE tasks SET trigger_time = ?, status = 'pending' WHERE id = ?",
-                (time.time(), task_id),
-            )
-        feedback = {"ok": True, "message": f"Task #{task_id} queued for immediate execution"}
+        from tasks.scheduler import scheduler as _sched
+        _sched.run_task_now(task_id)
+        feedback = {"ok": True, "message": f"Task #{task_id} started"}
+    except ValueError as e:
+        feedback = {"ok": False, "message": str(e)}
     except Exception as e:
         feedback = {"ok": False, "message": f"Error: {e}"}
     return templates.TemplateResponse("partials/tab_tasks.html", _ctx(
@@ -958,6 +961,19 @@ async def tab_skills(request: Request, _auth=Depends(require_auth)):
     return templates.TemplateResponse("partials/tab_skills.html", _ctx(
         request, skills=skills, feedback=None,
     ))
+
+
+@app.get("/api/cache/stats")
+async def api_cache_stats(_auth=Depends(require_auth)):
+    from utils.cache import query_cache
+    return query_cache.stats()
+
+
+@app.post("/api/cache/clear")
+async def api_cache_clear(_auth=Depends(require_auth)):
+    from utils.cache import query_cache
+    query_cache.clear()
+    return {"cleared": True}
 
 
 @app.post("/api/skills/reload", response_class=HTMLResponse)

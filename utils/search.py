@@ -6,8 +6,15 @@ from core.config import WEB_SEARCH_ENGINE, WEB_SEARCH_TIMEOUT, BRAVE_API_KEY, SE
 from utils.logger import log
 
 def web_search(query: str, num_results: int = 5, engine: Optional[str] = None) -> list:
-    results = []
+    from utils.cache import query_cache
     engine = (engine or WEB_SEARCH_ENGINE).lower().strip()
+    cache_key = f"search:{engine}:{query}:{num_results}"
+    cached = query_cache.get(cache_key)
+    if cached is not None:
+        log.debug(f"[Cache] ヒット: {cache_key[:60]}")
+        return cached
+
+    results = []
 
     if engine == "brave":
         if not BRAVE_API_KEY:
@@ -46,7 +53,6 @@ def web_search(query: str, num_results: int = 5, engine: Optional[str] = None) -
             log.warning(f"Wikipedia 搜索失败：{e}")
 
     elif engine == "google":
-        # Google 爬虫模式已禁用（容易导致 429 限流，处理速度慢）
         log.warning("Google 爬虫搜索已禁用，请使用 DuckDuckGo 或其他引擎")
 
     elif engine == "bing":
@@ -78,6 +84,8 @@ def web_search(query: str, num_results: int = 5, engine: Optional[str] = None) -
             except Exception as e:
                 log.warning(f"Google API 搜索失败：{e}")
 
+    if results:
+        query_cache.set(cache_key, results)
     return results
 
 def format_search_results(results: list) -> str:

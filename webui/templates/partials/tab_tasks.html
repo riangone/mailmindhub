@@ -35,6 +35,28 @@
             style="margin-left: auto">{{ t.tasks_refresh }}</button>
   </div>
 
+  <!-- ── Cache stats ──────────────────────────────────────────── -->
+  {% if cache_stats %}
+  <div class="cache-stats"
+       hx-get="/api/cache/stats"
+       hx-trigger="every 10s"
+       hx-swap="none"
+       id="cache-stats-bar">
+    <span class="cache-label">Cache</span>
+    {% if cache_stats.get('enabled') == False %}
+      <span class="cache-chip disabled">disabled</span>
+    {% else %}
+      <span class="cache-chip">{{ cache_stats.alive }}/{{ cache_stats.maxsize }} alive</span>
+      <span class="cache-chip muted">TTL {{ cache_stats.ttl }}s</span>
+    {% endif %}
+    <button class="btn-sm"
+            hx-post="/api/cache/clear"
+            hx-confirm="Clear all cache entries?"
+            hx-on::after-request="document.getElementById('cache-stats-bar').dispatchEvent(new Event('refresh'))"
+            style="margin-left:auto">Clear</button>
+  </div>
+  {% endif %}
+
   <!-- ── Task list ────────────────────────────────────────────── -->
   {% if tasks %}
   <div class="tasks-table-wrap">
@@ -100,7 +122,7 @@
 
           <td>
             <div class="task-actions">
-              {% if task.status in ('pending', 'failed', 'completed') %}
+              {% if task.status in ('pending', 'paused', 'failed', 'completed') %}
               <button class="btn-sm"
                       hx-post="/tasks/{{ task.id }}/trigger"
                       hx-target="#content"

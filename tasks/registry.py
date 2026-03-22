@@ -4,7 +4,7 @@ tasks/registry.py - 定时任务执行逻辑
 简化版：所有任务都交给 AI 处理，不封装任何工具
 """
 from typing import Optional, Dict, Any
-from core.config import AI_BACKENDS, DEFAULT_TASK_AI, PROMPT_LANG
+from core.config import AI_BACKENDS, DEFAULT_TASK_AI, PROMPT_LANG, AI_CLI_TIMEOUT, AI_PROGRESS_INTERVAL
 from ai.providers import get_ai_provider
 from utils.logger import log
 
@@ -113,7 +113,7 @@ def _handle_task_manage(payload: Optional[dict], subject: str, lang: str = "zh")
     return _t(f"⚠️ 未知操作：{action}", f"⚠️ 不明な操作：{action}", f"⚠️ Unknown action: {action}", f"⚠️ 알 수 없는 작업: {action}")
 
 
-def execute_task_logic(task: Dict[str, Any], lang: str = "zh") -> tuple:
+def execute_task_logic(task: Dict[str, Any], lang: str = "zh", progress_cb=None) -> tuple:
     """
     执行定时任务逻辑
     
@@ -166,9 +166,14 @@ def execute_task_logic(task: Dict[str, Any], lang: str = "zh") -> tuple:
         if backend.get("native_web_search"):
             prompt = f"请使用你的联网搜索能力完成以下请求：{prompt}"
         
-        # 调用 AI
+        # 调用 AI（CLI バックエンドは progress_cb + timeout を渡す）
         log.info(f"⚡ 定时任务调用 AI: {ai_name} | 类型：{task_type}")
-        body = ai.call(prompt) or _t("⚠️ AI 处理失败", "⚠️ AI 処理に失敗しました", "⚠️ AI processing failed", "⚠️ AI 처리 실패")
+        is_cli = (backend or {}).get("type") == "cli"
+        if is_cli and progress_cb and AI_PROGRESS_INTERVAL > 0:
+            body = ai.call(prompt, progress_cb=progress_cb, timeout=AI_CLI_TIMEOUT, progress_interval=AI_PROGRESS_INTERVAL)
+        else:
+            body = ai.call(prompt)
+        body = body or _t("⚠️ AI 处理失败", "⚠️ AI 処理に失敗しました", "⚠️ AI processing failed", "⚠️ AI 처리 실패")
         subject = subject or f"AI: {task_type or 'task'}"
     
     return subject, body

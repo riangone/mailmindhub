@@ -256,6 +256,12 @@ if WORKSPACE_DIR:
 
 SHOW_FILE_CHANGES = os.environ.get("SHOW_FILE_CHANGES", "true").lower() == "true"
 # ────────────────────────────────────────────────────────────────
+#  Query Cache 配置
+# ────────────────────────────────────────────────────────────────
+CACHE_ENABLED  = os.environ.get("CACHE_ENABLED", "true").lower() == "true"
+CACHE_MAX_SIZE = int(os.environ.get("CACHE_MAX_SIZE", "100"))
+CACHE_TTL      = int(os.environ.get("CACHE_TTL", "3600"))  # 秒
+# ────────────────────────────────────────────────────────────────
 #  Prompts
 # ────────────────────────────────────────────────────────────────
 PROMPT_TEMPLATES = {
