@@ -294,6 +294,10 @@ def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None, pro
             tmpl = tmpl.replace("{instruction}", hint + "\n{instruction}")
     except Exception:
         pass
+    # Inject WORKSPACE_DIR constraint for CLI AI backends
+    if WORKSPACE_DIR and os.path.isdir(WORKSPACE_DIR):
+        workspace_hint = f"[WORKSPACE] All file operations MUST be performed inside: {WORKSPACE_DIR}\nDo NOT read or write files outside this directory.\n\n"
+        tmpl = workspace_hint + tmpl
     # 安全格式化：转义非占位符的花括号（如 JSON 示例中的 {skill}）
     prompt = tmpl.replace("{", "{{").replace("}", "}}").replace("{{instruction}}", "{instruction}").replace("{{now}}", "{now}").format(instruction=instruction, now=now)
     ai = get_ai_provider(ai_name, backend)

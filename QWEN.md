@@ -514,7 +514,7 @@ python3 tests/test_email_logic.py
 
 ## 安全建议
 
-1. **白名单**: 始终设置 `ALLOWED` 为本人邮箱，防止陌生人滥用
+1. **白名单**: 始终设置 `ALLOWED` 为本人邮箱，防止陌生人触发 AI
 2. **敏感文件**: `.env`, `credentials_gmail.json`, `token_*.json` 已在 `.gitignore` 中
 3. **授权码**: 使用邮箱授权码而非登录密码
 4. **OAuth**: 优先使用 OAuth 而非应用密码（更安全）

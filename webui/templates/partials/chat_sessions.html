@@ -1,0 +1,19 @@
+<div class="chat-sessions" id="chat-sessions">
+  <div class="chat-sessions-header">
+    <h3>对话历史</h3>
+    <form hx-post="/chat/new" hx-target="#chat-sessions" class="chat-new-form">
+      <button type="submit" class="chat-new-btn">+ 新对话</button>
+    </form>
+  </div>
+  <div class="chat-sessions-scroll">
+    {% for session in sessions %}
+    <div class="chat-session-chip {{ 'active' if session.id == active_session else '' }}" 
+         onclick="selectChatSession({{ session.id }})">
+      {{ session.name[:20] }}{% if session.name|length > 20 %}...{% endif %}
+      <span style="opacity: 0.7; font-size: 0.8em;">({{ session.msg_count }})</span>
+    </div>
+    {% else %}
+    <div class="chat-session-chip" onclick="newChatSession()">+ 新对话</div>
+    {% endfor %}
+  </div>
+</div>

@@ -1,0 +1,26 @@
+<div class="chat-messages" id="chat-messages">
+  {% for msg in messages %}
+  <div class="chat-message chat-message-{{ msg.role }}">
+    <div class="chat-message-header">
+      <span class="chat-message-role">{{ '你' if msg.role == 'user' else 'AI' }}</span>
+      <span class="chat-message-time">
+        {% if msg.created_at %}
+          {{ msg.created_at | int | datetime('%H:%M') }}
+        {% endif %}
+      </span>
+    </div>
+    <div class="chat-message-content">
+      {% if msg.ai_backend and msg.role == 'assistant' %}
+      <div style="font-size: 0.75rem; opacity: 0.6; margin-bottom: 4px;">via {{ msg.ai_backend }}</div>
+      {% endif %}
+      {{ msg.content | e | replace('\n', '<br>') | safe }}
+    </div>
+  </div>
+  {% else %}
+  <div class="chat-empty-state">
+    <div class="chat-empty-icon">💬</div>
+    <p>开始与 AI 对话</p>
+    <p class="chat-empty-hint">选择 AI 模型，输入问题，按 Enter 发送</p>
+  </div>
+  {% endfor %}
+</div>

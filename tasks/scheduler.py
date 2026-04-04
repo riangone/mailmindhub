@@ -208,6 +208,35 @@ class TaskScheduler:
                 (task_id,))
             return cur.rowcount > 0
 
+    def restart_task(self, task_id: int) -> bool:
+        """Re-enable a cancelled, failed or completed task.
+        Recalculates trigger_time if it's a recurring task.
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
+            if not row:
+                return False
+            t = dict(row)
+            
+            now = time.time()
+            cron_expr = t.get("cron_expr")
+            interval = t.get("interval_seconds")
+            
+            new_trigger = now
+            if cron_expr:
+                new_trigger = self._cron_next(cron_expr, after=now) or now
+            elif interval:
+                # For interval tasks, we can either run now or wait one interval.
+                # Running now seems more intuitive for a manual "restart".
+                new_trigger = now
+
+            cur = conn.execute(
+                "UPDATE tasks SET status='pending', trigger_time=?, retry_count=0 WHERE id=?",
+                (new_trigger, task_id)
+            )
+            return cur.rowcount > 0
+
     def delete_task(self, task_id: int) -> bool:
         """Permanently remove a task. Returns True if deleted."""
         with sqlite3.connect(self.db_path) as conn:

@@ -1,0 +1,115 @@
+{
+  "weather": {
+    "temp": 10.7,
+    "windspeed": 2.5,
+    "weathercode": 1,
+    "weather_desc": "主要晴朗",
+    "max_temp": 15.4,
+    "min_temp": 2.8,
+    "precipitation": 0.0
+  },
+  "news": [
+    {
+      "title": "Top 10 AI Predictions for 2025: The Future of Artificial",
+      "href": "https://www.geeky-gadgets.com/ai-predictions-for-2025/",
+      "body": "AIwill become increasingly embedded in physical devices by2025, bringing intelligent systems into your daily life."
+    },
+    {
+      "title": "AI Insider's Expert Predictions on Artificial",
+      "href": "https://theaiinsider.tech/2025/12/30/ai-insiders-expert-predictions-on-artificial-intelligence-part-one/",
+      "body": "Let ’ s dive intoAIInsider ’ s Expert Predictions onArtificialIntelligence: Part One . ...AIto make things faster and cheaper, but ..."
+    },
+    {
+      "title": "AI News 2025: Latest Developments in Artificial Intelligence",
+      "href": "https://hindustanuday.com/category/technology/",
+      "body": "Get thelatestAInewsin2025including advancements in machine learning,AIapplications, and howAIis transforming industries worldwide."
+    },
+    {
+      "title": "Artificial Intelligence - AI Update, July 25, 2025: AI News and",
+      "href": "https://www.marketingprofs.com/opinions/2025/53496/ai-update-july-25-2025-ai-news-and-views-from-the-past-week",
+      "body": "Competing with Google Chrome and Safari, Perplexity aims for \"tens to hundreds of millions\" of users in2026. ... Mathematical Olympiad usingAI..."
+    },
+    {
+      "title": "Artificial Intelligence - AI Update, September 26, 2025: AI",
+      "href": "https://www.marketingprofs.com/opinions/2025/53764/ai-update-september-26-2025-ai-news-and-views-from-the-past-week",
+      "body": "... UN General Assembly, more than 200 Nobel laureates andAIexperts, along with 70 organizations, urged creation of enforceable \"AIred lines\" by2026..."
+    },
+    {
+      "title": "AI News Headlines_Artificial Intelligence Industry Update -",
+      "href": "https://www.1ai.net/en/news/headline",
+      "body": "...NEWSREPORTS, TODAY (29 NOVEMBER), THE BEIJING CITY COUNCIL FOR SCIENCE AND TECHNOLOGY AND THE CHINA GUAN VILLAGE SCIENCE AND TECHNOLOGY PARK BOARD ..."
+    },
+    {
+      "title": "The 5 Best Articles on Artificial Intelligence of 2025",
+      "href": "https://thelavinagency.com/the-best-reads-of-2025-5-must-read-articles-on-artificial-intelligence/",
+      "body": "... Wall Street Journal and more, our Lavin Exclusive Speakers offer smart, nuanced takes onAI, human judgment, and what leaders need to know in2026."
+    },
+    {
+      "title": "Top 5 AI news for January 4, 2026 - Best AI Tool Finder",
+      "href": "https://bestaitoolfinder.com/top-5-ai-news-for-january-4-2026/",
+      "body": "Theartificialintelligenceindustry crossed a definitive threshold on January 4,2026, as the conceptual promise of intelligent machines operating ..."
+    },
+    {
+      "title": "Forbes 2025 AI 50 List - Top Artificial Intelligence Companies",
+      "href": "https://www.forbes.com/lists/ai50/",
+      "body": "More than two years after the blockbuster launch of ChatGPT ,artificialintelligencecontinues to be the white hot center of venture capital and the ..."
+    },
+    {
+      "title": "Top 50 AI Predictions for 2026: How Intelligence Will Redefine",
+      "href": "https://techstartups.com/2025/11/26/top-50-ai-predictions-for-2026/",
+      "body": "As2025draws to a close, one theme stands out:artificialintelligencemoved from experimentation to pragmatic integration."
+    }
+  ],
+  "openai_search": [
+    {
+      "title": "OpenAI | Technology Conferences",
+      "href": "https://technologyconference.com/tag/openai/",
+      "body": "Join us for the inauguralOpenAIDevDay on November 6, 2023, in the vibrant city of San Francisco! This one-dayeventis a unique opportunity for ..."
+    },
+    {
+      "title": "Openai Archive for May 2024 - Page 3 | The Verge",
+      "href": "https://www.theverge.com/archives/openai/2024/5/3",
+      "body": "What is the company announcing one day ahead of Google ’ s presumably AI-heavy I/O 2024eventtomorrow? According to Sam Altman, whatOpenAI..."
+    },
+    {
+      "title": "OpenAI DevDay announced: What to expect? - gHacks Tech News",
+      "href": "https://www.ghacks.net/2023/09/07/openai-devday-announced-what-to-expect/",
+      "body": "On November 6th, 2023, the world will witnessOpenAI's inaugural developerconference, setting the stage for a new era in AI development."
+    },
+    {
+      "title": "5 OpenAI, ChatGPT updates for CIOs to watch | CIO Dive",
+      "href": "https://www.ciodive.com/news/OpenAI-DevDay-ChatCPT-GPT4Turbo-copyright-safeguards/698935/",
+      "body": "AtOpenAI’s first developerconferenceMonday, the company unveiled more than a dozen upgrades to services, many of which focus on customizing ..."
+    },
+    {
+      "title": "The man behind OpenAI’s global expansion and its effort",
+      "href": "https://www.bizinsider.org/the-man-behind-openais-global-expansion-and-its-effort-to-win-the-enterprise/",
+      "body": "Microsoft CEO Satya Nadella, right, speaks asOpenAICEO Sam Altman looks on during theOpenAIDevDayeventin San Francisco on Nov."
+    },
+    {
+      "title": "October 6, 2025 - AMD AND OPENAI ANNOUNCE STRATEGIC PARTNERSHIP",
+      "href": "https://ir.amd.com/financial-information/sec-filings/content/0001193125-25-230895/d28189dex991.htm",
+      "body": "October 6,2025— AMD (NASDAQ: AMD) andOpenAItoday announced a 6 gigawatt agreement to powerOpenAI’s next-generation AI infrastructure across ..."
+    },
+    {
+      "title": "DataHack Summit 2024: The Ultimate GenAI Event of the Year -",
+      "href": "https://www.analyticsvidhya.com/blog/2024/05/datahack-summit-2024/",
+      "body": "With all the anticipation and news surrounding AI advancements, we’re excited to announce the 5th edition of our much-anticipated GenAIeventof ..."
+    },
+    {
+      "title": "How OpenAI's New Model Can Answer ‘Challenging",
+      "href": "https://www.inc.com/ben-sherry/how-openais-new-model-can-answer-challenging-questions/91200974",
+      "body": "OpenAIclaims that o3-pro exhibited significantly improved performance over o3 in evaluations regarding science, education, programming, business ..."
+    },
+    {
+      "title": "May 12, 2025 – Access",
+      "href": "https://librarylearningspace.com/2025/05/12/",
+      "body": "22 Apr2025) The Washington Post has become the latest media company to strike a deal withOpenAI, with both companies announcing a “strategic ..."
+    },
+    {
+      "title": "OpenAI ChatGPT Event Today: Check Time, How To Watch Online,",
+      "href": "https://www.timesnownews.com/technology-science/openai-chatgpt-event-today-check-time-how-to-watch-online-what-to-expect-article-110083062",
+      "body": "Today,OpenAIis hosting an importanteventabout ... The AI Battle ThisOpenAIeventcomes just one day before Google's huge annual I/Oconference."
+    }
+  ]
+}

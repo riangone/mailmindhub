@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="{{ ui_lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat - MailMindHub</title>
+  
+  <!-- Markdown & Code Highlight -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/chat.css">
+  
+  <script>
+    (function() {
+      var saved = localStorage.getItem('mm-theme');
+      var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo"><span class="logo-brand">Mail</span>Mind<span class="logo-brand">Hub</span></div>
+  </div>
+  <div class="header-right" style="display:flex;align-items:center;height:100%;">
+    <!-- AI Chat Toggle Button -->
+    <button class="theme-btn" onclick="toggleChatPanel()" id="chat-toggle-btn" title="AI 助手" aria-label="AI 助手" style="margin-right: 8px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    </button>
+    
+    <!-- Theme Toggle -->
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg class="icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg class="icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+    
+    <!-- Language Menu -->
+    <div class="header-menu" id="header-menu">
+      <button class="header-menu-btn" onclick="toggleMenu()" aria-label="Language">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span>{{ ui_lang.upper() }}</span>
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="header-menu-dropdown">
+        <div class="header-menu-label">Language</div>
+        <a href="/lang/zh" class="{{ 'active' if ui_lang == 'zh' else '' }}">中文</a>
+        <a href="/lang/ja" class="{{ 'active' if ui_lang == 'ja' else '' }}">日本語</a>
+        <a href="/lang/ko" class="{{ 'active' if ui_lang == 'ko' else '' }}">한국어</a>
+        <a href="/lang/en" class="{{ 'active' if ui_lang == 'en' else '' }}">English</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="control-bar">
+  {% include "partials/header_status.html" %}
+</div>
+
+<nav>
+  <button class="tab"
+          hx-get="/tabs/mail"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">{{ t.nav_mail }}</button>
+  <button class="tab"
+          hx-get="/tabs/ai"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">{{ t.nav_ai }}</button>
+  <button class="tab"
+          hx-get="/tabs/tasks"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">{{ t.nav_tasks }}</button>
+  <button class="tab"
+          hx-get="/tabs/skills"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">{{ t.nav_skills }}</button>
+  <button class="tab"
+          hx-get="/tabs/stats"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">{{ t.nav_stats }}</button>
+  <button class="tab"
+          hx-get="/tabs/logs"
+          hx-target="#content"
+          hx-swap="innerHTML"
+          onclick="setTab(this)">{{ t.nav_logs }}</button>
+</nav>
+
+<main id="content">
+  <div class="tab-content">
+    {% include "partials/status_cards.html" %}
+    {% include "partials/quick_actions.html" %}
+  </div>
+</main>
+
+<script src="/static/chat.js"></script>
+<script>
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('mm-theme', next);
+}
+
+function toggleMenu() {
+  document.getElementById('header-menu').classList.toggle('open');
+}
+
+function setTab(btn) {
+  document.querySelectorAll('nav .tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+
+</body>
+</html>

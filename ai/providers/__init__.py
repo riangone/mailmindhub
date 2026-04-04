@@ -4,6 +4,7 @@ import requests
 import logging
 from ai.base import AIBase
 from utils.logger import log
+from core.config import WORKSPACE_DIR
 
 class CLIProvider(AIBase):
     def __init__(self, name: str, backend: dict):
@@ -46,12 +47,14 @@ class CLIProvider(AIBase):
         try:
             env = self._build_env()
             cmd = [self.backend["cmd"]] + self.backend["args"] + [prompt]
+            cwd = WORKSPACE_DIR if WORKSPACE_DIR and os.path.isdir(WORKSPACE_DIR) else None
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
                 env=env,
+                cwd=cwd,
             )
 
             stdout_lines = []
@@ -102,20 +105,155 @@ class CLIProvider(AIBase):
             log.error(f"CLI AI 调用失败：{e}")
             return f"AI 出错：{e}"
 
+    def execute_task(self, prompt: str, progress_cb=None, timeout=None, **kwargs) -> str:
+        """
+        执行任务模式（非交互式）
+        
+        专门用于编程任务等需要直接执行而不等待用户确认的场景。
+        添加额外的执行指令到 prompt 中，让 AI 直接行动。
+        """
+        import threading
+        import time as _time
+
+        # 添加执行指令到 prompt
+        exec_prompt = f"""{prompt}
+
+【重要】这是自动执行任务，请直接完成以下要求：
+1. 不要询问确认，直接执行任务
+2. 如果需要写文件，直接写入
+3. 如果需要运行命令，直接执行
+4. 在最后简短总结你做了什么
+5. 不要输出无关的内容"""
+
+        try:
+            env = self._build_env()
+            cmd = [self.backend["cmd"]] + self.backend["args"] + [exec_prompt]
+            cwd = WORKSPACE_DIR if WORKSPACE_DIR and os.path.isdir(WORKSPACE_DIR) else None
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env,
+                cwd=cwd,
+            )
+
+            stdout_lines = []
+            stderr_lines = []
+
+            def _read_stdout():
+                for line in proc.stdout:
+                    stdout_lines.append(line)
+
+            def _read_stderr():
+                for line in proc.stderr:
+                    stderr_lines.append(line)
+
+            t_out = threading.Thread(target=_read_stdout, daemon=True)
+            t_err = threading.Thread(target=_read_stderr, daemon=True)
+            t_out.start()
+            t_err.start()
+
+            start = _time.time()
+            last_progress = start
+
+            while proc.poll() is None:
+                _time.sleep(3)
+                elapsed = _time.time() - start
+                if timeout and elapsed > timeout:
+                    proc.kill()
+                    proc.wait()
+                    t_out.join(timeout=2)
+                    t_err.join(timeout=2)
+                    log.error(f"CLI AI 任务执行超时（{timeout}秒），进程已终止")
+                    return f"AI 任务执行出错：执行超时（{int(timeout)} 秒），任务未完成"
+                if progress_cb and progress_interval > 0:
+                    now = _time.time()
+                    if (now - last_progress) >= progress_interval:
+                        try:
+                            progress_cb(int(elapsed))
+                        except Exception:
+                            pass
+                        last_progress = now
+
+            t_out.join()
+            t_err.join()
+            result = "".join(stdout_lines).strip()
+            if not result and stderr_lines:
+                log.warning(f"CLI AI 任务执行 stderr: {''.join(stderr_lines[:5])}")
+            return result
+        except Exception as e:
+            log.error(f"CLI AI 任务执行失败：{e}")
+            return f"AI 任务执行出错：{e}"
+
 class OpenAIProvider(AIBase):
     def __init__(self, backend: dict):
         self.backend = backend
 
-    def call(self, prompt: str) -> str:
+    def call(self, prompt: str, tools: list = None) -> str:
         try:
             url = self.backend.get("url", "https://api.openai.com/v1/chat/completions")
             headers = {"Authorization": f"Bearer {self.backend['api_key']}", "Content-Type": "application/json"}
-            data = {"model": self.backend["model"], "messages": [{"role": "user", "content": prompt}]}
+            
+            data = {
+                "model": self.backend["model"],
+                "messages": [{"role": "user", "content": prompt}]
+            }
+            
+            # 添加工具支持
+            if tools:
+                data["tools"] = [tool.to_schema() for tool in tools]
+            
+            resp = requests.post(url, json=data, headers=headers, timeout=180)
+            resp.raise_for_status()
+            result = resp.json()
+            
+            # 检查是否有工具调用
+            choice = result["choices"][0]
+            if choice.get("finish_reason") == "tool_calls":
+                # 处理工具调用
+                tool_calls = choice["message"].get("tool_calls", [])
+                if tool_calls:
+                    from ai.executor import get_tool
+                    tool_results = []
+                    for tc in tool_calls:
+                        tool_name = tc["function"]["name"]
+                        tool_args = json.loads(tc["function"]["arguments"])
+                        tool = get_tool(tool_name)
+                        if tool:
+                            result = tool.execute(tool_args)
+                            tool_results.append(f"工具 {tool_name} 结果：{result}")
+                    
+                    # 将工具结果加入对话
+                    if tool_results:
+                        return self._continue_with_tool_results(prompt, tool_results)
+            
+            return choice["message"]["content"].strip()
+        except Exception as e:
+            log.error(f"OpenAI API 调用失败：{e}")
+            return f"AI 出错：{e}"
+    
+    def _continue_with_tool_results(self, original_prompt: str, tool_results: list[str]) -> str:
+        """在工具执行后继续对话"""
+        try:
+            url = self.backend.get("url", "https://api.openai.com/v1/chat/completions")
+            headers = {"Authorization": f"Bearer {self.backend['api_key']}", "Content-Type": "application/json"}
+            
+            messages = [
+                {"role": "user", "content": original_prompt},
+                {"role": "user", "content": "\n\n".join(tool_results) + "\n\n请根据工具执行结果给出最终回复。"}
+            ]
+            
+            data = {
+                "model": self.backend["model"],
+                "messages": messages
+            }
+            
             resp = requests.post(url, json=data, headers=headers, timeout=180)
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"].strip()
         except Exception as e:
-            log.error(f"OpenAI API 调用失败：{e}")
+            log.error(f"OpenAI API 工具调用继续失败：{e}")
             return f"AI 出错：{e}"
 
 class AnthropicProvider(AIBase):

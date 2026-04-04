@@ -28,6 +28,10 @@
             hx-get="/tabs/tasks?status=paused"
             hx-target="#content"
             hx-swap="innerHTML">{{ t.tasks_filter_paused }}</button>
+    <button class="filter-btn {{ 'active' if status_filter == 'cancelled' else '' }}"
+            hx-get="/tabs/tasks?status=cancelled"
+            hx-target="#content"
+            hx-swap="innerHTML">{{ t.tasks_filter_cancelled }}</button>
     <button class="filter-btn"
             hx-get="/tabs/tasks?status={{ status_filter }}"
             hx-target="#content"
@@ -142,6 +146,13 @@
                       hx-target="#content"
                       hx-swap="innerHTML"
                       hx-confirm="{{ t.tasks_confirm_resume }}">{{ t.tasks_btn_resume }}</button>
+              {% endif %}
+              {% if task.status == 'cancelled' %}
+              <button class="btn-sm"
+                      hx-post="/tasks/{{ task.id }}/restart"
+                      hx-target="#content"
+                      hx-swap="innerHTML"
+                      hx-confirm="{{ t.tasks_confirm_restart }}">{{ t.tasks_btn_restart }}</button>
               {% endif %}
               <button class="btn-sm danger"
                       hx-post="/tasks/{{ task.id }}/delete"

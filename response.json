@@ -1,6 +1,6 @@
-{"subject": "Re: workspace指定功能现在有效吗？",
-  "body": "您好，\n\nWebUI 的「AI 设置」页面中已添加「Workspace 目录 (WORKSPACE_DIR)」配置项，位于“高级选项”区域。\n\n该功能目前已生效：\n1. 设置后，系统生成的文件（如定时任务的归档报告）将限制在此目录内。\n2. 若留空，则默认使用系统临时目录。\n\n请刷新 WebUI 页面查看。",
-  "task_type": "email_manage",
-  "task_payload": {"action": "mark_read", "filter": {"subject_contains": "workspace指定功能现在有效吗？"}},
-  "output": {"email": true, "archive": true}
+{
+  "subject": "Web UI 错误已修复",
+  "body": "已修复以下 Web UI 错误：\n\n## 修复内容\n\n### 1. highlight.js 模块错误 ✅\n**问题**: `module is not defined` 和 `IDENT_RE` 重复声明\n**原因**: 使用了 CommonJS 模块格式的 highlight.js 语言包，浏览器环境不支持\n**修复**: 将 `core.min.js` + 多个语言包替换为单一的 `highlight.min.js`（UMD 格式，包含所有语言）\n\n### 2. /chat/sessions-list 422 错误 ✅\n**问题**: 前端调用 API 时返回 422 状态码\n**原因**: \n- 前端未传递 `active` 查询参数\n- 后端参数验证不完善，`int(\"\")` 会抛出异常\n**修复**:\n- 前端 fetch 请求添加 `?active=0` 参数\n- 后端添加 try-catch 安全处理参数转换\n\n### 3. 流式响应错误处理改进 ✅\n**问题**: JSON 解析失败时静默忽略，难以调试\n**修复**: 改为 `console.warn` 输出错误日志\n\n## 修改的文件\n\n1. `webui/templates/chat.html` - 简化 highlight.js 引用\n2. `webui/static/chat.js` - 添加 active 参数 + 改进错误日志\n3. `webui/server.py` - 安全参数验证\n\nWeb UI 已重启，现在访问 http://localhost:7000 应该不会再出现控制台错误。\n\n---\n*MailMindHub AI Assistant*",
+  "task_type": "email",
+  "output": {"email": true, "archive": false}
 }

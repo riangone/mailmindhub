@@ -19,14 +19,15 @@ import subprocess
 import sys
 import time
 import json
+import base64
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
 import httpx
 import uvicorn
-from fastapi import Depends, FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi import Depends, FastAPI, Form, Request, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -199,12 +200,13 @@ I18N: dict[str, dict[str, str]] = {
         "tasks_col_next": "下次执行", "tasks_col_repeat": "重复", "tasks_col_status": "状态",
         "tasks_col_to": "收件人", "tasks_col_actions": "操作",
         "tasks_btn_trigger": "立即", "tasks_btn_delete": "删除",
-        "tasks_btn_pause": "暂停", "tasks_btn_resume": "恢复",
-        "tasks_filter_paused": "已暂停",
+        "tasks_btn_pause": "暂停", "tasks_btn_resume": "恢复", "tasks_btn_restart": "重新开启",
+        "tasks_filter_paused": "已暂停", "tasks_filter_cancelled": "已取消",
         "tasks_empty": "暂无任务",
         "tasks_confirm_trigger": "立即执行此任务？",
         "tasks_confirm_delete": "删除此任务？此操作不可撤销。",
         "tasks_confirm_pause": "暂停此任务？", "tasks_confirm_resume": "恢复此任务？",
+        "tasks_confirm_restart": "重新开启此任务？",
         "logs_title": "DAEMON LOG", "logs_clear": "清空显示",
         "login_placeholder": "访问密码", "login_btn": "进入", "login_error": "密码错误",
         "mail_detected": "已检测到", "mail_detected_builtin": "已识别，使用内置服务器配置",
@@ -310,12 +312,13 @@ I18N: dict[str, dict[str, str]] = {
         "tasks_col_next": "次回実行", "tasks_col_repeat": "繰り返し", "tasks_col_status": "ステータス",
         "tasks_col_to": "宛先", "tasks_col_actions": "操作",
         "tasks_btn_trigger": "今すぐ", "tasks_btn_delete": "削除",
-        "tasks_btn_pause": "一時停止", "tasks_btn_resume": "再開",
-        "tasks_filter_paused": "一時停止中",
+        "tasks_btn_pause": "一時停止", "tasks_btn_resume": "再開", "tasks_btn_restart": "再開（再始動）",
+        "tasks_filter_paused": "一時停止中", "tasks_filter_cancelled": "キャンセル済み",
         "tasks_empty": "タスクがありません",
         "tasks_confirm_trigger": "このタスクを今すぐ実行しますか？",
         "tasks_confirm_delete": "このタスクを削除しますか？この操作は取り消せません。",
         "tasks_confirm_pause": "このタスクを一時停止しますか？", "tasks_confirm_resume": "このタスクを再開しますか？",
+        "tasks_confirm_restart": "このタスクを再開（再始動）しますか？",
         "logs_title": "DAEMON LOG", "logs_clear": "表示をクリア",
         "login_placeholder": "パスワード", "login_btn": "ログイン", "login_error": "パスワードが違います",
         "mail_detected": "検出しました", "mail_detected_builtin": "認識済み、内蔵サーバー設定を使用",
@@ -421,12 +424,13 @@ I18N: dict[str, dict[str, str]] = {
         "tasks_col_next": "Next Run", "tasks_col_repeat": "Repeat", "tasks_col_status": "Status",
         "tasks_col_to": "Recipient", "tasks_col_actions": "Actions",
         "tasks_btn_trigger": "Run Now", "tasks_btn_delete": "Delete",
-        "tasks_btn_pause": "Pause", "tasks_btn_resume": "Resume",
-        "tasks_filter_paused": "Paused",
+        "tasks_btn_pause": "Pause", "tasks_btn_resume": "Resume", "tasks_btn_restart": "Restart",
+        "tasks_filter_paused": "Paused", "tasks_filter_cancelled": "Cancelled",
         "tasks_empty": "No tasks found",
         "tasks_confirm_trigger": "Run this task immediately?",
         "tasks_confirm_delete": "Delete this task? This cannot be undone.",
         "tasks_confirm_pause": "Pause this task?", "tasks_confirm_resume": "Resume this task?",
+        "tasks_confirm_restart": "Restart this task?",
         "logs_title": "DAEMON LOG", "logs_clear": "Clear display",
         "login_placeholder": "Password", "login_btn": "Login", "login_error": "Incorrect password",
         "mail_detected": "Detected", "mail_detected_builtin": "Recognized, using built-in server config",
@@ -532,12 +536,13 @@ I18N: dict[str, dict[str, str]] = {
         "tasks_col_next": "다음 실행", "tasks_col_repeat": "반복", "tasks_col_status": "상태",
         "tasks_col_to": "수신자", "tasks_col_actions": "작업",
         "tasks_btn_trigger": "즉시 실행", "tasks_btn_delete": "삭제",
-        "tasks_btn_pause": "일시정지", "tasks_btn_resume": "재개",
-        "tasks_filter_paused": "일시정지",
+        "tasks_btn_pause": "일시정지", "tasks_btn_resume": "재개", "tasks_btn_restart": "다시 시작",
+        "tasks_filter_paused": "일시정지", "tasks_filter_cancelled": "취소됨",
         "tasks_empty": "작업이 없습니다",
         "tasks_confirm_trigger": "이 작업을 지금 즉시 실행하시겠습니까?",
         "tasks_confirm_delete": "이 작업을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
         "tasks_confirm_pause": "이 작업을 일시정지하시겠습니까?", "tasks_confirm_resume": "이 작업을 재개하시겠습니까?",
+        "tasks_confirm_restart": "이 작업을 다시 시작하시겠습니까?",
         "logs_title": "DAEMON LOG", "logs_clear": "화면 지우기",
         "login_placeholder": "비밀번호", "login_btn": "로그인", "login_error": "비밀번호가 올바르지 않습니다",
         "mail_detected": "감지됨", "mail_detected_builtin": "인식됨, 내장 서버 설정 사용",
@@ -652,6 +657,146 @@ def _fmt_ts(ts) -> str:
         return str(ts)
 
 templates.env.filters["fmt_ts"] = _fmt_ts
+
+
+def _fmt_datetime(ts, fmt="%H:%M") -> str:
+    """Format a Unix timestamp to a readable time string."""
+    if ts is None:
+        return ""
+    try:
+        return datetime.fromtimestamp(float(ts)).strftime(fmt)
+    except Exception:
+        return ""
+
+
+templates.env.filters["datetime"] = _fmt_datetime
+
+# ─── Chat DB helpers ──────────────────────────────────────────────────────────
+
+CHAT_DB = ROOT / "chat_history.db"
+
+
+def init_chat_db():
+    """Initialize chat history SQLite database."""
+    if not CHAT_DB.exists():
+        with sqlite3.connect(str(CHAT_DB)) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT DEFAULT '新对话',
+                    created_at REAL DEFAULT (strftime('%s', 'now')),
+                    updated_at REAL DEFAULT (strftime('%s', 'now'))
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id INTEGER NOT NULL,
+                    role TEXT NOT NULL,  -- 'user' or 'assistant'
+                    content TEXT NOT NULL,
+                    ai_backend TEXT,
+                    created_at REAL DEFAULT (strftime('%s', 'now')),
+                    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id)")
+            conn.commit()
+
+
+def get_chat_sessions(limit: int = 50) -> list[dict]:
+    """Get all chat sessions, ordered by last updated."""
+    if not CHAT_DB.exists():
+        init_chat_db()
+        return []
+    try:
+        with sqlite3.connect(str(CHAT_DB)) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute("""
+                SELECT s.id, s.name, s.created_at, s.updated_at,
+                       (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) as msg_count
+                FROM sessions s
+                ORDER BY s.updated_at DESC
+                LIMIT ?
+            """, (limit,))
+            return [dict(r) for r in cur.fetchall()]
+    except Exception:
+        return []
+
+
+def get_chat_messages(session_id: int, limit: int = 50) -> list[dict]:
+    """Get messages for a session."""
+    if not CHAT_DB.exists():
+        return []
+    try:
+        with sqlite3.connect(str(CHAT_DB)) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute("""
+                SELECT id, role, content, ai_backend, created_at
+                FROM messages
+                WHERE session_id = ?
+                ORDER BY created_at ASC
+                LIMIT ?
+            """, (session_id, limit))
+            return [dict(r) for r in cur.fetchall()]
+    except Exception:
+        return []
+
+
+def create_chat_session(name: str = "新对话") -> int:
+    """Create a new chat session and return its ID."""
+    if not CHAT_DB.exists():
+        init_chat_db()
+    with sqlite3.connect(str(CHAT_DB)) as conn:
+        cur = conn.execute(
+            "INSERT INTO sessions (name) VALUES (?)", (name,)
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def add_chat_message(session_id: int, role: str, content: str, ai_backend: str = None):
+    """Add a message to a chat session."""
+    if not CHAT_DB.exists():
+        init_chat_db()
+    with sqlite3.connect(str(CHAT_DB)) as conn:
+        conn.execute(
+            "INSERT INTO messages (session_id, role, content, ai_backend) VALUES (?, ?, ?, ?)",
+            (session_id, role, content, ai_backend)
+        )
+        conn.execute(
+            "UPDATE sessions SET updated_at = strftime('%s', 'now') WHERE id = ?",
+            (session_id,)
+        )
+        conn.commit()
+
+
+def delete_chat_session(session_id: int):
+    """Delete a chat session and its messages."""
+    if not CHAT_DB.exists():
+        return
+    with sqlite3.connect(str(CHAT_DB)) as conn:
+        conn.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
+        conn.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+        conn.commit()
+
+
+def rename_chat_session(session_id: int, name: str):
+    """Rename a chat session."""
+    if not CHAT_DB.exists():
+        return
+    with sqlite3.connect(str(CHAT_DB)) as conn:
+        conn.execute("UPDATE sessions SET name = ? WHERE id = ?", (name, session_id))
+        conn.commit()
+
+
+def get_session_messages_for_context(session_id: int, limit: int = 20) -> list[dict]:
+    """Get messages formatted for AI context (role + content)."""
+    messages = get_chat_messages(session_id, limit=limit)
+    return [
+        {"role": "user" if m["role"] == "user" else "assistant", "content": m["content"]}
+        for m in messages
+    ]
+
 
 # ─── Task DB helpers ──────────────────────────────────────────────────────────
 
@@ -1048,12 +1193,22 @@ async def task_pause(request: Request, task_id: int, _auth=Depends(require_auth)
 @app.post("/tasks/{task_id}/resume", response_class=HTMLResponse)
 async def task_resume(request: Request, task_id: int, _auth=Depends(require_auth)):
     try:
-        with sqlite3.connect(str(DB_FILE)) as conn:
-            conn.execute(
-                "UPDATE tasks SET status='pending', paused_at=NULL WHERE id=? AND status='paused'",
-                (task_id,),
-            )
+        from tasks.scheduler import scheduler as _sched
+        _sched.resume_task(task_id)
         feedback = {"ok": True, "message": f"Task #{task_id} resumed"}
+    except Exception as e:
+        feedback = {"ok": False, "message": f"Error: {e}"}
+    return templates.TemplateResponse("partials/tab_tasks.html", _ctx(
+        request, tasks=get_tasks(), status_filter="all", feedback=feedback,
+    ))
+
+
+@app.post("/tasks/{task_id}/restart", response_class=HTMLResponse)
+async def task_restart(request: Request, task_id: int, _auth=Depends(require_auth)):
+    try:
+        from tasks.scheduler import scheduler as _sched
+        _sched.restart_task(task_id)
+        feedback = {"ok": True, "message": f"Task #{task_id} restarted"}
     except Exception as e:
         feedback = {"ok": False, "message": f"Error: {e}"}
     return templates.TemplateResponse("partials/tab_tasks.html", _ctx(
@@ -1513,6 +1668,480 @@ async def unsubscribe_post(request: Request, token: str = Form(""), **_kwargs):
 </body>
 </html>"""
     return HTMLResponse(page, status_code=200)
+
+
+# ─── Chat Routes ──────────────────────────────────────────────────────────────
+
+# Active streaming sessions: {session_id: {"cancel_flag": asyncio.Event, "task": asyncio.Task}}
+_active_streams: dict[int, dict] = {}
+
+
+@app.get("/api/chat/models")
+async def api_chat_models(request: Request, _auth=Depends(require_auth)):
+    """Get available AI models/backends for chat."""
+    models = []
+    for name, info in AI_BACKENDS.items():
+        # Build model info for API
+        model_info = {
+            "id": name,
+            "name": info.get("label", name),
+            "type": info.get("type", "cli"),
+        }
+        models.append(model_info)
+    return JSONResponse({"models": models})
+
+
+@app.post("/api/chat/{session_id}/stream")
+async def api_chat_stream(request: Request, session_id: int):
+    """
+    SSE streaming endpoint for chat.
+    Sends AI response token by token as they arrive.
+    """
+    require_auth(request)
+
+    # Validate session_id
+    if session_id is None or session_id <= 0:
+        return JSONResponse({"error": "Invalid session ID"}, status_code=400)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+    
+    message = body.get("message", "").strip()
+    backend = body.get("backend", "claude")
+    
+    if not message:
+        return JSONResponse({"error": "Message is required"}, status_code=400)
+    
+    # Save user message
+    add_chat_message(session_id, "user", message)
+    
+    # Get conversation history for context
+    history = get_session_messages_for_context(session_id, limit=20)
+    
+    # Build prompt with context
+    prompt = build_chat_prompt(history, message)
+    
+    # Auto-rename session if first message
+    if len(history) <= 1:
+        rename_chat_session(session_id, message[:30] + ("..." if len(message) > 30 else ""))
+    
+    async def generate():
+        """Generate SSE events."""
+        cancel_event = asyncio.Event()
+        _active_streams[session_id] = {"cancel_flag": cancel_event, "task": asyncio.current_task()}
+        
+        ai_response = ""
+        error_msg = ""
+        
+        try:
+            # Send start event
+            yield f"data: {json.dumps({'type': 'start'})}\n\n"
+            
+            # Check backend type and call appropriately
+            backend_info = AI_BACKENDS.get(backend, {})
+            backend_type = backend_info.get("type", "cli")
+            
+            if backend_type == "cli":
+                # Stream from CLI
+                async for chunk in stream_ai_cli(backend, prompt, cancel_event):
+                    ai_response += chunk
+                    yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+            else:
+                # API backend - call and stream result
+                from ai.providers import get_ai_provider
+                try:
+                    # Get full backend config from core
+                    from core.config import AI_BACKENDS as CORE_AI_BACKENDS
+                    core_backend = CORE_AI_BACKENDS.get(backend, {})
+                    provider = get_ai_provider(backend, core_backend)
+                    # Run in executor to avoid blocking
+                    loop = asyncio.get_event_loop()
+                    ai_response = await loop.run_in_executor(None, lambda: provider.call(prompt))
+                    yield f"data: {json.dumps({'type': 'token', 'content': ai_response})}\n\n"
+                except Exception as e:
+                    error_msg = str(e)
+                    log.error(f"API AI error: {error_msg}")
+            
+            if error_msg:
+                yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
+            else:
+                # Save assistant response
+                add_chat_message(session_id, "assistant", ai_response, backend)
+                yield f"data: {json.dumps({'type': 'done', 'content': ai_response})}\n\n"
+                
+        except asyncio.CancelledError:
+            yield f"data: {json.dumps({'type': 'cancelled'})}\n\n"
+        except Exception as e:
+            error_msg = str(e)
+            log.error(f"Stream error: {error_msg}")
+            yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
+        finally:
+            _active_streams.pop(session_id, None)
+            yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+@app.post("/api/chat/{session_id}/cancel")
+async def api_chat_cancel(request: Request, session_id: int, _auth=Depends(require_auth)):
+    """Cancel an active streaming session."""
+    if session_id in _active_streams:
+        stream_info = _active_streams[session_id]
+        stream_info["cancel_flag"].set()
+        if stream_info.get("task"):
+            stream_info["task"].cancel()
+        return JSONResponse({"status": "cancelled"})
+    return JSONResponse({"status": "not_found"}, status_code=404)
+
+
+def build_chat_prompt(history: list[dict], current_message: str) -> str:
+    """Build prompt with conversation history."""
+    if not history:
+        return current_message
+    
+    # Build context from history
+    context_parts = []
+    for msg in history[-10:]:  # Last 10 messages
+        role = "User" if msg["role"] == "user" else "Assistant"
+        context_parts.append(f"{role}: {msg['content']}")
+    
+    context = "\n".join(context_parts)
+    return f"""Previous conversation:
+{context}
+
+User: {current_message}
+Assistant:"""
+
+
+async def stream_ai_cli(backend: str, prompt: str, cancel_event: asyncio.Event, timeout: int = 120):
+    """Stream output from AI CLI command."""
+    cli_commands = {
+        "claude": ["claude", "--print"],
+        "codex": ["codex", "exec", "--skip-git-repo-check"],
+        "gemini": ["gemini", "-p"],
+        "qwen": ["qwen", "--prompt", "--web-search-default", "--yolo"],
+        "copilot": ["copilot"],
+    }
+    
+    if backend not in cli_commands:
+        raise ValueError(f"Unknown CLI backend: {backend}")
+    
+    cmd = cli_commands[backend]
+    
+    # Some CLIs read from stdin, others take prompt as argument
+    if backend in ("claude", "gemini", "qwen", "copilot"):
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        
+        # Write prompt to stdin
+        try:
+            proc.stdin.write(prompt.encode("utf-8"))
+            await proc.stdin.drain()
+        except Exception:
+            pass
+        finally:
+            await proc.stdin.wait_closed()
+    else:
+        # codex: pass as argument
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, prompt,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    
+    # Read stdout line by line
+    output = ""
+    try:
+        while True:
+            if cancel_event.is_set():
+                proc.kill()
+                await proc.wait()
+                raise asyncio.CancelledError()
+            
+            line = await asyncio.wait_for(proc.stdout.readline(), timeout=1.0)
+            if not line:
+                break
+            
+            chunk = line.decode("utf-8", errors="replace")
+            output += chunk
+            yield chunk
+            
+            # Check for timeout
+            try:
+                await asyncio.wait_for(proc.wait(), timeout=0.1)
+                if proc.returncode is not None:
+                    break
+            except asyncio.TimeoutError:
+                continue
+        
+        await proc.wait()
+        
+        if proc.returncode != 0:
+            stderr = await asyncio.wait_for(proc.stderr.read(), timeout=5.0)
+            stderr_text = stderr.decode("utf-8", errors="replace").strip()
+            if stderr_text:
+                log.error(f"CLI error: {stderr_text}")
+                
+    except asyncio.CancelledError:
+        proc.kill()
+        await proc.wait()
+        raise
+    except Exception as e:
+        log.error(f"CLI stream error: {e}")
+        raise
+    
+    if not output:
+        # Try stderr if stdout is empty
+        try:
+            stderr = await asyncio.wait_for(proc.stderr.read(), timeout=5.0)
+            stderr_text = stderr.decode("utf-8", errors="replace")
+            if stderr_text:
+                yield stderr_text
+        except Exception:
+            pass
+
+
+@app.get("/chat")
+async def chat_page(request: Request):
+    """Redirect to home page (chat panel is integrated)."""
+    require_auth(request)
+    return RedirectResponse(url="/", status_code=302)
+
+
+@app.get("/chat/{session_id}")
+async def chat_session(request: Request, session_id: int):
+    """Redirect to home page (chat panel is integrated)."""
+    require_auth(request)
+    return RedirectResponse(url="/", status_code=302)
+
+
+@app.post("/chat/new")
+async def chat_new_session(request: Request):
+    """Create a new chat session."""
+    require_auth(request)
+    form = await request.form()
+    name = form.get("name", "新对话")
+    session_id = create_chat_session(name)
+    return RedirectResponse(url=f"/chat/{session_id}", status_code=303)
+
+
+@app.post("/chat/{session_id}/delete")
+async def chat_delete_session(request: Request, session_id: int):
+    """Delete a chat session."""
+    require_auth(request)
+    delete_chat_session(session_id)
+    return RedirectResponse(url="/chat", status_code=303)
+
+
+@app.post("/chat/{session_id}/rename")
+async def chat_rename(request: Request, session_id: int):
+    """Rename a chat session."""
+    require_auth(request)
+    form = await request.form()
+    name = form.get("name", "对话")
+    rename_chat_session(session_id, name)
+    return RedirectResponse(url=f"/chat/{session_id}", status_code=303)
+
+
+@app.get("/chat/{session_id}/messages")
+async def chat_get_messages(request: Request, session_id: int):
+    """HTMX: Get messages for a session."""
+    require_auth(request)
+    messages = get_chat_messages(session_id)
+    return templates.TemplateResponse(
+        "partials/chat_messages.html",
+        {**_ctx(request), "messages": messages}
+    )
+
+
+@app.get("/chat/{session_id}/sessions")
+async def chat_get_sessions(request: Request):
+    """HTMX: Get sessions list."""
+    require_auth(request)
+    sessions = get_chat_sessions()
+    return templates.TemplateResponse(
+        "partials/chat_sessions.html",
+        {**_ctx(request), "sessions": sessions, "active_session": int(request.query_params.get("active", 0))}
+    )
+
+
+@app.get("/chat/sessions")
+async def chat_sessions_json(request: Request):
+    """API: Get sessions list as JSON (for programmatic access)."""
+    require_auth(request)
+    limit = request.query_params.get("limit", "50")
+    try:
+        limit_val = int(limit)
+    except (ValueError, TypeError):
+        limit_val = 50
+    
+    sessions = get_chat_sessions(limit=limit_val)
+    return JSONResponse(content=sessions)
+
+
+@app.get("/chat/sessions-list")
+async def chat_sessions_list(request: Request):
+    """API: Get sessions list as HTML chips."""
+    require_auth(request)
+    sessions = get_chat_sessions(limit=20)
+
+    # 安全地获取 active 参数，避免 int("") 异常
+    try:
+        active_param = request.query_params.get("active", "0")
+        active_id = int(active_param) if active_param else 0
+    except (ValueError, TypeError):
+        active_id = 0
+
+    html_content = ""
+    for s in sessions:
+        active_class = "active" if s["id"] == active_id else ""
+        msg_count = s.get("msg_count", 0)
+        name = html.escape(s.get("name", "对话"))
+        html_content += f'<div class="chat-session-chip {active_class}" onclick="selectChatSession({s["id"]})">{name} ({msg_count})</div>'
+
+    if not html_content:
+        html_content = '<div class="chat-session-chip" onclick="newChatSession()">+ 新对话</div>'
+
+    return HTMLResponse(html_content)
+
+
+@app.get("/chat/{session_id}/messages-html")
+async def chat_messages_html(request: Request, session_id: int):
+    """API: Get messages as HTML."""
+    require_auth(request)
+    messages = get_chat_messages(session_id, limit=50)
+
+    html_content = ""
+    for msg in messages:
+        role_label = "你" if msg["role"] == "user" else "AI"
+        time_str = datetime.fromtimestamp(msg["created_at"]).strftime("%H:%M") if msg.get("created_at") else ""
+        content = html.escape(msg["content"])
+        html_content += f'''
+<div class="chat-message chat-message-{msg["role"]}">
+    <div class="chat-message-header">
+        <span class="chat-message-role">{role_label}</span>
+        <span class="chat-message-time">{time_str}</span>
+    </div>
+    <div class="chat-message-content">{content}</div>
+</div>
+'''
+    return HTMLResponse(html_content)
+
+
+
+@app.post("/chat/{session_id}/send")
+async def chat_send_message(request: Request, session_id: int):
+    """HTMX: Send a message and get AI response."""
+    require_auth(request)
+    form = await request.form()
+    user_message = form.get("message", "").strip()
+    ai_backend = form.get("ai_backend", "claude")
+    
+    if not user_message:
+        return HTMLResponse("")
+    
+    # Save user message
+    add_chat_message(session_id, "user", user_message)
+    
+    # Build conversation history for context
+    messages = get_chat_messages(session_id, limit=20)
+    history = []
+    for msg in messages:
+        if msg["role"] == "user":
+            history.append(f"User: {msg['content']}")
+        else:
+            history.append(f"Assistant: {msg['content']}")
+    
+    # Prepare prompt with context
+    context = "\n".join(history[-10:])  # Last 10 messages for context
+    prompt = f"""Previous conversation:
+{context}
+
+User: {user_message}
+Assistant:"""
+    
+    # Execute AI CLI
+    ai_response = ""
+    error_msg = ""
+    try:
+        ai_response = await run_ai_cli(ai_backend, prompt)
+        add_chat_message(session_id, "assistant", ai_response, ai_backend)
+    except Exception as e:
+        error_msg = str(e)
+        add_chat_message(session_id, "assistant", f"Error: {error_msg}", ai_backend)
+    
+    # Auto-rename session if first message
+    if len(messages) <= 1:
+        rename_chat_session(session_id, user_message[:30] + ("..." if len(user_message) > 30 else ""))
+    
+    # Return updated messages
+    messages = get_chat_messages(session_id)
+    return templates.TemplateResponse(
+        "partials/chat_messages.html",
+        {**_ctx(request), "messages": messages}
+    )
+
+
+async def run_ai_cli(backend: str, prompt: str, timeout: int = 120) -> str:
+    """Execute AI CLI command and return output."""
+    import shlex
+    
+    cli_commands = {
+        "claude": ["claude", "--print"],
+        "codex": ["codex", "exec", "--skip-git-repo-check"],
+        "gemini": ["gemini", "-p"],
+        "qwen": ["qwen", "--prompt", "--web-search-default", "--yolo"],
+        "copilot": ["copilot"],
+    }
+    
+    if backend not in cli_commands:
+        raise ValueError(f"Unknown CLI backend: {backend}")
+    
+    cmd = cli_commands[backend]
+    
+    # Some CLIs read from stdin, others take prompt as argument
+    if backend in ("claude", "gemini", "qwen", "copilot"):
+        # Pass prompt via stdin
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(
+            proc.communicate(input=prompt.encode("utf-8")),
+            timeout=timeout
+        )
+    else:
+        # codex: pass as argument
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, prompt,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(
+            proc.communicate(),
+            timeout=timeout
+        )
+    
+    if proc.returncode != 0:
+        raise RuntimeError(f"CLI failed: {stderr.decode('utf-8', errors='replace')}")
+    
+    return stdout.decode("utf-8", errors="replace").strip()
 
 
 # ─── Gmail Push Notification webhook ──────────────────────────────────────────
