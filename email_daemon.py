@@ -332,6 +332,10 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
     if sch_cron or sch_at or sch_every:
         if task_type and not output:
             output = {"email": True, "archive": True, "archive_dir": "reports"}
+        # 将当前使用的 AI 名称保存到 task_payload 中，确保手动执行时使用相同的 AI
+        if task_payload is None:
+            task_payload = {}
+        task_payload["ai_name"] = ai_name
         scheduler.add_task(
             mailbox_name,
             em["from_email"],

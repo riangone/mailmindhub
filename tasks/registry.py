@@ -45,12 +45,12 @@ def pick_task_ai(task_payload: Optional[dict] = None):
     if not candidates:
         selected = list(AI_BACKENDS.keys())[0]
     else:
-        # 如果有 gemini 且它在 candidates 里，优先选它（如果默认是它的话）
+        # 优先使用环境变量指定的 AI，否则使用第一个可用的候选
         if env_default in candidates:
             selected = env_default
         else:
             selected = candidates[0]
-            
+
     log.info(f"[Tasks] 动态选择 AI 后端: {selected} (原始请求: {ai_name or 'None'})")
     return selected, AI_BACKENDS.get(selected)
 
@@ -183,13 +183,17 @@ def execute_task_logic(task: Dict[str, Any], lang: str = "zh", progress_cb=None)
     skill = get_skill(effective_task_type)
     if skill:
         log.info(f"🚀 执行技能: {effective_task_type}")
-        
+
         # 准备技能参数：优先使用 payload 里的字段，如果 payload 缺少 query 但有 body，把 body 当 query
         skill_payload = payload.copy()
         if "query" not in skill_payload and body:
             skill_payload["query"] = body
         if "prompt" not in skill_payload and body:
             skill_payload["prompt"] = body
+        
+        # 重要：传递语言参数，确保技能使用正确的语言输出
+        if "lang" not in skill_payload:
+            skill_payload["lang"] = lang
 
         # 验证 payload
         is_valid, error_msg = skill.validate_payload(skill_payload)
