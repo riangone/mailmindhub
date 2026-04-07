@@ -17,17 +17,23 @@ from utils.logger import log
 
 def detect_lang(text: str) -> str:
     """检测文本语言：zh / ja / ko / en"""
-    # 韩文
+    if not text:
+        return "en"
+        
+    # 韩文权重最高
     if re.search(r'[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]', text):
         return "ko"
-    # 日文
+        
+    # 日文次之（包含假名）
     if re.search(r'[\u3040-\u309F\u30A0-\u30FF]', text):
         return "ja"
-    # 中文 vs 英文
-    cjk = len(re.findall(r'[\u4E00-\u9FFF]', text))
-    latin = len(re.findall(r'[a-zA-Z]', text))
-    if cjk > latin:
+        
+    # 中文检测：如果包含一定数量的汉字，即判定为中文（汉字在混合文本中通常表示主语言）
+    cjk_count = len(re.findall(r'[\u4E00-\u9FFF]', text))
+    # 如果汉字超过 3 个，或者在极短文本中汉字占比显著（如“帮我写代码”），通常就是中文指令
+    if cjk_count > 3 or (len(text) < 50 and cjk_count >= 2) or (len(text) < 20 and cjk_count >= 1):
         return "zh"
+        
     return "en"
 
 

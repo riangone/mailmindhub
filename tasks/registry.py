@@ -11,14 +11,25 @@ from utils.logger import log
 
 def pick_task_ai(task_payload: Optional[dict] = None):
     """选择一个可用的 AI 后端（CLI 优先，然后 API）"""
+    import os, shutil
     task_payload = task_payload or {}
-    ai_name = task_payload.get("ai_name") or DEFAULT_TASK_AI
+    
+    # 优先从环境变量获取，确保实时性
+    env_default = os.environ.get("TASK_DEFAULT_AI") or DEFAULT_TASK_AI
+    ai_name = task_payload.get("ai_name") or env_default
 
     if ai_name and ai_name in AI_BACKENDS:
-        return ai_name, AI_BACKENDS[ai_name]
+        # 检查如果是 CLI 类型，命令是否可用
+        backend = AI_BACKENDS[ai_name]
+        if backend.get("type") == "cli":
+            cmd = backend.get("cmd", "")
+            if cmd and (shutil.which(cmd) or os.path.isfile(cmd)):
+                return ai_name, backend
+        else:
+            # API 类型直接返回
+            return ai_name, backend
 
-    # 动态选择：CLI 优先
-    import os, shutil
+    # 动态选择：CLI 优先（过滤掉不可用的）
     cli_candidates = []
     api_candidates = []
     for name, b in AI_BACKENDS.items():
@@ -29,9 +40,19 @@ def pick_task_ai(task_payload: Optional[dict] = None):
         elif b.get("api_key"):
             api_candidates.append(name)
 
+    # 优先级：1. 原本指定的（如果可用） 2. 其他 CLI 3. API
     candidates = cli_candidates + api_candidates
-    ai_name = candidates[0] if candidates else list(AI_BACKENDS.keys())[0]
-    return ai_name, AI_BACKENDS.get(ai_name)
+    if not candidates:
+        selected = list(AI_BACKENDS.keys())[0]
+    else:
+        # 如果有 gemini 且它在 candidates 里，优先选它（如果默认是它的话）
+        if env_default in candidates:
+            selected = env_default
+        else:
+            selected = candidates[0]
+            
+    log.info(f"[Tasks] 动态选择 AI 后端: {selected} (原始请求: {ai_name or 'None'})")
+    return selected, AI_BACKENDS.get(selected)
 
 
 def _handle_task_manage(payload: Optional[dict], subject: str, lang: str = "zh") -> str:
@@ -162,21 +183,26 @@ def execute_task_logic(task: Dict[str, Any], lang: str = "zh", progress_cb=None)
     skill = get_skill(effective_task_type)
     if skill:
         log.info(f"🚀 执行技能: {effective_task_type}")
-        # 确保 payload 包含必要的上下文
-        if "prompt" not in payload and body:
-            payload["prompt"] = body
-        if "subject" not in payload and subject:
-            payload["subject"] = subject
+        
+        # 准备技能参数：优先使用 payload 里的字段，如果 payload 缺少 query 但有 body，把 body 当 query
+        skill_payload = payload.copy()
+        if "query" not in skill_payload and body:
+            skill_payload["query"] = body
+        if "prompt" not in skill_payload and body:
+            skill_payload["prompt"] = body
 
         # 验证 payload
-        is_valid, error_msg = skill.validate_payload(payload)
+        is_valid, error_msg = skill.validate_payload(skill_payload)
         if not is_valid:
             body = f"⚠️ 参数验证失败: {error_msg}"
         else:
-            ai_name, backend = pick_task_ai(payload)
+            ai_name, backend = pick_task_ai(skill_payload)
             ai = get_ai_provider(ai_name, backend)
-            body = skill.run(payload, ai_caller=ai)
+            # skill.run 会渲染指令并调用 AI
+            body = skill.run(skill_payload, ai_caller=ai)
+        
         subject = subject or f"Skill: {effective_task_type}"
+        return subject, body
 
     # 5. 其他所有任务：使用增强版 AI 执行框架
     else:
@@ -194,6 +220,17 @@ def execute_task_logic(task: Dict[str, Any], lang: str = "zh", progress_cb=None)
         skills_hint = get_all_skills_prompt(lang)
         if skills_hint:
             prompt = f"{prompt}\n\n{skills_hint}"
+
+        # 显式指令 AI 使用检测到的语言回复
+        lang_map = {
+            "zh": "Please respond in Chinese (Simplified).",
+            "ja": "Please respond in Japanese.",
+            "en": "Please respond in English.",
+            "ko": "Please respond in Korean.",
+        }
+        lang_instruction = lang_map.get(lang, "")
+        if lang_instruction:
+            prompt = f"{lang_instruction}\n\n{prompt}"
 
         # 添加强制执行指令
         exec_instruction = {

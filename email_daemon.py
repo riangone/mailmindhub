@@ -122,11 +122,25 @@ def _get_prompt_template(lang: str) -> str:
 
 def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None, progress_cb=None):
     now = datetime.now().strftime("%Y-%m-%d %H:%M (%Z)")
-    tmpl = _get_prompt_template(lang or PROMPT_LANG)
+    lang = lang or PROMPT_LANG
+    
+    # 显式指令 AI 使用检测到的语言回复
+    lang_map = {
+        "zh": "Please respond in Chinese (Simplified).",
+        "ja": "Please respond in Japanese.",
+        "en": "Please respond in English.",
+        "ko": "Please respond in Korean.",
+    }
+    lang_instruction = lang_map.get(lang, "")
+    
+    tmpl = _get_prompt_template(lang)
+    if lang_instruction:
+        tmpl = f"{lang_instruction}\n\n" + tmpl
+        
     try:
         # Inject AI skills hint
         from ai.skills import get_ai_skills_prompt
-        ai_skill_hint = get_ai_skills_prompt(lang or PROMPT_LANG)
+        ai_skill_hint = get_ai_skills_prompt(lang)
         if ai_skill_hint:
             tmpl = ai_skill_hint + "\n\n" + tmpl
         # Inject Python skills hint (backward compatibility)
@@ -297,7 +311,13 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
     if _is_help_request(em):
         log.info("📋 检测到帮助请求，回复模板列表")
         help_body = HELP_BODY.get(lang, HELP_BODY["zh"])
-        send_reply(MAILBOXES[mailbox_name], em["from_email"], "MailMindHub 使用模板", help_body, em.get("message_id"), lang=lang)
+        help_sub = {
+            "zh": "MailMindHub 使用模板",
+            "ja": "MailMindHub テンプレートの使い方",
+            "en": "MailMindHub Templates Guide",
+            "ko": "MailMindHub 템플릿 안내",
+        }.get(lang, "MailMindHub 使用模板")
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], help_sub, help_body, em.get("message_id"), lang=lang)
         mark_processed_id(em["id"])
         save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
         return
