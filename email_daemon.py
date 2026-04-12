@@ -23,6 +23,7 @@ from core.mail_sender import send_reply, archive_output
 from core.prompts import HELP_BODY, TEMPLATES
 from ai.providers import get_ai_provider
 from utils.parser import parse_ai_response, trim_email_body, detect_lang
+from utils.ai_logger import log_ai_message as _log_ai_to_db_impl
 from utils.logger import log
 from tasks.scheduler import scheduler
 from tasks.registry import execute_task_logic
@@ -38,6 +39,49 @@ def _is_help_request(em: dict) -> bool:
     subject = (em.get("subject") or "").strip().lower()
     body = (em.get("body") or "").strip().lower()
     return subject in _HELP_KEYWORDS or body in _HELP_KEYWORDS
+
+
+def _log_ai_to_db(mailbox_name, em, ai_name, backend, prompt, raw_response,
+                  parse_success, parse_error="", task_type="", subject="", body="",
+                  schedule_at=None, schedule_every=None, schedule_cron=None,
+                  schedule_until=None, task_payload=None, output=None,
+                  attachments=None, task_executed=False, task_result_subject="",
+                  task_result_body="", task_error="", ai_call_ms=0, task_exec_ms=0, lang="zh"):
+    """包装 _log_ai_to_db_impl，从 em 字典提取邮件上下文"""
+    try:
+        _log_ai_to_db_impl(
+            ai_name=ai_name,
+            raw_response=raw_response,
+            parse_success=parse_success,
+            mailbox_name=mailbox_name,
+            from_email=em.get("from_email", ""),
+            email_subject=em.get("subject", ""),
+            email_id=em.get("id", ""),
+            ai_type=backend.get("type", ""),
+            model=backend.get("model", ""),
+            prompt=prompt,
+            parse_error=parse_error,
+            task_type=task_type,
+            subject=subject,
+            body=body,
+            schedule_at=schedule_at,
+            schedule_every=schedule_every,
+            schedule_cron=schedule_cron,
+            schedule_until=schedule_until,
+            task_payload=task_payload,
+            output=output,
+            attachments=attachments,
+            task_executed=task_executed,
+            task_result_subject=task_result_subject,
+            task_result_body=task_result_body,
+            task_error=task_error,
+            ai_call_ms=ai_call_ms,
+            task_exec_ms=task_exec_ms,
+            lang=lang,
+        )
+    except Exception as e:
+        log.warning(f"[AILogger] 写入数据库失败: {e}")
+
 
 # 初始化线程池与 AI 并发限速器
 executor = ThreadPoolExecutor(max_workers=5)
@@ -121,9 +165,14 @@ def _get_prompt_template(lang: str) -> str:
     return tmpl_raw.replace("{{instruction}}", "{instruction}").replace("{{now}}", "{now}")
 
 def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None, progress_cb=None):
+    """调用 AI 并解析响应。
+
+    Returns:
+        (ai_result_tuple, raw_response_str)  — ai_result 为 None 表示 AI 调用失败
+    """
     now = datetime.now().strftime("%Y-%m-%d %H:%M (%Z)")
     lang = lang or PROMPT_LANG
-    
+
     # 显式指令 AI 使用检测到的语言回复
     lang_map = {
         "zh": "Please respond in Chinese (Simplified).",
@@ -132,17 +181,21 @@ def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None, pro
         "ko": "Please respond in Korean.",
     }
     lang_instruction = lang_map.get(lang, "")
-    
+
     tmpl = _get_prompt_template(lang)
     if lang_instruction:
         tmpl = f"{lang_instruction}\n\n" + tmpl
-        
+
     try:
         # Inject AI skills hint
         from ai.skills import get_ai_skills_prompt
         ai_skill_hint = get_ai_skills_prompt(lang)
         if ai_skill_hint:
             tmpl = ai_skill_hint + "\n\n" + tmpl
+    except Exception:
+        pass
+
+    try:
         # Inject Python skills hint (backward compatibility)
         from skills.loader import get_skills_hint
         hint = get_skills_hint(lang or PROMPT_LANG)
@@ -158,11 +211,14 @@ def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None, pro
     prompt = tmpl.replace("{", "{{").replace("}", "}}").replace("{{instruction}}", "{instruction}").replace("{{now}}", "{now}").format(instruction=instruction, now=now)
     ai = get_ai_provider(ai_name, backend)
     is_cli = backend.get("type") == "cli"
+
+    ai_call_start = time.time()
     with _ai_semaphore:
         if is_cli:
             raw = ai.call(prompt, progress_cb=progress_cb, timeout=AI_CLI_TIMEOUT, progress_interval=AI_PROGRESS_INTERVAL)
         else:
             raw = ai.call(prompt)
+    ai_call_ms = int((time.time() - ai_call_start) * 1000)
 
     # 记录 AI 原始响应（调试用）
     if isinstance(raw, str):
@@ -170,11 +226,12 @@ def call_ai(ai_name: str, backend: dict, instruction: str, lang: str = None, pro
         if len(raw) > 300:
             log.info(f"🤖 AI 原始响应 (总长度): {len(raw)} 字符")
 
-    # AI error prefix indicates a failure — return sentinel rather than parse garbage
+    # AI error prefix indicates a failure
     if isinstance(raw, str) and raw.startswith("AI 出错："):
         log.error(f"❌ AI 调用返回错误前缀: {raw[:200]}")
-        return None
-    return parse_ai_response(raw)
+        return None, raw
+    return parse_ai_response(raw), raw
+
 
 def _get_git_diff_summary(workspace_dir: str) -> str:
     """Return git diff --stat output if workspace_dir is a git repo with changes."""
@@ -272,7 +329,7 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
         send_reply(MAILBOXES[mailbox_name], em["from_email"], em["subject"], msg, em.get("message_id"), lang=lang)
 
     _ai_start = time.time()
-    ai_result = call_ai(ai_name, backend, instr, lang=lang, progress_cb=_progress_cb if is_cli else None)
+    ai_result, raw_response = call_ai(ai_name, backend, instr, lang=lang, progress_cb=_progress_cb if is_cli else None)
     _ai_ms = int((time.time() - _ai_start) * 1000)
     if ai_result is None:
         # AI call failed — notify user and stop processing
@@ -286,6 +343,9 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
         send_reply(MAILBOXES[mailbox_name], em["from_email"], em["subject"], err_msg, em.get("message_id"), lang=lang)
         mark_processed_id(em["id"])
         save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
+        # 记录到 DB（失败）
+        _log_ai_to_db(mailbox_name, em, ai_name, backend, instr, raw_response or "",
+                      parse_success=False, parse_error="AI 调用失败", ai_call_ms=_ai_ms, lang=lang)
         return
     scheduler.record_stat(mailbox_name, "success", _ai_ms, em.get("subject"))
     sub, body, sch_at, sch_every, sch_until, sch_cron, atts, task_type, task_payload, output = ai_result
@@ -295,6 +355,13 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
     log.info(f"   schedule_at={sch_at!r}, schedule_every={sch_every!r}, schedule_cron={sch_cron!r}")
     log.info(f"   task_payload keys={list(task_payload.keys()) if task_payload else None}")
     log.info(f"   output={output!r}")
+
+    # 记录到 DB（成功）
+    _log_ai_to_db(mailbox_name, em, ai_name, backend, instr, raw_response or "",
+                  parse_success=True, task_type=task_type, subject=sub, body=body,
+                  schedule_at=sch_at, schedule_every=sch_every, schedule_cron=sch_cron,
+                  schedule_until=sch_until, task_payload=task_payload, output=output,
+                  attachments=atts, ai_call_ms=_ai_ms, lang=lang)
 
     # email_manage 确认回复检测（先经 AI，再执行）
     if em.get("in_reply_to"):

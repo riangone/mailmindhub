@@ -1783,6 +1783,65 @@ async def api_cache_clear(_auth=Depends(require_auth)):
     return {"cleared": True}
 
 
+# ─── AI Messages API ──────────────────────────────────────────────────────────
+
+@app.get("/api/ai-messages")
+async def api_ai_messages(
+    limit: int = 50,
+    offset: int = 0,
+    from_email: str = "",
+    task_type: str = "",
+    ai_name: str = "",
+    parse_success: str = "",  # "true" / "false" / ""
+    keyword: str = "",
+    mailbox_name: str = "",
+    _auth=Depends(require_auth),
+):
+    """查询 AI 消息记录"""
+    from utils.ai_logger import query_ai_messages, get_ai_stats
+
+    ps = None if parse_success == "" else (parse_success.lower() == "true")
+    messages = query_ai_messages(
+        limit=min(limit, 200),
+        offset=max(offset, 0),
+        from_email=from_email,
+        task_type=task_type,
+        ai_name=ai_name,
+        parse_success=ps,
+        keyword=keyword,
+        mailbox_name=mailbox_name,
+    )
+    stats = get_ai_stats()
+    return {"messages": messages, "stats": stats, "total": stats["total"]}
+
+
+@app.get("/api/ai-messages/{msg_id}")
+async def api_ai_message_detail(msg_id: int, _auth=Depends(require_auth)):
+    """获取单条 AI 消息详情"""
+    from utils.ai_logger import get_ai_message_detail
+    msg = get_ai_message_detail(msg_id)
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return msg
+
+
+@app.get("/api/ai-messages/stats")
+async def api_ai_messages_stats(_auth=Depends(require_auth)):
+    """获取 AI 消息统计"""
+    from utils.ai_logger import get_ai_stats
+    return get_ai_stats()
+
+
+@app.post("/api/ai-messages/cleanup")
+async def api_ai_messages_cleanup(days: int = 30, _auth=Depends(require_auth)):
+    """清理指定天数之前的旧 AI 消息"""
+    from utils.ai_logger import delete_old_messages
+    import time
+    cutoff = time.time() - days * 86400
+    deleted = delete_old_messages(cutoff)
+    return {"deleted": deleted, "days": days}
+
+
 @app.post("/api/skills/reload", response_class=HTMLResponse)
 async def api_skills_reload(request: Request, _auth=Depends(require_auth)):
     from skills.loader import reload_skills

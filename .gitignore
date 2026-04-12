@@ -8,6 +8,7 @@ webui.log
 webui.pid
 webui.pid.meta
 tasks.db
+ai_messages.db
 
 # OAuth 凭据和 token（包含敏感信息，不提交）
 credentials_gmail.json
