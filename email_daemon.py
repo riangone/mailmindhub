@@ -271,6 +271,78 @@ def process_email(mailbox_name, ai_name, backend, em):
         mark_processed_id(em["id"])
         save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
 
+def _handle_harness_command(mailbox_name, em, lang, cmd, rest) -> bool:
+    """
+    处理 harness 命令（/generate、/review、/fix 等）
+
+    流程：
+    1. 调用 harness API POST /api/v1/tasks/from-email
+    2. harness 异步执行 → 完成后 Webhook 回调到 MailMind
+    3. MailMind 收到回调 → 回复邮件给用户
+
+    如果 harness API 不可达，降级为本地 AI 处理。
+
+    Returns:
+        True: harness 成功处理并发送了确认邮件
+        False: harness 失败，需要降级为 AI 处理
+    """
+    from utils.logger import log
+    from core.mail_sender import send_reply
+
+    try:
+        from integrations.harness_bridge import run_from_email_with_callback, HARNESS_API_BASE
+    except ImportError:
+        log.warning("[Harness] harness_bridge 未安装，降级为 AI 处理")
+        return False  # 返回 False 让 AI 正常处理
+
+    # 构建回调 URL（harness 完成后 POST 到此）
+    # MailMind WebUI 的 webhook 端点
+    unsubscribe_base = os.environ.get("UNSUBSCRIBE_BASE", "")
+    callback_url = f"{unsubscribe_base}/webhook/harness" if unsubscribe_base else None
+
+    # 调用 harness API
+    result = run_from_email_with_callback(
+        subject=em.get("subject", ""),
+        body=em.get("body", ""),
+        from_addr=em.get("from_email", ""),
+        callback_url=callback_url,
+        original_message_id=em.get("message_id"),
+    )
+
+    status = result.get("status", "")
+    task_id = result.get("task_id")
+
+    if status == "pending" and task_id:
+        # 任务已提交，发送确认邮件
+        _msgs = {
+            "zh": f"✅ 任务已提交到 Harness 多 AI 管道\n\n任务 ID: {task_id}\n命令: {cmd}\n内容: {rest[:100]}\n\nHarness 正在异步执行中，完成后会通过邮件通知你。",
+            "ja": f"✅ タスクが Harness マルチ AI パイプラインに送信されました\n\nタスク ID: {task_id}\nコマンド: {cmd}\n内容: {rest[:100]}\n\nHarness が非同期で実行中です、完了後メールでお知らせします。",
+            "en": f"✅ Task submitted to Harness multi-AI pipeline\n\nTask ID: {task_id}\nCommand: {cmd}\nContent: {rest[:100]}\n\nHarness is executing asynchronously, you'll be notified by email when done.",
+            "ko": f"✅ 작업이 Harness 멀티 AI 파이프라인에 제출되었습니다\n\n작업 ID: {task_id}\n명령: {cmd}\n내용: {rest[:100]}\n\nHarness 가 비동기로 실행 중이며, 완료 후 이메일로 알려드립니다.",
+        }
+        body = _msgs.get(lang, _msgs["zh"])
+        sub = f"🤖 Harness 任务已提交 #{task_id}"
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], sub, body, em.get("message_id"), lang=lang)
+        mark_processed_id(em["id"])
+        save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
+        log.info(f"[Harness] ✓ 确认邮件已发送: task_id={task_id}")
+        return True  # 成功处理
+
+    elif status == "unknown_command":
+        # harness 无法识别命令，返回帮助信息
+        help_body = result.get("message", "无法识别的命令")
+        send_reply(MAILBOXES[mailbox_name], em["from_email"], "🤖 harness 帮助", help_body, em.get("message_id"), lang=lang)
+        mark_processed_id(em["id"])
+        save_processed_ids(PROCESSED_IDS_PATH, processed_ids)
+        return True  # 成功处理（发送了帮助信息）
+
+    else:
+        # harness 调用失败，降级为本地 AI 处理
+        log.warning(f"[Harness] 命令执行失败 ({status})，降级为 AI 处理")
+        # 不标记为已处理，让正常的 AI 流程接管
+        return False  # 失败，需要 AI 处理
+
+
 def _process_email_impl(mailbox_name, ai_name, backend, em):
     log.info(f"📨 收到指令: [{em['subject']}] 来自 {em['from_email']}")
 
@@ -278,6 +350,25 @@ def _process_email_impl(mailbox_name, ai_name, backend, em):
     email_text = f"{em.get('subject', '')} {em.get('body', '')}"
     em_lang = detect_lang(email_text)
     lang = em_lang if em_lang in ("zh", "ja", "en", "ko") else PROMPT_LANG
+
+    # ─── Harness 命令拦截（优先于 AI 处理）───
+    # 只匹配邮件**主题**开头的 /generate、/review、/fix 命令
+    # 不匹配正文，避免确认邮件/回复邮件触发循环
+    _HARNESS_SUBJECT_PATTERN = re.compile(
+        r'^\s*(/generate|/gen|/g|/review|/fix)\s+(.*)',
+        re.IGNORECASE
+    )
+    subject = em.get('subject', '')
+    harness_match = _HARNESS_SUBJECT_PATTERN.match(subject)
+    if harness_match:
+        cmd = harness_match.group(1).lower()
+        rest = harness_match.group(2).strip()
+        log.info(f"🔧 检测到 Harness 命令: {cmd}, 内容: {rest[:60]}...")
+        handled = _handle_harness_command(mailbox_name, em, lang, cmd, rest)
+        if handled:
+            # harness 成功处理并发送了确认邮件
+            return
+        # harness 失败，不 return，继续让 AI 处理
 
     instr = f"发件人：{em['from']}\n主题：{em['subject']}\n\n"
     instr += trim_email_body(em['body'] or "", max_chars=MAX_EMAIL_CHARS)

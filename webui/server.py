@@ -3263,6 +3263,106 @@ async def gmail_push_webhook(request: Request):
     return {"status": "ok"}
 
 
+# ─── Harness Webhook Callback ─────────────────────────────────────────────────
+
+@app.post("/webhook/harness")
+async def harness_webhook(request: Request):
+    """
+    Receive Harness task completion callbacks.
+
+    harness 任务完成后 POST 到此端点，MailMind 收到后回复邮件给用户。
+
+    Payload:
+    {
+      "task_id": 123,
+      "status": "completed" | "failed",
+      "title": "任务标题",
+      "result": "执行结果",
+      "runs": [...],
+      "email_content": {"subject": "...", "body": "..."}
+    }
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return {"status": "error", "detail": "invalid JSON"}
+
+    task_id = body.get("task_id")
+    status = body.get("status", "")
+    log.info(f"🔧 Harness Webhook 回调: task_id={task_id}, status={status}")
+
+    # 异步处理回调（避免阻塞 webhook 响应）
+    import threading
+    threading.Thread(target=_handle_harness_callback, args=(body,), daemon=True).start()
+
+    # 立即返回 200
+    return {"status": "ok", "task_id": task_id}
+
+
+def _handle_harness_callback(payload: dict):
+    """
+    处理 harness 回调：构建回复邮件并发送。
+    运行在后台线程中。
+    """
+    from core.mail_sender import send_reply
+    from core.config import MAILBOXES
+
+    task_id = payload.get("task_id")
+    status = payload.get("status", "unknown")
+    title = payload.get("title", "")
+    result = payload.get("result", "")
+    email_content = payload.get("email_content")
+    runs = payload.get("runs", [])
+    original_message_id = payload.get("original_message_id")
+
+    # 从 harness 格式化好的邮件内容中回复
+    if email_content and isinstance(email_content, dict):
+        reply_subject = email_content.get("subject", f"[harness] Task #{task_id} {status}")
+        reply_body = email_content.get("body", result or "")
+    else:
+        # 自行构建
+        if status == "completed":
+            reply_subject = f"✅ Harness 任务完成 #{task_id}: {title[:50]}"
+        else:
+            reply_subject = f"❌ Harness 任务失败 #{task_id}: {title[:50]}"
+
+        reply_body = f"**任务**: {title}\n**状态**: {status}\n\n"
+        if result:
+            reply_body += f"**结果**:\n{result[:2000]}\n\n"
+
+        if runs:
+            reply_body += "---\n**执行步骤**:\n"
+            for r in runs:
+                icon = "✅" if r.get("status") == "completed" else "❌"
+                reply_body += f"{icon} {r.get('phase', '?')} ({r.get('agent', '?')})\n"
+
+    # 使用 MailMind 的邮箱发送回复
+    # 获取第一个已配置的邮箱
+    mailbox_name = os.environ.get("MAILBOX", "custom")
+    mailbox = MAILBOXES.get(mailbox_name)
+    if not mailbox:
+        log.error(f"[Harness Callback] 邮箱 {mailbox_name} 未配置，无法回复")
+        return
+
+    # 使用 from_addr 作为收件人（harness 回调中提供）
+    to_addr = payload.get("from_addr")
+    if not to_addr:
+        # fallback: 使用 allowed 地址
+        to_addr = mailbox.get("allowed", "").split(",")[0] if mailbox.get("allowed") else mailbox.get("address", "")
+    if not to_addr:
+        log.error("[Harness Callback] 无法确定收件人地址")
+        return
+
+    log.info(f"[Harness Callback] 发送回复邮件: to={to_addr}, subject={reply_subject}, in_reply_to={original_message_id}")
+    try:
+        # 关键修复：传递 original_message_id 作为 In-Reply-To，确保是回复而不是新邮件
+        # 这样 IMAP 接收时不会当作新指令处理
+        send_reply(mailbox, to_addr, reply_subject, reply_body, in_reply_to=original_message_id, lang="zh")
+        log.info(f"[Harness Callback] ✓ 回复邮件已发送")
+    except Exception as e:
+        log.error(f"[Harness Callback] ✗ 发送邮件失败: {e}")
+
+
 @app.post("/webhook/discord")
 async def discord_webhook(request: Request):
     """
