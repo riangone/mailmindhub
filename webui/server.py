@@ -3346,11 +3346,13 @@ def _handle_harness_callback(payload: dict):
 
     # 使用 from_addr 作为收件人（harness 回调中提供）
     to_addr = payload.get("from_addr")
-    if not to_addr:
+    # from_addr がデーモン自身のアドレスの場合は allowed_senders の最初のアドレスにフォールバック
+    own_address = mailbox.get("address", "")
+    if not to_addr or (own_address and to_addr.lower() == own_address.lower()):
         # fallback: 使用 allowed 地址
-        to_addr = mailbox.get("allowed", "").split(",")[0] if mailbox.get("allowed") else mailbox.get("address", "")
+        to_addr = mailbox.get("allowed", "").split(",")[0] if mailbox.get("allowed") else None
     if not to_addr:
-        log.error("[Harness Callback] 无法确定收件人地址")
+        log.error("[Harness Callback] 无法确定收件人地址（from_addr は自己アドレスで allowed も未設定）")
         return
 
     log.info(f"[Harness Callback] 发送回复邮件: to={to_addr}, subject={reply_subject}, in_reply_to={original_message_id}")

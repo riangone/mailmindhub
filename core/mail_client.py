@@ -257,12 +257,23 @@ def fetch_unread_emails(mailbox: dict, processed_ids: set, ids_lock=None, existi
                 body, atts = get_body_and_attachments(msg)
                 from_raw = decode_str(msg.get("From", ""))
                 _, from_addr = parseaddr(from_raw)
+                # 自動返信ヘッダを抽出（RFC 3834 / Outlook / 一般的なメーラー）
+                auto_submitted = (msg.get("Auto-Submitted") or "").strip().lower()
+                x_autoreply   = (msg.get("X-Autoreply") or "").strip().lower()
+                precedence     = (msg.get("Precedence") or "").strip().lower()
+                x_auto_suppress = (msg.get("X-Auto-Response-Suppress") or "").strip().lower()
                 emails.append({
                     "id": eid,
                     "from": from_raw,
                     "from_email": from_addr or from_raw,
                     "subject": decode_str(msg.get("Subject", "(无主题)")),
                     "message_id": msg.get("Message-ID", ""),
+                    "in_reply_to": msg.get("In-Reply-To", ""),
+                    "references":  msg.get("References", ""),
+                    "auto_submitted": auto_submitted,
+                    "x_autoreply":    x_autoreply,
+                    "precedence":     precedence,
+                    "x_auto_response_suppress": x_auto_suppress,
                     "body": body,
                     "attachments": atts
                 })

@@ -21,3 +21,7 @@ reports/
 # 一键退订签名密钥（自动生成，不提交）
 .unsubscribe_secret
 .claude/worktrees/
+
+# 排除不需要提交的目录
+MailMind/
+ws/

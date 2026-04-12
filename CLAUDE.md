@@ -289,3 +289,48 @@ bash manage.sh uninstall  # サービスを削除
 ```
 
 **注意:** `manage.sh install` は `MAIL_126_*` の環境変数のみを自動インライン化する。他のメールボックスを使う場合は、`/etc/systemd/system/email-daemon.service` に手動で `Environment=` 行を追加する。
+
+## 既知のバグと対策：無限ループ送信
+
+### 問題の概要
+
+デーモンが**自分自身のメールアドレスに返信を送信**すると、その返信を新しい指令として受信し、再度 AI を呼び出して返信する無限ループが発生する。
+
+### ループが発生するパターン（すべて対策済み）
+
+| パターン | 発生箇所 | 対策 |
+|---------|---------|------|
+| Harness webhook の `from_addr` がデーモン自身のアドレス | `webui/server.py:_handle_harness_callback` | `from_addr == own_address` の場合は `allowed_senders[0]` にフォールバック |
+| `from_email == own_address` のメールを処理 | `email_daemon.py:_process_email_impl` | `_is_self_email()` で冒頭にブロック |
+| Gmail の `+tag` エイリアス（例: `me+tag@gmail.com`）が自己アドレスと一致しない | 同上 | `_normalize_email()` で `+tag` を除去してから比較 |
+| 環境変数 `MAIL_<X>_ALIASES` で設定した追加エイリアス | 同上 | `_is_self_email()` 内でエイリアスリストも照合 |
+| 自動返信・不在通知・バウンスメール（`Auto-Submitted`, `X-Autoreply` など） | 同上 | `_is_auto_reply()` で RFC 3834 ヘッダと件名パターンを検出しブロック |
+| スケジューラが `to` 空タスクをデーモン自身のアドレスに送信 | `tasks/scheduler.py` | `to` が空または自己アドレスの場合は `allowed_senders[0]` にリダイレクト |
+
+### ループ防止の実装ポイント
+
+```
+email_daemon.py
+  _normalize_email(addr)        # Gmail +tag 正規化
+  _is_self_email(mailbox, addr) # 自己アドレス・エイリアス判定（MAIL_<X>_ALIASES 対応）
+  _is_auto_reply(em)            # 自動返信ヘッダ・件名パターン判定
+  _process_email_impl()         # 冒頭で上記2つをチェック → 該当すれば即 return
+
+core/mail_client.py
+  fetch_unread_emails()         # Auto-Submitted / X-Autoreply 等のヘッダを em dict に含める
+
+tasks/scheduler.py
+  _run_due_tasks()              # 自己アドレスへの送信を allowed_senders[0] にリダイレクト
+
+webui/server.py
+  _handle_harness_callback()    # from_addr == own_address なら allowed_senders[0] を使用
+```
+
+### 新機能追加時のチェックリスト
+
+メール送信処理を追加・修正するときは以下を確認する：
+
+1. **送信先が `em["from_email"]` 以外になる場合** → その宛先がデーモン自身のアドレスになりうるか確認
+2. **Webhook / 外部コールバックから宛先を取得する場合** → `from_addr` / `to_addr` が自己アドレスでないか確認
+3. **タスクスケジューラで `to` フィールドを設定する場合** → 空文字列または自己アドレスを避ける
+4. **新しい種類の通知メールを送信する場合** → `Auto-Submitted: auto-generated` ヘッダを付与して他のメールシステムとの相互ループを防ぐ（`core/mail_sender.py` 参照）

@@ -423,13 +423,26 @@ class TaskScheduler:
         if output.get("email", True):
             # 重要：如果收件人为空，使用管理邮箱地址作为默认收件人
             recipient = t["to"]
+            mailbox_cfg = MAILBOXES.get(t["mailbox_name"], {})
+            own_address = mailbox_cfg.get("address", "")
             if not recipient or not recipient.strip():
-                mailbox = MAILBOXES.get(t["mailbox_name"], {})
-                recipient = mailbox.get("address", "")
+                # 収件人が空の場合は allowed_senders の最初のアドレスを使用（自己送信ループ防止）
+                allowed = mailbox_cfg.get("allowed_senders", [])
+                recipient = allowed[0] if allowed else ""
                 if not recipient:
-                    log.warning(f"任务 {t.get('id')} 没有收件人，跳过邮件发送")
+                    log.warning(f"任务 {t.get('id')} 没有收件人且 allowed_senders 未设置，跳过邮件发送")
                 else:
-                    log.info(f"任务 {t.get('id')} 收件人为空，使用管理邮箱地址: {recipient}")
+                    log.info(f"任务 {t.get('id')} 收件人为空，使用 allowed_senders[0]: {recipient}")
+            # 自己送信ループ防止：自分自身のアドレスへの送信は行わない
+            elif own_address and recipient.strip().lower() == own_address.lower():
+                allowed = mailbox_cfg.get("allowed_senders", [])
+                fallback = allowed[0] if allowed else ""
+                if fallback:
+                    log.warning(f"任务 {t.get('id')} 收件人为自身地址，改为 allowed_senders[0]: {fallback}")
+                    recipient = fallback
+                else:
+                    log.warning(f"任务 {t.get('id')} 收件人为自身地址且 allowed_senders 未设置，跳过邮件发送")
+                    recipient = ""
 
             if recipient:
                 send_reply(

@@ -343,7 +343,76 @@ def _handle_harness_command(mailbox_name, em, lang, cmd, rest) -> bool:
         return False  # 失败，需要 AI 处理
 
 
+def _normalize_email(addr: str) -> str:
+    """メールアドレスを正規化する（小文字化・Gmail の +tag 除去）"""
+    addr = addr.strip().lower()
+    # Gmail の +tag アドレス（例: user+tag@gmail.com → user@gmail.com）
+    if "@gmail.com" in addr or "@googlemail.com" in addr:
+        local, _, domain = addr.partition("@")
+        local = local.split("+")[0]
+        addr = f"{local}@{domain}"
+    return addr
+
+
+def _is_self_email(mailbox_name: str, sender: str) -> bool:
+    """送信者が自分自身のアドレス（またはエイリアス）かどうかを判定する"""
+    own_address = MAILBOXES.get(mailbox_name, {}).get("address", "")
+    if not own_address:
+        return False
+    norm_sender = _normalize_email(sender)
+    norm_own    = _normalize_email(own_address)
+    if norm_sender == norm_own:
+        return True
+    # 環境変数 MAIL_<MAILBOX>_ALIASES で追加エイリアスを設定可能（カンマ区切り）
+    env_key = f"MAIL_{mailbox_name.upper()}_ALIASES"
+    aliases_raw = os.environ.get(env_key, "")
+    for alias in aliases_raw.split(","):
+        alias = alias.strip()
+        if alias and _normalize_email(alias) == norm_sender:
+            return True
+    return False
+
+
+def _is_auto_reply(em: dict) -> bool:
+    """自動返信・バウンスメールかどうかを判定する（RFC 3834 / Outlook 規約）"""
+    # RFC 3834: Auto-Submitted ヘッダが "no" 以外なら自動生成メール
+    auto_submitted = em.get("auto_submitted", "")
+    if auto_submitted and auto_submitted != "no":
+        return True
+    # X-Autoreply ヘッダ（一般的なメーラー）
+    if em.get("x_autoreply") in ("yes", "1", "true"):
+        return True
+    # Outlook の X-Auto-Response-Suppress
+    if em.get("x_auto_response_suppress"):
+        return True
+    # 件名パターン（不在通知・配信不能・バウンスなど）
+    subject = em.get("subject", "").lower()
+    _AUTO_SUBJECT_PREFIXES = (
+        "auto:", "automatic reply", "out of office", "autoreply",
+        "auto-reply", "vacation", "delivery status notification",
+        "undeliverable", "mailer-daemon", "mail delivery failed",
+        "delivery failure", "返信不要", "自動返信", "不在通知",
+    )
+    if any(subject.startswith(p) or subject == p.rstrip(":") for p in _AUTO_SUBJECT_PREFIXES):
+        return True
+    return False
+
+
 def _process_email_impl(mailbox_name, ai_name, backend, em):
+    sender = em.get("from_email", "")
+
+    # ─── 自己送信ループ防止 ───
+    if _is_self_email(mailbox_name, sender):
+        log.info(f"🔄 自己送信メールを無視（ループ防止）: [{em['subject']}] from={sender}")
+        mark_processed_id(em["id"])
+        return
+
+    # ─── 自動返信・バウンスメール防止 ───
+    if _is_auto_reply(em):
+        log.info(f"🤖 自動返信メールを無視: [{em['subject']}] from={sender}")
+        mark_processed_id(em["id"])
+        return
+
     log.info(f"📨 收到指令: [{em['subject']}] 来自 {em['from_email']}")
 
     # 优先检测语言，用于后续回复
