@@ -1830,7 +1830,7 @@ async def task_update(request: Request, task_id: int, _auth=Depends(require_auth
         with sqlite3.connect(str(DB_FILE)) as conn:
             conn.execute(
                 """UPDATE tasks 
-                   SET subject=?, body=?, to=?, type=?, payload=?, 
+                   SET subject=?, body=?, "to"=?, type=?, payload=?, 
                        trigger_time=?, interval_seconds=?, cron_expr=?
                    WHERE id=?""",
                 (

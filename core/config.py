@@ -220,6 +220,7 @@ def _copilot_cmd() -> str:
     return _find_cli("copilot", "COPILOT_CMD")
 AI_BACKENDS = {
     # CLI 方式
+    "hermes":      {"type": "cli",           "cmd": _find_cli("hermes", "HERMES_CMD"), "args": ["chat", "-q"],                                                                    "native_web_search": True,  "label": "Hermes Agent",     "env_key": None},
     "claude":      {"type": "cli",           "cmd": _find_cli("claude", "CLAUDE_CMD"), "args": ["--print", "--dangerously-skip-permissions"],                           "native_web_search": True, "label": "Claude CLI",       "env_key": None},
     "codex":       {"type": "cli",           "cmd": _find_cli("codex", "CODEX_CMD"),  "args": ["exec", "--skip-git-repo-check"],                                                                 "native_web_search": False, "label": "OpenAI Codex CLI",   "env_key": None},
     "gemini":      {"type": "cli",           "cmd": _find_cli("gemini", "GEMINI_CMD"), "args": ["-y", "-p"],                                                               "native_web_search": True, "label": "Gemini CLI",       "env_key": None},
