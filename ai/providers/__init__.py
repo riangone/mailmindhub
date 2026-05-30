@@ -9,7 +9,7 @@ def get_ai_provider(ai_name: str, backend: dict) -> AIBase:
     - 'cli' -> ai.providers.cli.CLIProvider
     - 'api_openai' -> ai.providers.openai.OpenAIProvider
     - 'api_anthropic' -> ai.providers.anthropic.AnthropicProvider
-    - 'api_gemini' -> ai.providers.gemini.GeminiAPIProvider
+    - 'api_antigravity' -> ai.providers.antigravity.AntigravityAPIProvider
     """
     provider_type = backend.get("type", "")
     
@@ -24,7 +24,7 @@ def get_ai_provider(ai_name: str, backend: dict) -> AIBase:
             "api_qwen": ("openai", "OpenAIProvider"), # 兼容 OpenAI
             "api_deepseek": ("openai", "OpenAIProvider"), # 兼容 OpenAI
             "api_anthropic": ("anthropic", "AnthropicProvider"),
-            "api_gemini": ("gemini", "GeminiAPIProvider"),
+            "api_antigravity": ("antigravity", "AntigravityAPIProvider"),
             "api_ollama": ("ollama", "OllamaProvider"),
             "api_spark": ("spark", "SparkAPIProvider"),
             "api_ernie": ("ernie", "ErnieAPIProvider"),

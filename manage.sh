@@ -216,7 +216,7 @@ do_setup() {
     echo "   1) DeepSeek API（推荐，性价比高）"
     echo "   2) OpenAI API（gpt-4o）"
     echo "   3) Anthropic API（claude-sonnet）"
-    echo "   4) Gemini API"
+    echo "   4) Antigravity API"
     echo "   5) Groq API（Llama，速度快）"
     echo "   6) Perplexity API（sonar-pro）"
     echo "   7) Cohere API（command-r-plus）"
@@ -229,7 +229,7 @@ do_setup() {
     echo "  13) 零一万物 Yi API"
     echo "  --- CLI 工具 ---"
     echo "  14) claude CLI（需本地已安装 claude 命令）"
-    echo "  15) gemini CLI（需本地已安装 gemini 命令）"
+    echo "  15) antigravity CLI（需本地已安装 antigravity 命令）"
     echo "  16) qwen CLI（需本地已安装 qwen 命令）"
     echo "  17) codex CLI（需本地已安装 codex 命令）"
     echo ""
@@ -239,7 +239,7 @@ do_setup() {
         1)  AI_BACKEND="deepseek";   AI_KEY_VAR="DEEPSEEK_API_KEY";    AI_TYPE="api" ;;
         2)  AI_BACKEND="openai";     AI_KEY_VAR="OPENAI_API_KEY";      AI_TYPE="api" ;;
         3)  AI_BACKEND="anthropic";  AI_KEY_VAR="ANTHROPIC_API_KEY";   AI_TYPE="api" ;;
-        4)  AI_BACKEND="gemini-api"; AI_KEY_VAR="GEMINI_API_KEY";      AI_TYPE="api" ;;
+        4)  AI_BACKEND="antigravity-api"; AI_KEY_VAR="ANTIGRAVITY_API_KEY";      AI_TYPE="api" ;;
         5)  AI_BACKEND="groq";       AI_KEY_VAR="GROQ_API_KEY";        AI_TYPE="api" ;;
         6)  AI_BACKEND="perplexity"; AI_KEY_VAR="PERPLEXITY_API_KEY";  AI_TYPE="api" ;;
         7)  AI_BACKEND="cohere";     AI_KEY_VAR="COHERE_API_KEY";      AI_TYPE="api" ;;
@@ -250,7 +250,7 @@ do_setup() {
         12) AI_BACKEND="ernie";      AI_KEY_VAR="ERNIE_API_KEY";       AI_TYPE="api" ;;
         13) AI_BACKEND="yi";         AI_KEY_VAR="YI_API_KEY";          AI_TYPE="api" ;;
         14) AI_BACKEND="claude";     AI_KEY_VAR="";                    AI_TYPE="cli" ;;
-        15) AI_BACKEND="gemini";     AI_KEY_VAR="";                    AI_TYPE="cli" ;;
+        15) AI_BACKEND="antigravity"; AI_KEY_VAR="";                    AI_TYPE="cli" ;;
         16) AI_BACKEND="qwen";       AI_KEY_VAR="";                    AI_TYPE="cli" ;;
         17) AI_BACKEND="codex";      AI_KEY_VAR="";                    AI_TYPE="cli" ;;
         *) error "无效选项"; exit 1 ;;
@@ -697,7 +697,7 @@ _ensure_webui_deps() {
     ensure_venv
     if ! "$VENV_PYTHON" -c "import fastapi, itsdangerous" 2>/dev/null; then
         info "正在安装 Web UI 依赖..."
-        "$VENV_PIP" install "fastapi>=0.110.0" "uvicorn[standard]>=0.29.0" "jinja2>=3.1.0" "python-multipart>=0.0.9" "itsdangerous>=2.1.0" --quiet || {
+        "$VENV_PIP" install "fastapi>=0.110.0" "uvicorn[standard]>=0.29.0" "jinja2>=3.1.0" "python-multipart>=0.0.9" "itsdangerous>=2.1.0" "httpx>=0.27.0" --quiet || {
             error "依赖安装失败"
             exit 1
         }

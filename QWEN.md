@@ -52,7 +52,7 @@ MailMind/
 │   ├── __init__.py
 │   ├── base.py              # AIBase 抽象类
 │   └── providers/           # AI 提供商实现
-│       └── __init__.py      # CLI/API 提供商（OpenAI/Anthropic/Gemini/Qwen/Cohere/Spark/Ernie）
+│       └── __init__.py      # CLI/API 提供商（OpenAI/Anthropic/Antigravity/Qwen/Cohere/Spark/Ernie）
 ├── tasks/                   # 定时任务模块
 │   ├── __init__.py
 │   ├── scheduler.py         # TaskScheduler（SQLite 持久化，支持 cron）
@@ -250,7 +250,7 @@ python3 email_daemon.py --mailbox outlook --auth
 |------|------|----------|
 | `claude` | `claude --print` | Claude Code 已安装 |
 | `codex` | `codex exec --skip-git-repo-check` | Codex CLI 已安装 |
-| `gemini` | `gemini -p` | Gemini CLI 已安装 |
+| `antigravity` | `antigravity -p` | Antigravity CLI 已安装 |
 | `qwen` | `qwen --prompt --web-search-default --yolo` | Qwen CLI 已安装 |
 | `copilot` | `copilot` | GitHub Copilot CLI 已安装 |
 
@@ -262,7 +262,7 @@ python3 email_daemon.py --mailbox outlook --auth
 |------|-------------|----------|----------|
 | `anthropic` | `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` | Anthropic 官方 |
 | `openai` | `OPENAI_API_KEY` | `gpt-4o` | OpenAI 官方 |
-| `gemini-api` | `GEMINI_API_KEY` | `gemini-2.0-flash` | Google 官方 |
+| `antigravity-api` | `ANTIGRAVITY_API_KEY` | `antigravity-2.0-flash` | Google 官方 |
 | `deepseek` | `DEEPSEEK_API_KEY` | `deepseek-chat` | DeepSeek 官方 |
 | `groq` | `GROQ_API_KEY` | `llama-3.3-70b-versatile` | Groq 高速推理 |
 | `perplexity` | `PERPLEXITY_API_KEY` | `sonar-pro` | Perplexity 搜索增强 |
@@ -324,7 +324,7 @@ fetch_unread_emails() → process_email() → call_ai() → send_reply()
 
 **`AI_BACKENDS`** (core/config.py)
 - AI 后端预设字典
-- `type`: `cli`, `api_anthropic`, `api_openai`, `api_gemini`, `api_qwen`, `cli_copilot`, `api_cohere`, `api_spark`, `api_ernie`, `api_ollama`, `api_vllm`
+- `type`: `cli`, `api_anthropic`, `api_openai`, `api_antigravity`, `api_qwen`, `cli_copilot`, `api_cohere`, `api_spark`, `api_ernie`, `api_ollama`, `api_vllm`
 
 ### 邮件处理流程
 
@@ -620,8 +620,8 @@ WEBUI_LANG="zh"         # 界面语言：zh/ja/ko/en
 ```
 
 **支持的 AI 后端**：Web UI 配置页面已同步更新，支持所有 AI 后端：
-- CLI 方式：Claude、Codex、Gemini、Qwen、Copilot
-- 国际 API：OpenAI、Anthropic、Gemini API、DeepSeek、Groq、Perplexity、Cohere
+- CLI 方式：Claude、Codex、Antigravity、Qwen、Copilot
+- 国际 API：OpenAI、Anthropic、Antigravity API、DeepSeek、Groq、Perplexity、Cohere
 - 中国 API：通义千问、月之暗面 Kimi、智谱 GLM、讯飞星火、百度文心一言、零一万物 Yi
 - 本地模型：Ollama、vLLM
 

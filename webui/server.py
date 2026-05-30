@@ -2897,7 +2897,7 @@ async def stream_ai_cli(backend: str, prompt: str, cancel_event: asyncio.Event, 
     cli_commands = {
         "claude": ["claude", "--print"],
         "codex": ["codex", "exec", "--skip-git-repo-check"],
-        "gemini": ["gemini", "-p"],
+        "antigravity": ["antigravity", "-p"],
         "qwen": ["qwen", "--prompt", "--web-search-default", "--yolo"],
         "copilot": ["copilot"],
     }
@@ -2909,7 +2909,7 @@ async def stream_ai_cli(backend: str, prompt: str, cancel_event: asyncio.Event, 
 
     # Some CLIs read from stdin, others take prompt as argument
     # codex takes prompt as argument, others use stdin
-    if backend in ("claude", "gemini", "qwen", "copilot"):
+    if backend in ("claude", "antigravity", "qwen", "copilot"):
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.PIPE,
@@ -3176,7 +3176,7 @@ async def run_ai_cli(backend: str, prompt: str, timeout: int = 120) -> str:
     cli_commands = {
         "claude": ["claude", "--print"],
         "codex": ["codex", "exec", "--skip-git-repo-check"],
-        "gemini": ["gemini", "-p"],
+        "antigravity": ["antigravity", "-p"],
         "qwen": ["qwen", "--prompt", "--web-search-default", "--yolo"],
         "copilot": ["copilot"],
     }
@@ -3188,7 +3188,7 @@ async def run_ai_cli(backend: str, prompt: str, timeout: int = 120) -> str:
 
     # Some CLIs read from stdin, others take prompt as argument
     # codex takes prompt as argument, others use stdin
-    if backend in ("claude", "gemini", "qwen", "copilot"):
+    if backend in ("claude", "antigravity", "qwen", "copilot"):
         # Pass prompt via stdin
         proc = await asyncio.create_subprocess_exec(
             *cmd,

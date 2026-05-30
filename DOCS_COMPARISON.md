@@ -19,7 +19,7 @@
 ### MailMindHub
 - **轻量化**：纯 Python 编写，依赖极少，适合部署在云服务器、树莓派或 NAS。
 - **协议驱动**：基于标准的 IMAP/SMTP 协议，支持所有主流邮箱服务。
-- **多模型原生支持**：通过简单的配置即可切换 `Gemini`, `Claude`, `DeepSeek`, `Qwen` 等多种 CLI 或 API 后端。
+- **多模型原生支持**：通过简单的配置即可切换 `Antigravity`, `Claude`, `DeepSeek`, `Qwen` 等多种 CLI 或 API 后端。
 - **自动化能力**：内置强大的定时任务调度器（Scheduler），支持定时日报、天气/新闻汇总、系统监控。
 
 ### OpenClaw

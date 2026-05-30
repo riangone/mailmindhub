@@ -1,0 +1,3 @@
+mmh.0101.click {
+    reverse_proxy localhost:7000
+}

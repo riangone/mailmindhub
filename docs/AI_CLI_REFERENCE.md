@@ -10,7 +10,7 @@
 |---------|---------|----------|-----------|
 | Claude CLI | `claude --print --dangerously-skip-permissions <prompt>` | `CLAUDE_CMD` | - |
 | Codex CLI | `codex exec --skip-git-repo-check --full-auto <prompt>` | `CODEX_CMD` | - |
-| Gemini CLI | `gemini -y -p <prompt>` | `GEMINI_CMD` | - |
+| Antigravity CLI | `antigravity -y -p <prompt>` | `ANTIGRAVITY_CMD` | - |
 | Qwen CLI | `qwen --prompt --web-search-default --yolo <prompt>` | `QWEN_CMD` | - |
 | Copilot CLI | `copilot <prompt>` | `COPILOT_CMD` | `GITHUB_COPILOT_TOKEN` |
 
@@ -68,11 +68,11 @@ npm install -g @openai/codex
 
 ---
 
-### 3. Gemini CLI
+### 3. Antigravity CLI
 
 **命令格式：**
 ```bash
-gemini -y -p <prompt>
+antigravity -y -p <prompt>
 ```
 
 **参数说明：**
@@ -80,19 +80,19 @@ gemini -y -p <prompt>
 - `-p`：打印输出（print）
 
 **配置项：**
-- `GEMINI_CMD`：自定义 gemini 可执行文件路径（可选）
+- `ANTIGRAVITY_CMD`：自定义 antigravity 可执行文件路径（可选）
 
 **默认查找路径：**
 ```
-~/.npm-global/bin/gemini
-~/.local/bin/gemini
-/usr/local/bin/gemini
-/usr/bin/gemini
+~/.npm-global/bin/antigravity
+~/.local/bin/antigravity
+/usr/local/bin/antigravity
+/usr/bin/antigravity
 ```
 
 **安装方式：**
 ```bash
-npm install -g @google/gemini-cli
+npm install -g @google/antigravity-cli
 ```
 
 ---
@@ -275,7 +275,7 @@ def call(self, prompt: str, progress_cb=None, timeout=None, progress_interval=12
 # 自定义 CLI 路径（可选，通常自动检测）
 CLAUDE_CMD="/usr/local/bin/claude"
 CODEX_CMD="/home/user/.npm-global/bin/codex"
-GEMINI_CMD="/usr/local/bin/gemini"
+ANTIGRAVITY_CMD="/usr/local/bin/antigravity"
 QWEN_CMD="/usr/local/bin/qwen"
 COPILOT_CMD="/home/user/.vscode-server/data/User/globalStorage/github.copilot-chat/copilotCli/copilot"
 
@@ -304,8 +304,8 @@ python3 email_daemon.py --mailbox gmail --ai claude
 # 使用 Codex CLI
 python3 email_daemon.py --mailbox gmail --ai codex
 
-# 使用 Gemini CLI
-python3 email_daemon.py --mailbox gmail --ai gemini
+# 使用 Antigravity CLI
+python3 email_daemon.py --mailbox gmail --ai antigravity
 
 # 使用 Qwen CLI（带搜索）
 python3 email_daemon.py --mailbox gmail --ai qwen

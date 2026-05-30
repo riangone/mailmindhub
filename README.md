@@ -21,8 +21,8 @@
 
 - **多邮箱支持**：126、163、QQ、Gmail（OAuth/应用密码）、Outlook（OAuth）
 - **多 AI 支持**：
-  - **CLI 方式**：Claude Code、Codex、Gemini、通义千问、GitHub Copilot
-  - **国际 API**：Anthropic、OpenAI、Gemini、DeepSeek、Groq、Perplexity、Cohere
+  - **CLI 方式**：Claude Code、Codex、Antigravity、通义千问、GitHub Copilot
+  - **国际 API**：Anthropic、OpenAI、Antigravity、DeepSeek、Groq、Perplexity、Cohere
   - **中国 API**：通义千问、月之暗面 Kimi、智谱 GLM、讯飞星火、百度文心一言、零一万物 Yi
 - **白名单安全**：每个邮箱独立配置白名单，支持多个地址或域名
 - **AI 自动拟标题**：AI 根据回复内容自动生成邮件标题
@@ -496,7 +496,7 @@ python3 tray_app.py
 |--------|------|----------|
 | `claude` | Claude Code | 需安装 Claude Code |
 | `codex` | OpenAI Codex CLI | 需安装 Codex CLI |
-| `gemini` | Gemini CLI | 需安装 Gemini CLI |
+| `antigravity` | Antigravity CLI | 需安装 Antigravity CLI |
 | `qwen` | 通义千问 CLI | 需安装 Qwen CLI |
 | `copilot` | GitHub Copilot CLI | 需安装 Copilot CLI |
 
@@ -506,7 +506,7 @@ python3 tray_app.py
 |--------|------|--------------|
 | `anthropic` | Anthropic API | `ANTHROPIC_API_KEY` |
 | `openai` | OpenAI API | `OPENAI_API_KEY` |
-| `gemini-api` | Gemini API | `GEMINI_API_KEY` |
+| `antigravity-api` | Antigravity API | `ANTIGRAVITY_API_KEY` |
 | `deepseek` | DeepSeek API | `DEEPSEEK_API_KEY` |
 | `groq` | Groq 高速推理 | `GROQ_API_KEY` |
 | `perplexity` | Perplexity 搜索增强 | `PERPLEXITY_API_KEY` |
@@ -594,7 +594,7 @@ AI 会生成带 `"output": {"email": false, "archive": true}` 的任务，结果
 ### ✨ 主な機能
 
 - **複数メールボックス対応**：126、163、QQ、Gmail（OAuth/アプリパスワード）、Outlook（OAuth）
-- **複数 AI 対応**：CLI 方式（Claude Code、Codex、Gemini、Qwen）、API 方式（Anthropic、OpenAI、Gemini API、Qwen API）
+- **複数 AI 対応**：CLI 方式（Claude Code、Codex、Antigravity、Qwen）、API 方式（Anthropic、OpenAI、Antigravity API、Qwen API）
 - **ホワイトリスト機能**：メールボックスごとに独立設定、複数アドレス・ドメイン対応
 - **AI による件名自動生成**：返信内容に基づき AI が件名を自動作成
 - **サービス管理**：1 スクリプトで起動・停止・再起動・ログ・systemd 登録
@@ -747,7 +747,7 @@ bash manage.sh uninstall         # systemd サービスを削除
 |-----------|------|---------|
 | `claude` | Claude Code | Claude Code インストール済み |
 | `codex` | Codex CLI | Codex CLI インストール済み |
-| `gemini` | Gemini CLI | Gemini CLI インストール済み |
+| `antigravity` | Antigravity CLI | Antigravity CLI インストール済み |
 | `qwen` | Qwen CLI | Qwen CLI インストール済み |
 | `copilot` | GitHub Copilot CLI | Copilot CLI インストール済み |
 
@@ -757,7 +757,7 @@ bash manage.sh uninstall         # systemd サービスを削除
 |-----------|------|-------------|
 | `anthropic` | Anthropic API | `ANTHROPIC_API_KEY` |
 | `openai` | OpenAI API | `OPENAI_API_KEY` |
-| `gemini-api` | Gemini API | `GEMINI_API_KEY` |
+| `antigravity-api` | Antigravity API | `ANTIGRAVITY_API_KEY` |
 | `deepseek` | DeepSeek API | `DEEPSEEK_API_KEY` |
 | `groq` | Groq 高速推論 | `GROQ_API_KEY` |
 | `perplexity` | Perplexity 検索強化 | `PERPLEXITY_API_KEY` |
@@ -1026,7 +1026,7 @@ Send email (instruction) → MailMindHub receives → AI processes → Reply via
 ### ✨ Features
 
 - **Multiple mailboxes**: 126, 163, QQ, Gmail (OAuth/App Password), Outlook (OAuth)
-- **Multiple AI backends**: CLI (Claude Code, Codex, Gemini, Qwen) and API (Anthropic, OpenAI, Gemini API, Qwen API)
+- **Multiple AI backends**: CLI (Claude Code, Codex, Antigravity, Qwen) and API (Anthropic, OpenAI, Antigravity API, Qwen API)
 - **Whitelist security**: Per-mailbox whitelist supporting multiple addresses or domains
 - **AI-generated subjects**: AI crafts a meaningful reply subject automatically
 - **Service management**: One script for start, stop, restart, logs, and systemd install
@@ -1199,7 +1199,7 @@ Once running, send an email to your configured mailbox with your instruction as 
 |------|---------|
 | `claude` | Claude Code installed |
 | `codex` | Codex CLI installed |
-| `gemini` | Gemini CLI installed |
+| `antigravity` | Antigravity CLI installed |
 | `qwen` | Qwen CLI installed |
 | `copilot` | GitHub Copilot CLI installed |
 
@@ -1209,7 +1209,7 @@ Once running, send an email to your configured mailbox with your instruction as 
 |------|---------|
 | `anthropic` | `ANTHROPIC_API_KEY` |
 | `openai` | `OPENAI_API_KEY` |
-| `gemini-api` | `GEMINI_API_KEY` |
+| `antigravity-api` | `ANTIGRAVITY_API_KEY` |
 | `deepseek` | `DEEPSEEK_API_KEY` |
 | `groq` | `GROQ_API_KEY` |
 | `perplexity` | `PERPLEXITY_API_KEY` |
@@ -1495,7 +1495,7 @@ Archive all emails older than 30 days whose subject contains [AI Reply]
 ### ✨ 주요 기능
 
 - **다중 메일함 지원**：126、163、QQ、Gmail（OAuth/앱 비밀번호）、Outlook（OAuth）
-- **다중 AI 지원**：CLI 방식（Claude Code、Codex、Gemini、Qwen）、API 방식（Anthropic、OpenAI、Gemini API、Qwen API）
+- **다중 AI 지원**：CLI 방식（Claude Code、Codex、Antigravity、Qwen）、API 방식（Anthropic、OpenAI、Antigravity API、Qwen API）
 - **화이트리스트 보안**：메일함별 독립 설정, 여러 주소·도메인 지원
 - **AI 자동 제목 생성**：AI가 회신 내용에 맞는 제목을 자동 생성
 - **서비스 관리**：하나의 스크립트로 시작·정지·재시작·로그·systemd 등록
@@ -1647,7 +1647,7 @@ bash manage.sh uninstall         # systemd 서비스 제거
 |---------|---------|
 | `claude` | Claude Code 설치 |
 | `codex` | Codex CLI 설치 |
-| `gemini` | Gemini CLI 설치 |
+| `antigravity` | Antigravity CLI 설치 |
 | `qwen` | Qwen CLI 설치 |
 | `copilot` | GitHub Copilot CLI 설치 |
 
@@ -1657,7 +1657,7 @@ bash manage.sh uninstall         # systemd 서비스 제거
 |---------|---------|
 | `anthropic` | `ANTHROPIC_API_KEY` |
 | `openai` | `OPENAI_API_KEY` |
-| `gemini-api` | `GEMINI_API_KEY` |
+| `antigravity-api` | `ANTIGRAVITY_API_KEY` |
 | `deepseek` | `DEEPSEEK_API_KEY` |
 | `groq` | `GROQ_API_KEY` |
 | `perplexity` | `PERPLEXITY_API_KEY` |

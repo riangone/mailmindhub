@@ -93,7 +93,7 @@ MCP_SERVER_SEARCH=npx -y @modelcontextprotocol/server-brave-search
 
 #### AI 原生搜索优先
 
-对于支持 `native_web_search` 的 AI 后端（如 Claude CLI、Gemini CLI 等），技能会自动优先使用 AI 的原生搜索能力，无需本地调用。
+对于支持 `native_web_search` 的 AI 后端（如 Claude CLI、Antigravity CLI 等），技能会自动优先使用 AI 的原生搜索能力，无需本地调用。
 
 ### 第三阶段：优化 prompt 模板
 

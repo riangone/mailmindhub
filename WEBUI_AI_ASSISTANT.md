@@ -20,8 +20,8 @@
 
 **特性：**
 - ✅ SSE (Server-Sent Events) 流式响应
-- ✅ 支持所有 CLI 后端（Claude、Codex、Gemini、Qwen、Copilot）
-- ✅ 支持所有 API 后端（OpenAI、Anthropic、Gemini API、通义千问等）
+- ✅ 支持所有 CLI 后端（Claude、Codex、Antigravity、Qwen、Copilot）
+- ✅ 支持所有 API 后端（OpenAI、Anthropic、Antigravity API、通义千问等）
 - ✅ 对话历史持久化（SQLite）
 - ✅ 多轮对话上下文保持
 - ✅ 请求取消功能
@@ -212,8 +212,8 @@ Assistant:"""
 |------|-------------|-------------------|
 | UI 形态 | 右侧滑出面板 | ✅ 右侧滑出面板 |
 | 流式响应 | SignalR | ✅ SSE |
-| CLI 支持 | Claude, Qwen | ✅ Claude, Codex, Gemini, Qwen, Copilot |
-| API 支持 | - | ✅ OpenAI, Anthropic, Gemini 等 |
+| CLI 支持 | Claude, Qwen | ✅ Claude, Codex, Antigravity, Qwen, Copilot |
+| API 支持 | - | ✅ OpenAI, Anthropic, Antigravity 等 |
 | 任务管理 | 列表/详情/取消 | ✅ 取消功能 |
 | 认证 | OAuth (CLI 管理) | ✅ WebUI 密码认证 |
 | Markdown | ✅ | ✅ |
